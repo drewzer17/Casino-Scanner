@@ -5,7 +5,7 @@ import logging
 import threading
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .. import models
@@ -178,12 +178,13 @@ def movers(db: Session = Depends(get_db), limit: int = 10) -> MoversOut:
     return MoversOut(gainers=gainers, losers=losers)
 
 
-@router.post("/scan/run")
+@router.get("/scan/run")
 def trigger_scan(background_tasks: BackgroundTasks, db: Session = Depends(get_db)) -> dict:
-    """Kick off a full scan in a background thread.
+    """Kick off a full scan via a plain GET so it works from a browser or bare curl.
 
-    Returns immediately.  Poll ``GET /api/scan/latest`` to see results once
-    the run finishes (typically 5-15 min for ~500 tickers).
+    Returns immediately with JSON — the scan runs in a background thread.
+    Poll GET /api/scan/status to track progress, or GET /api/scan/latest
+    once it finishes (typically 10-15 min for ~500 tickers).
 
     Returns 409 if a scan is already in progress.
     """
@@ -191,11 +192,17 @@ def trigger_scan(background_tasks: BackgroundTasks, db: Session = Depends(get_db
         select(models.ScanRun).where(models.ScanRun.status == "running").limit(1)
     ).scalar_one_or_none()
     if in_progress:
-        raise HTTPException(
-            status_code=409,
-            detail=f"Scan already running (run_id={in_progress.id}). "
-                   "Poll /api/scan/latest or wait for it to finish.",
-        )
+        # Count how many results exist so far for a live progress hint
+        scanned = db.execute(
+            select(func.count()).select_from(models.ScanResult)
+            .where(models.ScanResult.run_id == in_progress.id)
+        ).scalar() or 0
+        return {
+            "status": "already_running",
+            "run_id": in_progress.id,
+            "tickers_scanned_so_far": scanned,
+            "message": f"Scan already in progress. {scanned} tickers done so far. Poll /api/scan/status for live progress.",
+        }
 
     def _background() -> None:
         if not _scan_lock.acquire(blocking=False):
@@ -213,7 +220,43 @@ def trigger_scan(background_tasks: BackgroundTasks, db: Session = Depends(get_db
             _scan_lock.release()
 
     background_tasks.add_task(_background)
-    return {"status": "started", "message": "Scan kicked off in background. Poll /api/scan/latest for results."}
+    return {
+        "status": "scan_started",
+        "message": "Scanning ~500 tickers in the background. Check back in 10-15 min.",
+        "poll_progress": "/api/scan/status",
+        "poll_results": "/api/scan/latest",
+    }
+
+
+@router.get("/scan/status")
+def scan_status(db: Session = Depends(get_db)) -> dict:
+    """Live progress for the most recent scan run (running or finished)."""
+    run = db.execute(
+        select(models.ScanRun).order_by(models.ScanRun.started_at.desc()).limit(1)
+    ).scalar_one_or_none()
+
+    if run is None:
+        return {"status": "no_scans_yet", "message": "Hit GET /api/scan/run to start the first scan."}
+
+    # Count ScanResult rows committed so far — updated every 25 tickers in the engine
+    scanned = db.execute(
+        select(func.count()).select_from(models.ScanResult)
+        .where(models.ScanResult.run_id == run.id)
+    ).scalar() or 0
+
+    total_universe = 500  # approximate; exact count lives in universe.py
+    remaining = max(0, total_universe - scanned) if run.status == "running" else 0
+
+    return {
+        "status": run.status,          # "running" | "completed" | "failed"
+        "run_id": run.id,
+        "started_at": run.started_at,
+        "finished_at": run.finished_at,
+        "tickers_scanned": scanned,
+        "tickers_remaining": remaining,
+        "tickers_errored": run.tickers_errored,
+        "estimated_minutes_left": round(remaining / 35) if remaining > 0 else 0,
+    }
 
 
 @router.get("/health")
