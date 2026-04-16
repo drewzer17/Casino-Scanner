@@ -54,7 +54,7 @@ if _assets_dir.exists():
 # ── SPA catch-all ──────────────────────────────────────────────────────────────
 # Any path that didn't match /api/* or /assets/* returns index.html so that
 # React Router can handle client-side navigation.
-@app.get("/{full_path:path}", include_in_schema=False)
+@app.get("/{full_path:path}", include_in_schema=False, response_model=None)
 async def serve_spa(full_path: str) -> FileResponse | dict:
     index = DIST / "index.html"
     if index.exists():
