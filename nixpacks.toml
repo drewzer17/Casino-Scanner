@@ -5,9 +5,13 @@
 #   - Nix's python312 is immutable — ensurepip and --break-system-packages are blocked.
 #   - Solution: create a venv, then use /opt/venv/bin/pip and /opt/venv/bin/python exclusively.
 #   - All start commands must use the venv python so installed packages are on sys.path.
+#   - Nix's gcc provides the compiler but does NOT put libstdc++.so.6 on the system
+#     library path. pandas/numpy need the C++ runtime at import time. Fix: install
+#     libstdc++6 via apt (always available on Railway's Ubuntu base image).
 
 [phases.setup]
 nixPkgs = ["python312", "gcc", "nodejs_20"]
+aptPkgs = ["libstdc++6"]
 
 [phases.install]
 cmds = [
