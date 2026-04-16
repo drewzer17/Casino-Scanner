@@ -1,12 +1,15 @@
 """Public API endpoints."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+import logging
+import threading
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import models
-from ..database import get_db
+from ..database import SessionLocal, get_db
 from ..schemas import (
     MoverOut,
     MoversOut,
@@ -14,6 +17,11 @@ from ..schemas import (
     ScanResultOut,
     ScoreBreakdown,
 )
+
+logger = logging.getLogger(__name__)
+
+# Simple lock so two HTTP requests can't kick off concurrent scans
+_scan_lock = threading.Lock()
 
 router = APIRouter(prefix="/api", tags=["scanner"])
 
@@ -168,6 +176,44 @@ def movers(db: Session = Depends(get_db), limit: int = 10) -> MoversOut:
     gainers = deltas[:limit]
     losers = sorted(deltas, key=lambda m: m.delta)[:limit]
     return MoversOut(gainers=gainers, losers=losers)
+
+
+@router.post("/scan/run")
+def trigger_scan(background_tasks: BackgroundTasks, db: Session = Depends(get_db)) -> dict:
+    """Kick off a full scan in a background thread.
+
+    Returns immediately.  Poll ``GET /api/scan/latest`` to see results once
+    the run finishes (typically 5-15 min for ~500 tickers).
+
+    Returns 409 if a scan is already in progress.
+    """
+    in_progress = db.execute(
+        select(models.ScanRun).where(models.ScanRun.status == "running").limit(1)
+    ).scalar_one_or_none()
+    if in_progress:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Scan already running (run_id={in_progress.id}). "
+                   "Poll /api/scan/latest or wait for it to finish.",
+        )
+
+    def _background() -> None:
+        if not _scan_lock.acquire(blocking=False):
+            logger.warning("trigger_scan: lock already held, skipping duplicate run")
+            return
+        bg_db = SessionLocal()
+        try:
+            from ..scanner.engine import run_scan
+            run_id = run_scan(bg_db)
+            logger.info("background scan finished run_id=%s", run_id)
+        except Exception as exc:
+            logger.exception("background scan failed: %s", exc)
+        finally:
+            bg_db.close()
+            _scan_lock.release()
+
+    background_tasks.add_task(_background)
+    return {"status": "started", "message": "Scan kicked off in background. Poll /api/scan/latest for results."}
 
 
 @router.get("/health")

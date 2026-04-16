@@ -7,13 +7,14 @@
 #   - All start commands must use the venv python so installed packages are on sys.path.
 
 [phases.setup]
-nixPkgs = ["python312", "gcc"]
+nixPkgs = ["python312", "gcc", "nodejs_20"]
 
 [phases.install]
 cmds = [
   "python3.12 -m venv /opt/venv",
   "/opt/venv/bin/pip install --upgrade pip",
-  "/opt/venv/bin/pip install -r backend/requirements.txt"
+  "/opt/venv/bin/pip install -r backend/requirements.txt",
+  "cd frontend && npm install && npm run build"
 ]
 
 [start]
