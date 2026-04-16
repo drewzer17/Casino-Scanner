@@ -35,5 +35,25 @@ def get_db():
 
 def init_db() -> None:
     from . import models  # noqa: F401  ensure models are imported
+    from sqlalchemy import text
 
     Base.metadata.create_all(bind=engine)
+
+    # Idempotent migrations: add columns introduced after initial deploy.
+    # create_all() only creates missing *tables*, not missing *columns*, so we
+    # ALTER TABLE manually and swallow the error if the column already exists.
+    _add_column_if_missing(
+        "ALTER TABLE scan_runs ADD COLUMN tickers_total INTEGER DEFAULT 0"
+    )
+
+
+def _add_column_if_missing(ddl: str) -> None:
+    from sqlalchemy import text
+
+    with engine.connect() as conn:
+        try:
+            conn.execute(text(ddl))
+            conn.commit()
+        except Exception:
+            # Column already exists — safe to ignore
+            conn.rollback()

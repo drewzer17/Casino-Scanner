@@ -179,7 +179,11 @@ def movers(db: Session = Depends(get_db), limit: int = 10) -> MoversOut:
 
 
 @router.get("/scan/run")
-def trigger_scan(background_tasks: BackgroundTasks, db: Session = Depends(get_db)) -> dict:
+def trigger_scan(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    limit: int | None = None,
+) -> dict:
     """Kick off a full scan via a plain GET so it works from a browser or bare curl.
 
     Returns immediately with JSON — the scan runs in a background thread.
@@ -211,7 +215,7 @@ def trigger_scan(background_tasks: BackgroundTasks, db: Session = Depends(get_db
         bg_db = SessionLocal()
         try:
             from ..scanner.engine import run_scan
-            run_id = run_scan(bg_db)
+            run_id = run_scan(bg_db, limit=limit)
             logger.info("background scan finished run_id=%s", run_id)
         except Exception as exc:
             logger.exception("background scan failed: %s", exc)
@@ -220,9 +224,10 @@ def trigger_scan(background_tasks: BackgroundTasks, db: Session = Depends(get_db
             _scan_lock.release()
 
     background_tasks.add_task(_background)
+    ticker_count = f"first {limit}" if limit else "~500"
     return {
         "status": "scan_started",
-        "message": "Scanning ~500 tickers in the background. Check back in 10-15 min.",
+        "message": f"Scanning {ticker_count} tickers in the background. Results commit every 25 tickers.",
         "poll_progress": "/api/scan/status",
         "poll_results": "/api/scan/latest",
     }
@@ -238,24 +243,26 @@ def scan_status(db: Session = Depends(get_db)) -> dict:
     if run is None:
         return {"status": "no_scans_yet", "message": "Hit GET /api/scan/run to start the first scan."}
 
-    # Count ScanResult rows committed so far — updated every 25 tickers in the engine
-    scanned = db.execute(
+    # ScanResult rows committed so far — the engine commits every 25 tickers
+    committed = db.execute(
         select(func.count()).select_from(models.ScanResult)
         .where(models.ScanResult.run_id == run.id)
     ).scalar() or 0
 
-    total_universe = 500  # approximate; exact count lives in universe.py
-    remaining = max(0, total_universe - scanned) if run.status == "running" else 0
+    total = run.tickers_total or 500  # tickers_total added in migration; fall back to 500
+    remaining = max(0, total - committed) if run.status == "running" else 0
 
     return {
-        "status": run.status,          # "running" | "completed" | "failed"
+        "status": run.status,           # "running" | "completed" | "failed"
         "run_id": run.id,
         "started_at": run.started_at,
         "finished_at": run.finished_at,
-        "tickers_scanned": scanned,
+        "tickers_total": total,
+        "tickers_scanned": committed,   # live count from DB rows, not the in-memory counter
         "tickers_remaining": remaining,
         "tickers_errored": run.tickers_errored,
         "estimated_minutes_left": round(remaining / 35) if remaining > 0 else 0,
+        "batch_size": 25,
     }
 
 

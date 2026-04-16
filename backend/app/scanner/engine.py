@@ -1,7 +1,14 @@
 """Scan engine: pulls yfinance data for each ticker, computes metrics, scores, buckets.
 
-Phase 1 keeps this pragmatic. yfinance is network-flaky so every ticker is
-wrapped in a try/except — one bad ticker should never kill the run.
+Design goals (Phase 1):
+- Crash-resilient: results are committed every BATCH_SIZE tickers so a Railway
+  restart preserves completed batches.
+- Resumable: run_scan() detects an existing 'running' ScanRun and skips tickers
+  that already have results for that run, continuing from where it crashed.
+- Per-ticker timeout: yfinance can hang indefinitely; every ticker is run in a
+  ThreadPoolExecutor with a hard 10-second timeout.
+- One-bad-ticker isolation: any exception from a single ticker is caught, logged,
+  and counted as errored — it never kills the whole run.
 
 IV rank is approximated from 252 days of close-to-close realized vol percentile
 because yfinance does not expose historical IV. It is directionally correct for
@@ -11,13 +18,16 @@ from __future__ import annotations
 
 import logging
 import math
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeout
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from typing import Iterable
 
 import numpy as np
 import pandas as pd
 import yfinance as yf
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import models
@@ -243,54 +253,142 @@ def scan_ticker(ticker: str) -> ScanRowResult | None:
         return None
 
 
-def run_scan(db: Session, tickers: list[str] | None = None) -> int:
-    """Run a full scan and persist results. Returns the ScanRun id."""
-    if tickers is None:
-        tickers = load_universe()
+BATCH_SIZE = 25
+TICKER_TIMEOUT = 10  # seconds per ticker before we give up and move on
 
-    run = models.ScanRun(started_at=datetime.utcnow(), status="running")
-    db.add(run)
-    db.commit()
-    db.refresh(run)
 
-    scanned = 0
-    errored = 0
-    for ticker in tickers:
-        result = scan_ticker(ticker)
-        if result is None:
-            errored += 1
-            continue
-        scanned += 1
-        row = models.ScanResult(
-            run_id=run.id,
-            ticker=result.ticker,
-            price=result.price,
-            iv_rank=result.metrics.iv_rank,
-            iv=result.metrics.iv,
-            hv=result.metrics.hv,
-            atm_call_premium=result.atm_call_premium,
-            premium_pct=result.metrics.premium_pct,
-            open_interest=result.metrics.open_interest,
-            bid_ask_spread_pct=result.metrics.bid_ask_spread_pct,
-            earnings_days=result.metrics.earnings_days,
-            unusual_volume=result.metrics.unusual_volume,
-            score=result.score,
-            score_iv_rank=result.breakdown_iv_rank,
-            score_premium=result.breakdown_premium,
-            score_iv_hv=result.breakdown_iv_hv,
-            score_catalyst=result.breakdown_catalyst,
-            score_chain=result.breakdown_chain,
-            bucket=result.bucket,
+def _scan_with_timeout(ticker: str) -> ScanRowResult | None:
+    """Run scan_ticker in a thread with a hard timeout.
+
+    yfinance can hang indefinitely on network calls (DNS, SSL, stalled HTTP).
+    We isolate each ticker in a 1-worker ThreadPoolExecutor so the timeout is
+    enforced at the OS level.  The worker thread itself may linger briefly after
+    the timeout fires, but the main scan loop moves on immediately.
+    """
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(scan_ticker, ticker)
+        try:
+            return future.result(timeout=TICKER_TIMEOUT)
+        except FuturesTimeout:
+            logger.warning("ticker %s timed out after %ds — skipping", ticker, TICKER_TIMEOUT)
+            return None
+        except Exception as exc:
+            logger.warning("ticker %s raised unexpectedly: %s — skipping", ticker, exc)
+            return None
+
+
+def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
+    row = models.ScanResult(
+        run_id=run_id,
+        ticker=result.ticker,
+        price=result.price,
+        iv_rank=result.metrics.iv_rank,
+        iv=result.metrics.iv,
+        hv=result.metrics.hv,
+        atm_call_premium=result.atm_call_premium,
+        premium_pct=result.metrics.premium_pct,
+        open_interest=result.metrics.open_interest,
+        bid_ask_spread_pct=result.metrics.bid_ask_spread_pct,
+        earnings_days=result.metrics.earnings_days,
+        unusual_volume=result.metrics.unusual_volume,
+        score=result.score,
+        score_iv_rank=result.breakdown_iv_rank,
+        score_premium=result.breakdown_premium,
+        score_iv_hv=result.breakdown_iv_hv,
+        score_catalyst=result.breakdown_catalyst,
+        score_chain=result.breakdown_chain,
+        bucket=result.bucket,
+    )
+    db.add(row)
+
+
+def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = None) -> int:
+    """Run a crash-resilient, resumable scan. Returns the ScanRun id.
+
+    Resume logic:
+        If there is already a ScanRun with status='running', we assume the
+        previous process crashed and pick up where it left off.  We query which
+        tickers already have results for that run and skip them.
+
+    Batch commit:
+        Results are committed every BATCH_SIZE tickers.  A crash between commits
+        loses at most BATCH_SIZE tickers of work.
+
+    Limit:
+        Pass limit=N to scan only the first N tickers (useful for smoke tests).
+    """
+    universe = tickers if tickers is not None else load_universe()
+    if limit is not None:
+        universe = universe[:limit]
+
+    # ── Find or create a ScanRun ──────────────────────────────────────────────
+    existing_run = db.execute(
+        select(models.ScanRun)
+        .where(models.ScanRun.status == "running")
+        .order_by(models.ScanRun.started_at.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+
+    if existing_run is not None:
+        run = existing_run
+        logger.info(
+            "resuming crashed run_id=%s — checking for already-scanned tickers", run.id
         )
-        db.add(row)
-        if scanned % 25 == 0:
-            db.commit()
+        done_tickers: set[str] = set(
+            db.execute(
+                select(models.ScanResult.ticker).where(models.ScanResult.run_id == run.id)
+            ).scalars().all()
+        )
+        remaining = [t for t in universe if t not in done_tickers]
+        scanned = run.tickers_scanned
+        errored = run.tickers_errored
+        logger.info(
+            "resume: %d already done, %d remaining", len(done_tickers), len(remaining)
+        )
+    else:
+        run = models.ScanRun(
+            started_at=datetime.utcnow(),
+            status="running",
+            tickers_total=len(universe),
+        )
+        db.add(run)
+        db.commit()
+        db.refresh(run)
+        remaining = list(universe)
+        scanned = 0
+        errored = 0
+        logger.info("new scan run_id=%s, %d tickers to scan", run.id, len(remaining))
+
+    # Update total in case we're resuming with a different universe/limit
+    run.tickers_total = len(universe)
+    db.commit()
+
+    # ── Scan in batches ───────────────────────────────────────────────────────
+    for batch_start in range(0, len(remaining), BATCH_SIZE):
+        batch = remaining[batch_start : batch_start + BATCH_SIZE]
+        logger.info(
+            "run_id=%s batch %d-%d / %d",
+            run.id, batch_start + 1, batch_start + len(batch), len(remaining),
+        )
+
+        for ticker in batch:
+            result = _scan_with_timeout(ticker)
+            if result is None:
+                errored += 1
+            else:
+                scanned += 1
+                _persist_result(db, run.id, result)
+
+        # Commit the whole batch + update progress counters atomically
+        run.tickers_scanned = scanned
+        run.tickers_errored = errored
+        db.commit()
+        logger.info("run_id=%s committed batch — scanned=%d errored=%d", run.id, scanned, errored)
 
     run.finished_at = datetime.utcnow()
-    run.tickers_scanned = scanned
-    run.tickers_errored = errored
     run.status = "completed"
     db.commit()
+    logger.info("run_id=%s complete — scanned=%d errored=%d", run.id, scanned, errored)
     return run.id
 
 
