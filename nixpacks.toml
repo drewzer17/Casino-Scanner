@@ -5,13 +5,14 @@
 #   - Nix's python312 is immutable — ensurepip and --break-system-packages are blocked.
 #   - Solution: create a venv, then use /opt/venv/bin/pip and /opt/venv/bin/python exclusively.
 #   - All start commands must use the venv python so installed packages are on sys.path.
-#   - Nix's gcc provides the compiler but does NOT put libstdc++.so.6 on the system
-#     library path. pandas/numpy need the C++ runtime at import time. Fix: install
-#     libstdc++6 via apt (always available on Railway's Ubuntu base image).
+#   - pandas/numpy C++ extensions need libstdc++.so.6 at runtime. aptPkgs = ["libstdc++6"]
+#     does NOT work because apt packages are not on the nix venv's linker search path.
+#   - Fix: gcc-unwrapped in nixPkgs puts libstdc++ in the nix store. The start command
+#     then dynamically locates it and sets LD_LIBRARY_PATH before uvicorn starts, so
+#     the linker finds it regardless of the nix store hash (which changes per build).
 
 [phases.setup]
-nixPkgs = ["python312", "gcc", "nodejs_20"]
-aptPkgs = ["libstdc++6"]
+nixPkgs = ["python312", "gcc", "gcc-unwrapped", "nodejs_20"]
 
 [phases.install]
 cmds = [
@@ -22,4 +23,4 @@ cmds = [
 ]
 
 [start]
-cmd = "cd backend && /opt/venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+cmd = "export LD_LIBRARY_PATH=$(dirname $(find /nix/store -name 'libstdc++.so.6' 2>/dev/null | head -1)):$LD_LIBRARY_PATH && cd backend && /opt/venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT"
