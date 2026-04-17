@@ -199,7 +199,17 @@ export default function TickerModal({ row, onClose }) {
     setLoading(true);
     setError(null);
     api.wheel(row.ticker, s1, r1)
-      .then(setWheel)
+      .then((w) => {
+        setWheel(w);
+        // Backfill any null overrides from the wheel response (same DB data,
+        // but wheel reads from latest completed run which may differ from card row)
+        setOverrides((prev) => ({
+          support_1:    prev.support_1    ?? w.support_1    ?? null,
+          support_2:    prev.support_2    ?? w.support_2    ?? null,
+          resistance_1: prev.resistance_1 ?? w.resistance_1 ?? null,
+          resistance_2: prev.resistance_2 ?? w.resistance_2 ?? null,
+        }));
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   };

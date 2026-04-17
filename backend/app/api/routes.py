@@ -486,13 +486,26 @@ def ticker_wheel(
 
     ticker = ticker.strip().upper()
 
-    # Latest scan result for this ticker
-    row = db.execute(
-        select(models.ScanResult)
-        .where(models.ScanResult.ticker == ticker)
-        .order_by(models.ScanResult.created_at.desc())
-        .limit(1)
-    ).scalar_one_or_none()
+    # Read from the latest completed run (same source as the dashboard card),
+    # not just the most recent row by created_at which could be a partial scan.
+    _run = _latest_run(db)
+    row = None
+    if _run:
+        row = db.execute(
+            select(models.ScanResult)
+            .where(
+                models.ScanResult.ticker == ticker,
+                models.ScanResult.run_id == _run.id,
+            )
+        ).scalar_one_or_none()
+    # Fall back to most-recent row if ticker wasn't in the latest completed run
+    if row is None:
+        row = db.execute(
+            select(models.ScanResult)
+            .where(models.ScanResult.ticker == ticker)
+            .order_by(models.ScanResult.created_at.desc())
+            .limit(1)
+        ).scalar_one_or_none()
 
     price = row.price if row else None
 
