@@ -112,6 +112,8 @@ def _to_out(
         hv=row.hv,
         atm_call_premium=row.atm_call_premium,
         premium_pct=row.premium_pct,
+        premium_otm1=row.premium_otm1,
+        premium_otm2=row.premium_otm2,
         open_interest=row.open_interest,
         bid_ask_spread_pct=row.bid_ask_spread_pct,
         earnings_days=row.earnings_days,

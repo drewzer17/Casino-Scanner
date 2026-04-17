@@ -198,7 +198,14 @@ export default function ScoreCard({ row, onClick }) {
       <SmaPanel row={row} />
 
       <div className="meta">
-        <span className="chip">prem {fmtPct(row.premium_pct, 2)}</span>
+        <span className="chip">
+          prem {fmtPct(row.premium_pct, 2)}
+          {row.premium_otm2 != null && (
+            <span style={{ color: "var(--text-muted)" }}>
+              {" "}(${(row.premium_otm2 * 100).toFixed(2)} 2OTM)
+            </span>
+          )}
+        </span>
         <span className="chip">OI {row.open_interest ?? "—"}</span>
         <span className="chip">
           spr {row.bid_ask_spread_pct != null ? fmtPct(row.bid_ask_spread_pct, 1) : "—"}

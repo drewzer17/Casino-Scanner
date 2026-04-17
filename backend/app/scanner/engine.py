@@ -442,11 +442,36 @@ def _nearest_expiry(exp_dates: Iterable[str], min_days: int = 21, max_days: int 
     return None
 
 
-def _pick_atm_call(options: list[dict], price: float) -> dict | None:
-    calls = [o for o in options if o.get("option_type") == "call" and _is_valid(o.get("strike"))]
+def _pick_call_strikes(
+    options: list[dict], price: float
+) -> tuple[dict | None, dict | None, dict | None]:
+    """Return (atm_call, 1_otm_call, 2_otm_call) sorted by strike ascending.
+
+    ATM = call with strike closest to current price.
+    1 OTM / 2 OTM = the next 1 and 2 strikes above ATM in the chain.
+    """
+    calls = sorted(
+        [o for o in options if o.get("option_type") == "call" and _is_valid(o.get("strike"))],
+        key=lambda o: float(o["strike"]),
+    )
     if not calls:
+        return None, None, None
+    atm_idx = min(range(len(calls)), key=lambda i: abs(float(calls[i]["strike"]) - price))
+    atm  = calls[atm_idx]
+    otm1 = calls[atm_idx + 1] if atm_idx + 1 < len(calls) else None
+    otm2 = calls[atm_idx + 2] if atm_idx + 2 < len(calls) else None
+    return atm, otm1, otm2
+
+
+def _contract_mid(contract: dict | None) -> float | None:
+    """Mid price per share from a Tradier option contract dict."""
+    if contract is None:
         return None
-    return min(calls, key=lambda o: abs(float(o["strike"]) - price))
+    bid = float(contract.get("bid") or 0)
+    ask = float(contract.get("ask") or 0)
+    if bid > 0 and ask > 0:
+        return (bid + ask) / 2
+    return None
 
 
 # ── Per-ticker scan ───────────────────────────────────────────────────────────
@@ -457,6 +482,8 @@ class ScanRowResult:
     metrics: TickerMetrics
     price: float | None
     atm_call_premium: float | None
+    premium_otm1: float | None          # 1 OTM call mid, per share
+    premium_otm2: float | None          # 2 OTM call mid, per share
     score: float
     bucket: str
     breakdown_iv_rank: float
@@ -522,30 +549,35 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
 
         atm_iv: float | None = None
         atm_premium: float | None = None
+        premium_otm1: float | None = None
+        premium_otm2: float | None = None
         atm_oi: int | None = None
         spread_pct: float | None = None
 
         if exp:
-            # 4. Options chain → ATM call metrics
+            # 4. Options chain → ATM + OTM call metrics
             chain = fetch_chain(ticker, exp)
-            atm = _pick_atm_call(chain, price)
+            atm, otm1, otm2 = _pick_call_strikes(chain, price)
             if atm:
                 greeks = atm.get("greeks") or {}
                 iv_raw = greeks.get("smv_vol") or greeks.get("mid_iv") or greeks.get("iv")
                 if _is_valid(iv_raw):
                     atm_iv = float(iv_raw)
 
-                bid = float(atm.get("bid") or 0)
-                ask = float(atm.get("ask") or 0)
-                mid = (bid + ask) / 2 if bid > 0 and ask > 0 else 0.0
-                if mid > 0:
-                    atm_premium = mid
+                atm_mid = _contract_mid(atm)
+                if atm_mid and atm_mid > 0:
+                    atm_premium = atm_mid
+                    bid = float(atm.get("bid") or 0)
+                    ask = float(atm.get("ask") or 0)
                     if bid > 0 and ask > 0:
-                        spread_pct = (ask - bid) / mid
+                        spread_pct = (ask - bid) / atm_mid
 
                 oi_raw = atm.get("open_interest")
                 if _is_valid(oi_raw):
                     atm_oi = int(float(oi_raw))
+
+            premium_otm1 = _contract_mid(otm1)
+            premium_otm2 = _contract_mid(otm2)
 
         # IV rank: use rolling-vol approximation if we have closes; else 50 placeholder
         iv_rank = _iv_rank_from_history(closes, atm_iv)
@@ -564,6 +596,7 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
         metrics = TickerMetrics(
             iv_rank=iv_rank,
             premium_pct=premium_pct,
+            premium_otm2=premium_otm2,
             iv=atm_iv,
             hv=hv,
             earnings_days=earn_days,
@@ -586,6 +619,8 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
             metrics=metrics,
             price=price,
             atm_call_premium=atm_premium,
+            premium_otm1=round(premium_otm1, 4) if premium_otm1 else None,
+            premium_otm2=round(premium_otm2, 4) if premium_otm2 else None,
             score=final_score,
             bucket=bucket,
             breakdown_iv_rank=breakdown.iv_rank,
@@ -642,6 +677,8 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
         hv=result.metrics.hv,
         atm_call_premium=result.atm_call_premium,
         premium_pct=result.metrics.premium_pct,
+        premium_otm1=result.premium_otm1,
+        premium_otm2=result.premium_otm2,
         open_interest=result.metrics.open_interest,
         bid_ask_spread_pct=result.metrics.bid_ask_spread_pct,
         earnings_days=result.metrics.earnings_days,

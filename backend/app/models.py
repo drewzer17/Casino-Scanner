@@ -34,6 +34,8 @@ class ScanResult(Base):
     hv: Mapped[float | None] = mapped_column(Float, nullable=True)
     atm_call_premium: Mapped[float | None] = mapped_column(Float, nullable=True)
     premium_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    premium_otm1: Mapped[float | None] = mapped_column(Float, nullable=True)  # 1 OTM call mid, per share
+    premium_otm2: Mapped[float | None] = mapped_column(Float, nullable=True)  # 2 OTM call mid, per share
     open_interest: Mapped[int | None] = mapped_column(Integer, nullable=True)
     bid_ask_spread_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
 

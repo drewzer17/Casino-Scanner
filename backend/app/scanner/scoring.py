@@ -2,7 +2,7 @@
 
 Five factors, 20 points each:
   1. IV RANK
-  2. PREMIUM QUALITY (ATM call premium as % of stock price)
+  2. PREMIUM QUALITY — 10 pts from ATM % efficiency + 10 pts from 2 OTM dollar premium
   3. IV vs HV ratio
   4. CATALYST (earnings proximity + modifiers)
   5. CHAIN QUALITY (open interest + bid/ask spread)
@@ -16,6 +16,7 @@ from dataclasses import dataclass
 class TickerMetrics:
     iv_rank: float | None = None          # 0-100
     premium_pct: float | None = None      # ATM call premium / stock price, e.g. 0.03 = 3%
+    premium_otm2: float | None = None     # 2 OTM call mid price per share (e.g. 1.05 = $1.05/sh = $105/contract)
     iv: float | None = None               # implied vol (annualized decimal, e.g. 0.45)
     hv: float | None = None               # historical vol (annualized decimal)
     earnings_days: int | None = None      # days until next earnings (None = unknown/no event)
@@ -57,23 +58,46 @@ def score_iv_rank(iv_rank: float | None) -> float:
     return 0.0
 
 
-def score_premium(premium_pct: float | None) -> float:
-    if premium_pct is None:
-        return 0.0
-    pct = premium_pct * 100  # convert 0.03 -> 3.0
-    if pct >= 5:
-        return 20
-    if pct >= 3.5:
-        return 17
-    if pct >= 2.5:
-        return 14
-    if pct >= 2:
-        return 10
-    if pct >= 1.5:
-        return 6
-    if pct >= 1:
-        return 3
-    return 0.0
+def score_premium(premium_pct: float | None, premium_otm2: float | None = None) -> float:
+    """10 pts from ATM % efficiency + 10 pts from 2 OTM dollar premium per contract.
+
+    Percentage component keeps capital efficiency in the score.
+    Dollar component ensures high-priced stocks with real dollar payoff score well
+    even when the percentage is modest (e.g. $10.50 at 2 OTM on a $220 stock).
+    """
+    # ── Percentage component (0-10) ──────────────────────────────────────────
+    pct_score = 0.0
+    if premium_pct is not None:
+        pct = premium_pct * 100  # 0.03 -> 3.0
+        if pct >= 5:
+            pct_score = 10.0
+        elif pct >= 3.5:
+            pct_score = 8.5
+        elif pct >= 2.5:
+            pct_score = 7.0
+        elif pct >= 2:
+            pct_score = 5.0
+        elif pct >= 1.5:
+            pct_score = 3.0
+        elif pct >= 1:
+            pct_score = 1.5
+
+    # ── Dollar component (0-10): 2 OTM premium per contract ──────────────────
+    dollar_score = 0.0
+    if premium_otm2 is not None:
+        dollars = premium_otm2 * 100  # per-share -> per-contract
+        if dollars >= 10:
+            dollar_score = 10.0
+        elif dollars >= 7:
+            dollar_score = 8.0
+        elif dollars >= 5:
+            dollar_score = 6.0
+        elif dollars >= 3:
+            dollar_score = 4.0
+        elif dollars >= 1:
+            dollar_score = 2.0
+
+    return pct_score + dollar_score
 
 
 def score_iv_vs_hv(iv: float | None, hv: float | None) -> float:
@@ -155,7 +179,7 @@ def score_chain(open_interest: int | None, spread_pct: float | None) -> float:
 def score_ticker(metrics: TickerMetrics) -> ScoreBreakdown:
     return ScoreBreakdown(
         iv_rank=score_iv_rank(metrics.iv_rank),
-        premium=score_premium(metrics.premium_pct),
+        premium=score_premium(metrics.premium_pct, metrics.premium_otm2),
         iv_hv=score_iv_vs_hv(metrics.iv, metrics.hv),
         catalyst=score_catalyst(
             metrics.earnings_days,

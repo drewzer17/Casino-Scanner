@@ -45,6 +45,12 @@ def init_db() -> None:
     _add_column_if_missing(
         "ALTER TABLE scan_runs ADD COLUMN tickers_total INTEGER DEFAULT 0"
     )
+    # OTM premium columns added in v3
+    for _ddl in [
+        "ALTER TABLE scan_results ADD COLUMN premium_otm1 FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN premium_otm2 FLOAT",
+    ]:
+        _add_column_if_missing(_ddl)
     # SMA + S/R columns added in v2
     for _ddl in [
         "ALTER TABLE scan_results ADD COLUMN sma_200 FLOAT",

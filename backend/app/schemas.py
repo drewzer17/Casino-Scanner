@@ -33,6 +33,8 @@ class ScanResultOut(BaseModel):
     hv: float | None
     atm_call_premium: float | None
     premium_pct: float | None
+    premium_otm1: float | None = None   # 1 OTM call mid, per share
+    premium_otm2: float | None = None   # 2 OTM call mid, per share
     open_interest: int | None
     bid_ask_spread_pct: float | None
     earnings_days: int | None
