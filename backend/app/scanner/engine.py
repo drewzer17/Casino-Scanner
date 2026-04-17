@@ -47,6 +47,8 @@ BATCH_SIZE = 25
 QUOTE_BATCH = 20      # Tradier max symbols per quotes call
 TICKER_TIMEOUT = 60   # seconds — multi-expiry fetches need more time
 
+_sma_sr_debug_count = 0  # log SMA/SR values for first 3 tickers to verify calculation
+
 TRADIER_BASE = "https://sandbox.tradier.com"
 
 
@@ -563,6 +565,24 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
 
         # Support / Resistance detection
         supports, resistances = _find_support_resistance(bars, price)
+
+        # Diagnostic log for first 3 tickers so we can verify SMA/SR in Railway logs
+        global _sma_sr_debug_count
+        if _sma_sr_debug_count < 3:
+            _sma_sr_debug_count += 1
+            logger.info(
+                "SMA/SR debug [%d/3] %s: bars=%d "
+                "200SMA=%s 50SMA=%s regime=%s "
+                "S1=%s S2=%s R1=%s R2=%s",
+                _sma_sr_debug_count, ticker, len(closes),
+                f"${sma_200:.2f}" if sma_200 else "None",
+                f"${sma_50:.2f}" if sma_50 else "None",
+                regime or "None",
+                f"${supports[0]['price']:.2f}" if supports else "None",
+                f"${supports[1]['price']:.2f}" if len(supports) > 1 else "None",
+                f"${resistances[0]['price']:.2f}" if resistances else "None",
+                f"${resistances[1]['price']:.2f}" if len(resistances) > 1 else "None",
+            )
 
         # 3. Options expirations → Phase A filter 2: must be optionable
         exps = fetch_expirations(ticker)
