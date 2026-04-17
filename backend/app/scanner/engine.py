@@ -1011,13 +1011,14 @@ def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = 
             except Exception as exc:
                 logger.warning("quote batch failed (%s): %s", q_symbols, exc)
 
-        # Phase A filter 1: price must be $10–$300 (no volume filter)
-        filtered_batch = [t for t in batch if 10.0 <= prices.get(t, 0.0) <= 300.0]
-        skipped_price = len(batch) - len(filtered_batch)
-        if skipped_price:
-            logger.info("run_id=%s price filter: skipped %d tickers outside $10-$300",
-                        run.id, skipped_price)
-            errored += skipped_price
+        # No price filter — scan every ticker in the universe. Price filtering
+        # is handled on the frontend display only so data is always available.
+        filtered_batch = [t for t in batch if prices.get(t, 0.0) > 0.0]
+        skipped_no_price = len(batch) - len(filtered_batch)
+        if skipped_no_price:
+            logger.info("run_id=%s no price from Tradier: skipped %d tickers",
+                        run.id, skipped_no_price)
+            errored += skipped_no_price
 
         for ticker in filtered_batch:
             earn_days_val = earnings_lookup.get(ticker)

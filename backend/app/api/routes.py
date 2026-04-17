@@ -229,7 +229,7 @@ def scan_latest(db: Session = Depends(get_db)) -> ScanLatestOut:
         tickers_scanned=run.tickers_scanned,
         sell_now=sell_now,
         buy_sell_later=buy_sell_later,
-        watchlist=watchlist[:100],  # cap the watchlist payload
+        watchlist=watchlist,
     )
 
 
