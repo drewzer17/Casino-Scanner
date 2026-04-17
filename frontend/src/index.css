@@ -92,10 +92,15 @@ body {
   padding: 14px;
 }
 
-.card .row {
+.card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.card-ticker-info {
+  flex: 0 0 auto;
 }
 
 .ticker {
@@ -190,19 +195,66 @@ body {
   border: 1px solid rgba(248, 113, 113, 0.3);
 }
 
-/* ── Timeframe arrows ──────────────────────────────────────────────────────── */
-.arrows {
+/* ── Score trajectory strip ────────────────────────────────────────────────── */
+.traj-strip {
+  flex: 1;
   display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
-  margin-top: 8px;
+  border-radius: 6px;
+  padding: 4px 6px;
+  min-width: 0;
+  overflow: hidden;
 }
 
-.arrow-tf {
+/* Gradient variants */
+.traj-green {
+  background: linear-gradient(to right, rgba(74,222,128,0.08), rgba(74,222,128,0.22));
+  border: 1px solid rgba(74,222,128,0.22);
+}
+.traj-green-yellow {
+  background: linear-gradient(to right, rgba(74,222,128,0.18), rgba(250,204,21,0.18));
+  border: 1px solid rgba(250,204,21,0.2);
+}
+.traj-yellow-green {
+  background: linear-gradient(to right, rgba(250,204,21,0.14), rgba(74,222,128,0.18));
+  border: 1px solid rgba(74,222,128,0.2);
+}
+.traj-yellow {
+  background: linear-gradient(to right, rgba(250,204,21,0.06), rgba(250,204,21,0.18));
+  border: 1px solid rgba(250,204,21,0.18);
+}
+.traj-red {
+  background: linear-gradient(to right, rgba(248,113,113,0.08), rgba(248,113,113,0.22));
+  border: 1px solid rgba(248,113,113,0.22);
+}
+.traj-neutral {
+  background: rgba(139,148,167,0.07);
+  border: 1px solid var(--border);
+}
+
+.traj-slot {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.traj-score {
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.2px;
-  opacity: 0.9;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.traj-label {
+  font-size: 8px;
+  color: var(--text-muted);
+  margin-top: 1px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+
+.traj-now .traj-score {
+  color: var(--accent);
 }
 
 /* ── Top Movers panel ──────────────────────────────────────────────────────── */

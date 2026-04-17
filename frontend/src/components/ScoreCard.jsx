@@ -16,35 +16,59 @@ function fmt(v, digits = 2) {
   return Number(v).toFixed(digits);
 }
 
-// arrow character + color for each arrow type
-const ARROW_STYLE = {
-  up_green:    { char: "▲", color: "var(--green)" },
-  down_yellow: { char: "▼", color: "var(--yellow)" },
-  down_red:    { char: "▼", color: "var(--red)" },
-};
+const BUCKET_RANK = { sell_now: 2, buy_sell_later: 1, watchlist: 0 };
 
-function ArrowStrip({ history }) {
-  if (!history || history.length === 0) return null;
+// Determine gradient class from score trajectory
+function trajectoryClass(history, currentScore, currentBucket) {
+  const byDays = {};
+  for (const h of (history || [])) byDays[h.days] = h;
+
+  const score7 = byDays[7]?.prev_score ?? null;
+  const score3 = byDays[3]?.prev_score ?? null;
+  const bucket7 = byDays[7]?.prev_bucket ?? null;
+
+  if (score7 === null || score3 === null) return "traj-neutral";
+
+  const up7 = currentScore > score7;
+  const up3 = currentScore > score3;
+
+  if (up7 && up3) return "traj-green";
+  if (up7 && !up3) return "traj-green-yellow";
+  if (!up7 && up3) return "traj-yellow-green";
+
+  // lower than both 7d and 3d
+  const droppedBucket =
+    bucket7 !== null &&
+    BUCKET_RANK[currentBucket] < (BUCKET_RANK[bucket7] ?? 99);
+  return droppedBucket ? "traj-red" : "traj-yellow";
+}
+
+function TrajectoryStrip({ history, currentScore, currentBucket }) {
+  const byDays = {};
+  for (const h of (history || [])) byDays[h.days] = h;
+
+  const slots = [
+    { label: "7d", score: byDays[7]?.prev_score ?? null },
+    { label: "5d", score: byDays[5]?.prev_score ?? null },
+    { label: "4d", score: byDays[4]?.prev_score ?? null },
+    { label: "3d", score: byDays[3]?.prev_score ?? null },
+    { label: "2d", score: byDays[2]?.prev_score ?? null },
+    { label: "1d", score: byDays[1]?.prev_score ?? null },
+    { label: "NOW", score: currentScore, now: true },
+  ];
+
+  const gradClass = trajectoryClass(history, currentScore, currentBucket);
+
   return (
-    <div className="arrows">
-      {history.map((h) => {
-        const style = h.arrow ? ARROW_STYLE[h.arrow] : null;
-        const color = style ? style.color : "var(--text-muted)";
-        const char  = style ? style.char  : "–";
-        const tip   = h.delta != null
-          ? `${h.days}d ago: ${h.delta > 0 ? "+" : ""}${h.delta.toFixed(1)} pts`
-          : `${h.days}d: no data`;
-        return (
-          <span
-            key={h.days}
-            className="arrow-tf"
-            style={{ color }}
-            title={tip}
-          >
-            {h.days}d{char}
-          </span>
-        );
-      })}
+    <div className={`traj-strip ${gradClass}`}>
+      {slots.map(({ label, score, now }) => (
+        <div key={label} className={`traj-slot${now ? " traj-now" : ""}`}>
+          <div className="traj-score">
+            {score !== null ? Math.round(score) : "–"}
+          </div>
+          <div className="traj-label">{label}</div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -53,17 +77,20 @@ export default function ScoreCard({ row }) {
   const b = row.breakdown || {};
   return (
     <div className="card">
-      <div className="row">
-        <div>
+      <div className="card-header">
+        <div className="card-ticker-info">
           <div className="ticker">{row.ticker}</div>
           <div className="price">
             ${fmt(row.price, 2)} · IVR {fmt(row.iv_rank, 0)}
           </div>
         </div>
+        <TrajectoryStrip
+          history={row.history}
+          currentScore={row.score}
+          currentBucket={row.bucket}
+        />
         <div className={pillClass(row.score)}>{fmt(row.score, 0)}</div>
       </div>
-
-      <ArrowStrip history={row.history} />
 
       <div className="breakdown">
         <div className="factor">
