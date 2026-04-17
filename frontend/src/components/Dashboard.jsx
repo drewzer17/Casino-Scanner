@@ -184,7 +184,7 @@ export default function Dashboard() {
   const [signalFilter, setSignalFilter] = useState("all");
   const [ivRankRange, setIvRankRange] = useState([0, 100]);
   const [premRange, setPremRange] = useState([0, 50]);
-  const [oiRange, setOiRange] = useState([0, 50000]);
+  const [oiRange, setOiRange] = useState([0, 20000]);
   const [safetyRange, setSafetyRange] = useState([0, 5000]);
   const [ccScoreRange, setCcScoreRange] = useState([0, 100]);
   const [cspScoreRange, setCspScoreRange] = useState([0, 100]);
@@ -267,7 +267,7 @@ export default function Dashboard() {
     setSignalFilter("all");
     setIvRankRange([0, 100]);
     setPremRange([0, 50]);
-    setOiRange([0, 50000]);
+    setOiRange([0, 20000]);
     setSafetyRange([0, 5000]);
     setCcScoreRange([0, 100]);
     setCspScoreRange([0, 100]);
@@ -643,7 +643,7 @@ export default function Dashboard() {
             </div>
             <div className="filter-slider-item">
               <span className="filter-slider-label">CHAIN OI</span>
-              <DualSlider min={0} max={50000} step={500} value={oiRange} onChange={setOiRange}
+              <DualSlider min={0} max={20000} step={50} value={oiRange} onChange={setOiRange}
                 fmt={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`} />
             </div>
             <div className="filter-slider-item">
