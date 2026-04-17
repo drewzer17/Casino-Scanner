@@ -188,6 +188,7 @@ export default function Dashboard() {
   const [safetyRange, setSafetyRange] = useState([0, 5000]);
   const [ccScoreRange, setCcScoreRange] = useState([0, 100]);
   const [cspScoreRange, setCspScoreRange] = useState([0, 100]);
+  const [s1DistRange, setS1DistRange] = useState([0, 50]);
 
   // Scan trigger state
   const [scanning, setScanning] = useState(false);
@@ -270,6 +271,7 @@ export default function Dashboard() {
     setSafetyRange([0, 5000]);
     setCcScoreRange([0, 100]);
     setCspScoreRange([0, 100]);
+    setS1DistRange([0, 50]);
   }, [mode]);
 
   const handleRunScan = async () => {
@@ -374,6 +376,10 @@ export default function Dashboard() {
         (r.cc_score < ccScoreRange[0] || r.cc_score > ccScoreRange[1])) return false;
     if (mode !== "cc" && r.csp_score != null &&
         (r.csp_score < cspScoreRange[0] || r.csp_score > cspScoreRange[1])) return false;
+    if (r.support_1 != null && r.price != null && r.price > 0) {
+      const dist = ((r.price - r.support_1) / r.price) * 100;
+      if (dist < s1DistRange[0] || dist > s1DistRange[1]) return false;
+    }
     return true;
   };
 
@@ -639,6 +645,11 @@ export default function Dashboard() {
               <span className="filter-slider-label">CHAIN OI</span>
               <DualSlider min={0} max={50000} step={500} value={oiRange} onChange={setOiRange}
                 fmt={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`} />
+            </div>
+            <div className="filter-slider-item">
+              <span className="filter-slider-label">S1 DISTANCE</span>
+              <DualSlider min={0} max={50} step={0.5} value={s1DistRange} onChange={setS1DistRange}
+                fmt={v => `${Number(v).toFixed(0)}%`} />
             </div>
             {mode === "all" && (
               <div className="filter-slider-item">

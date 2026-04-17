@@ -134,6 +134,7 @@ const COLS = [
   { key: "expiry",     label: "Expiry",    align: "right" },
   { key: "dte",        label: "DTE",       align: "right" },
   { key: "oi",         label: "OI",        align: "right" },
+  { key: "s1_dist",    label: "S1 Dist",   align: "right" },
   { key: "cc_score",   label: "CC Score",  align: "right" },
   { key: "csp_score",  label: "CSP Score", align: "right" },
 ];
@@ -172,6 +173,12 @@ function cellValue(item, key) {
           ? `${(item.open_interest / 1000).toFixed(1)}K`
           : String(item.open_interest)
         : "—";
+    case "s1_dist": {
+      if (item.support_1 == null || item.price == null || item.price <= 0) return "—";
+      const dist = ((item.price - item.support_1) / item.price) * 100;
+      const cls = dist <= 8 ? "s1dist-tight" : dist <= 15 ? "s1dist-ok" : "s1dist-wide";
+      return <span className={cls}>{dist.toFixed(1)}%</span>;
+    }
     case "cc_score":  return item.cc_score != null
       ? <span className="score-cc">{item.cc_score}</span> : "—";
     case "csp_score": return item.csp_score != null
@@ -192,6 +199,10 @@ function sortValue(item, key) {
     case "expiry":     return item._d.expiry ?? "";
     case "dte":        return item._d.dte ?? 9999;
     case "oi":         return item.open_interest ?? -1;
+    case "s1_dist":
+      return (item.support_1 != null && item.price > 0)
+        ? ((item.price - item.support_1) / item.price) * 100
+        : -1;
     case "cc_score":   return item.cc_score ?? -1;
     case "csp_score":  return item.csp_score ?? -1;
     default: return 0;

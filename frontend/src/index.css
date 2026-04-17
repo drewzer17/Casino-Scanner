@@ -1570,6 +1570,10 @@ body {
 .spread-ok    { color: var(--yellow); font-weight: 600; }
 .spread-wide  { color: var(--red);   font-weight: 600; }
 
+.s1dist-tight { color: var(--green); font-weight: 600; }
+.s1dist-ok    { color: var(--yellow); font-weight: 600; }
+.s1dist-wide  { color: var(--red);   font-weight: 600; }
+
 /* ── Mode Selector ── */
 .mode-selector {
   display: flex;
