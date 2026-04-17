@@ -63,7 +63,7 @@ def _headers() -> dict[str, str]:
 
 def _get(path: str, params: dict) -> dict:
     """Single synchronous GET to Tradier. Raises on non-2xx."""
-    with httpx.Client(timeout=15.0) as client:
+    with httpx.Client(timeout=8.0) as client:
         resp = client.get(TRADIER_BASE + path, params=params, headers=_headers())
         resp.raise_for_status()
         return resp.json()

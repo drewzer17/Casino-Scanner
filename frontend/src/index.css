@@ -967,6 +967,13 @@ body {
   color: rgba(139,148,167,0.4) !important;
 }
 
+.prem-exp-atm-col {
+  font-weight: 700 !important;
+  color: var(--yellow) !important;
+  border-left: 1px solid rgba(245,197,66,0.25);
+  border-right: 1px solid rgba(245,197,66,0.15);
+}
+
 @media (max-width: 600px) {
   .modal-body { grid-template-columns: 1fr; }
   .modal-col + .modal-col { border-left: none; border-top: 1px solid var(--border); }

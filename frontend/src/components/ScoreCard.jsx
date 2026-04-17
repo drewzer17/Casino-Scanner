@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 function pillClass(score) {
-  if (score >= 55) return "score-pill hi";
+  if (score >= 45) return "score-pill hi";
   if (score >= 25) return "score-pill mid";
   return "score-pill lo";
 }
@@ -169,10 +169,12 @@ function PremExpansion({ expiryData, price }) {
   if (!expiryData || expiryData.length === 0) return null;
   const OTM_LABELS = ["1 OTM", "2 OTM", "3 OTM", "4 OTM"];
 
-  const tableSection = (title, dataKey) => {
-    // Build strike header from first expiry that has data
+  const tableSection = (title, dataKey, atmPremKey, atmStrikeKey) => {
+    // Build OTM strike header from first expiry that has data
     const firstWithData = expiryData.find(e => e[dataKey]?.length > 0);
     const strikeHeaders = firstWithData?.[dataKey]?.map(s => s.strike) ?? [];
+    // ATM strike header from first expiry that has it
+    const firstAtmStrike = expiryData.find(e => e[atmStrikeKey] != null)?.[atmStrikeKey];
 
     return (
       <div className="prem-exp-section">
@@ -182,6 +184,12 @@ function PremExpansion({ expiryData, price }) {
             <tr>
               <th>Exp</th>
               <th>DTE</th>
+              <th className="prem-exp-atm-col">
+                <div>ATM</div>
+                {firstAtmStrike != null && (
+                  <div className="prem-exp-strike">${firstAtmStrike.toFixed(0)}</div>
+                )}
+              </th>
               {OTM_LABELS.map((l, i) => (
                 <th key={i}>
                   <div>{l}</div>
@@ -197,6 +205,9 @@ function PremExpansion({ expiryData, price }) {
               <tr key={e.expiry}>
                 <td>{fmtExpiry(e.expiry)}</td>
                 <td className="prem-exp-dte">{e.dte}d</td>
+                <td className={`prem-exp-atm-col${e[atmPremKey] ? "" : " prem-exp-empty"}`}>
+                  {fmtP(e[atmPremKey])}
+                </td>
                 {Array.from({ length: 4 }, (_, i) => {
                   const s = e[dataKey]?.[i];
                   return <td key={i} className={s?.prem ? "" : "prem-exp-empty"}>{fmtP(s?.prem)}</td>;
@@ -211,8 +222,8 @@ function PremExpansion({ expiryData, price }) {
 
   return (
     <div className="prem-expansion" onClick={e => e.stopPropagation()}>
-      {tableSection("Covered Calls ▲", "calls")}
-      {tableSection("Cash-Secured Puts ▼", "puts")}
+      {tableSection("Covered Calls ▲", "calls", "atm_call_prem", "atm_strike")}
+      {tableSection("Cash-Secured Puts ▼", "puts", "atm_put_prem", "atm_strike")}
     </div>
   );
 }

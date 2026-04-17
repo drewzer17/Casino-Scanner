@@ -1,7 +1,7 @@
 """Bucket assignment rules.
 
 Three buckets:
-  - sell_now: score>=55 AND iv_rank>=45 AND premium_pct>=1.5%
+  - sell_now: score>=45 AND iv_rank>=45 AND premium_pct>=1.5%
   - buy_sell_later: score>=25 AND earnings within 30d, OR score>=30 AND low IV
   - watchlist: everything else
 """
@@ -23,7 +23,7 @@ def assign_bucket(
     premium_pct_val = (premium_pct or 0) * 100  # 0.015 -> 1.5
     iv_rank_val = iv_rank if iv_rank is not None else 0
 
-    if score >= 55 and iv_rank_val >= 45 and premium_pct_val >= 1.5:
+    if score >= 45 and iv_rank_val >= 45 and premium_pct_val >= 1.5:
         return SELL_NOW
 
     has_catalyst_30d = earnings_days is not None and 0 < earnings_days <= 30
