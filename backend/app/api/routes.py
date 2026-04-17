@@ -586,18 +586,25 @@ def ticker_wheel(
         if csp_mid:
             base.csp_effective_basis = round(csp_strike - csp_mid, 2)
 
-    # CC: lowest-strike call at or above target.
+    # CC: call strike closest to target (above current price).
+    # "Closest" beats "strictly above" — R1=$275.17 should pick $275 not $280.
     # Priority: R1 → R2 → 5% above price (only if no technical level exists).
-    def _cc_candidates(target):
-        return [c for c in calls if float(c["strike"]) >= target]
+    otm_calls = [c for c in calls if float(c["strike"]) > price]
+
+    def _nearest_cc(target):
+        """Strike nearest to target among calls above current price."""
+        if not otm_calls:
+            return []
+        best = min(otm_calls, key=lambda c: abs(float(c["strike"]) - target))
+        return [best]
 
     cc_pool = []
     if r1:
-        cc_pool = _cc_candidates(r1)
+        cc_pool = _nearest_cc(r1)
     if not cc_pool and r2:
-        cc_pool = _cc_candidates(r2)
+        cc_pool = _nearest_cc(r2)
     if not cc_pool:
-        cc_pool = _cc_candidates(price * 1.05)
+        cc_pool = _nearest_cc(price * 1.05)
 
     if cc_pool:
         best_call = min(cc_pool, key=lambda c: float(c["strike"]))
