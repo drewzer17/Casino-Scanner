@@ -87,6 +87,10 @@ class ScanResult(Base):
     best_put_expiry: Mapped[str | None] = mapped_column(Text, nullable=True)
     best_put_dte: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
+    # CC / CSP attractiveness scores (0-100)
+    cc_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    csp_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 

@@ -21,6 +21,8 @@ const COLS = [
   { key: "signal",       label: "Signal",       align: "center" },
   { key: "cross",        label: "Cross",        align: "left" },
   { key: "premium",      label: "Premium $",    align: "right" },
+  { key: "cc_score",     label: "CC Score",     align: "right" },
+  { key: "csp_score",    label: "CSP Score",    align: "right" },
 ];
 
 function cellValue(row, key) {
@@ -61,6 +63,10 @@ function cellValue(row, key) {
       return "—";
     case "premium":
       return row.atm_call_premium != null ? `$${fmt(row.atm_call_premium)}` : "—";
+    case "cc_score":
+      return row.cc_score != null ? <span className="score-cc">{row.cc_score}</span> : "—";
+    case "csp_score":
+      return row.csp_score != null ? <span className="score-csp">{row.csp_score}</span> : "—";
     default:
       return "—";
   }
@@ -77,6 +83,8 @@ function sortValue(row, key) {
     case "signal":       return rs ?? -1;
     case "cross":        return row.sma_golden_cross == null ? 0 : row.sma_golden_cross ? 1 : -1;
     case "premium":      return row.atm_call_premium ?? -1;
+    case "cc_score":     return row.cc_score ?? -1;
+    case "csp_score":    return row.csp_score ?? -1;
     default:             return 0;
   }
 }

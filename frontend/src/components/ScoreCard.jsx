@@ -293,6 +293,20 @@ export default function ScoreCard({ row, onClick, showBucket = false }) {
           <div className="k">CHAIN</div>
           <div className="r">{row.open_interest != null ? (row.open_interest >= 1000 ? `${(row.open_interest / 1000).toFixed(1)}K` : `${row.open_interest}`) + " OI" : ""}</div>
         </div>
+        {row.cc_score != null && (
+          <div className="factor">
+            <div className="v score-cc">{row.cc_score}</div>
+            <div className="k">CC</div>
+            <div className="r"></div>
+          </div>
+        )}
+        {row.csp_score != null && (
+          <div className="factor">
+            <div className="v score-csp">{row.csp_score}</div>
+            <div className="k">CSP</div>
+            <div className="r"></div>
+          </div>
+        )}
       </div>
 
       <SmaPanel row={row} />

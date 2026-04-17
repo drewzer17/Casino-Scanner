@@ -185,6 +185,9 @@ def _to_out(
         best_put_strike=_san(row.best_put_strike),
         best_put_expiry=row.best_put_expiry,
         best_put_dte=row.best_put_dte,
+        # CC / CSP scores
+        cc_score=row.cc_score,
+        csp_score=row.csp_score,
     )
 
 

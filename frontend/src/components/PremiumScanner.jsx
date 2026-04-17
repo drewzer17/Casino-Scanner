@@ -133,6 +133,8 @@ const COLS = [
   { key: "expiry",     label: "Expiry",    align: "right" },
   { key: "dte",        label: "DTE",       align: "right" },
   { key: "oi",         label: "OI",        align: "right" },
+  { key: "cc_score",   label: "CC Score",  align: "right" },
+  { key: "csp_score",  label: "CSP Score", align: "right" },
 ];
 
 function cellValue(item, key) {
@@ -162,6 +164,10 @@ function cellValue(item, key) {
           ? `${(item.open_interest / 1000).toFixed(1)}K`
           : String(item.open_interest)
         : "—";
+    case "cc_score":  return item.cc_score != null
+      ? <span className="score-cc">{item.cc_score}</span> : "—";
+    case "csp_score": return item.csp_score != null
+      ? <span className="score-csp">{item.csp_score}</span> : "—";
     default: return "—";
   }
 }
@@ -177,6 +183,8 @@ function sortValue(item, key) {
     case "expiry":     return item._d.expiry ?? "";
     case "dte":        return item._d.dte ?? 9999;
     case "oi":         return item.open_interest ?? -1;
+    case "cc_score":   return item.cc_score ?? -1;
+    case "csp_score":  return item.csp_score ?? -1;
     default: return 0;
   }
 }

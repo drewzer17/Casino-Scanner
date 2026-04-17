@@ -87,6 +87,10 @@ class ScanResultOut(BaseModel):
     # Universe source tags (e.g. ["sp500", "ai_sector"]) — populated from ticker_universe table
     sources: list[str] = []
 
+    # CC / CSP attractiveness scores
+    cc_score: int | None = None
+    csp_score: int | None = None
+
     # Auto-detected support / resistance
     support_1: float | None = None
     support_1_strength: float | None = None

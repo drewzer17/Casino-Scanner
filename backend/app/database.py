@@ -94,6 +94,13 @@ def init_db() -> None:
     ]:
         _add_column_if_missing(_ddl)
 
+    # CC / CSP attractiveness scores added in v7
+    for _ddl in [
+        "ALTER TABLE scan_results ADD COLUMN cc_score INTEGER",
+        "ALTER TABLE scan_results ADD COLUMN csp_score INTEGER",
+    ]:
+        _add_column_if_missing(_ddl)
+
     # SMA + S/R columns added in v2
     for _ddl in [
         "ALTER TABLE scan_results ADD COLUMN sma_200 FLOAT",

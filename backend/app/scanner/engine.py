@@ -600,6 +600,164 @@ def _calc_safety_score(
     return round((dollar_prem * iv_hv * support_dist) / (avg_range * penalty), 2)
 
 
+# ── CC / CSP attractiveness scores ───────────────────────────────────────────
+
+def _calc_cc_score(
+    price: float | None,
+    sma_200: float | None,
+    sma_50: float | None,
+    sma_golden_cross: bool | None,
+    resistance_1: float | None,
+    price_vs_sma200_pct: float | None,
+    price_vs_sma50_pct: float | None,
+    iv_rank: float | None,
+    atm_call_premium: float | None,
+    iv: float | None,
+    hv: float | None,
+    premium_pct: float | None,
+    open_interest: int | None,
+    bid_ask_spread_pct: float | None,
+    support_1: float | None,
+    sma_regime: str | None,
+) -> int:
+    s = 0
+    iv_hv = (iv / hv) if (iv and hv and hv > 0) else None
+
+    # TREND STRENGTH — 30 pts max
+    if price and sma_200 and price > sma_200: s += 8
+    if price and sma_50 and price > sma_50:   s += 7
+    if sma_golden_cross:                       s += 5
+    if resistance_1 is None:                   s += 5
+    if price_vs_sma200_pct is not None and price_vs_sma200_pct > 20: s += 3
+    if price_vs_sma50_pct  is not None and price_vs_sma50_pct  > 5:  s += 2
+
+    # PREMIUM QUALITY — 30 pts max
+    if iv_rank is not None:
+        if   iv_rank >= 80: s += 10
+        elif iv_rank >= 60: s += 7
+        elif iv_rank >= 40: s += 4
+        elif iv_rank >= 20: s += 2
+    if atm_call_premium is not None:
+        if   atm_call_premium >= 10: s += 10
+        elif atm_call_premium >= 5:  s += 7
+        elif atm_call_premium >= 2:  s += 4
+        elif atm_call_premium >= 1:  s += 2
+    if iv_hv is not None:
+        if   iv_hv >= 1.5: s += 5
+        elif iv_hv >= 1.2: s += 3
+        elif iv_hv >= 1.0: s += 1
+    if premium_pct is not None:
+        if   premium_pct >= 0.05:  s += 5
+        elif premium_pct >= 0.03:  s += 3
+        elif premium_pct >= 0.015: s += 2
+
+    # EXECUTION QUALITY — 20 pts max
+    if open_interest is not None:
+        if   open_interest >= 5000: s += 10
+        elif open_interest >= 1000: s += 7
+        elif open_interest >= 500:  s += 5
+        elif open_interest >= 100:  s += 3
+    if bid_ask_spread_pct is not None:
+        if   bid_ask_spread_pct <= 0.03: s += 10
+        elif bid_ask_spread_pct <= 0.05: s += 7
+        elif bid_ask_spread_pct <= 0.10: s += 4
+        elif bid_ask_spread_pct <= 0.15: s += 2
+
+    # SAFETY — 20 pts max
+    if support_1 and price and price > 0:
+        dist = (price - support_1) / price * 100
+        if   dist > 15: s += 8
+        elif dist > 10: s += 6
+        elif dist > 5:  s += 4
+        elif dist > 2:  s += 2
+    if   sma_regime == "UPTREND":      s += 7
+    elif sma_regime == "TRANSITIONAL": s += 3
+    if iv_hv is not None:
+        if   iv_hv < 1.5: s += 3  # low: decent but not ideal for CC premium
+        elif iv_hv < 2.0: s += 5  # sweet spot: IV well above realized, not extreme
+
+    return min(100, max(0, s))
+
+
+def _calc_csp_score(
+    price: float | None,
+    sma_200: float | None,
+    sma_50: float | None,
+    sma_golden_cross: bool | None,
+    sma_regime: str | None,
+    support_1: float | None,
+    support_1_strength: float | None,
+    support_2: float | None,
+    iv_rank: float | None,
+    atm_put_premium: float | None,
+    iv: float | None,
+    hv: float | None,
+    premium_pct: float | None,
+    open_interest: int | None,
+    bid_ask_spread_pct: float | None,
+) -> int:
+    s = 0
+    iv_hv = (iv / hv) if (iv and hv and hv > 0) else None
+
+    # SUPPORT QUALITY — 30 pts max
+    if support_1 and price and price > 0:
+        dist = (price - support_1) / price * 100
+        if   dist <= 3:  s += 10
+        elif dist <= 5:  s += 8
+        elif dist <= 10: s += 5
+        elif dist <= 15: s += 3
+    if support_1_strength is not None:
+        if   support_1_strength >= 15: s += 10
+        elif support_1_strength >= 10: s += 7
+        elif support_1_strength >= 5:  s += 4
+    if support_2 and price and price > 0:
+        if abs(price - support_2) / price * 100 <= 20: s += 5
+    if support_1 and support_2 and support_1 > 0:
+        if (support_1 - support_2) / support_1 * 100 > 10: s += 5
+
+    # TREND CONTEXT — 25 pts max
+    if sma_golden_cross:                                   s += 8
+    if price and sma_200 and price > sma_200:              s += 7
+    if   sma_regime == "UPTREND":      s += 5
+    elif sma_regime == "TRANSITIONAL": s += 3
+    if price and sma_50 and sma_200 and price < sma_50 and price > sma_200: s += 5
+
+    # PREMIUM QUALITY — 25 pts max
+    if iv_rank is not None:
+        if   iv_rank >= 80: s += 8
+        elif iv_rank >= 60: s += 6
+        elif iv_rank >= 40: s += 3
+        elif iv_rank >= 20: s += 1
+    if atm_put_premium is not None:
+        if   atm_put_premium >= 8: s += 8
+        elif atm_put_premium >= 4: s += 6
+        elif atm_put_premium >= 2: s += 4
+        elif atm_put_premium >= 1: s += 2
+    if iv_hv is not None:
+        if   iv_hv >= 1.5: s += 5
+        elif iv_hv >= 1.2: s += 3
+        elif iv_hv >= 1.0: s += 1
+    put_pct = (atm_put_premium / price) if (atm_put_premium and price) else premium_pct
+    if put_pct is not None:
+        if   put_pct >= 0.04: s += 4
+        elif put_pct >= 0.02: s += 3
+        elif put_pct >= 0.01: s += 1
+
+    # EXECUTION QUALITY — 20 pts max
+    if open_interest is not None:
+        if   open_interest >= 5000: s += 10
+        elif open_interest >= 1000: s += 7
+        elif open_interest >= 500:  s += 5
+        elif open_interest >= 100:  s += 3
+    if bid_ask_spread_pct is not None:
+        if   bid_ask_spread_pct <= 0.03: s += 10
+        elif bid_ask_spread_pct <= 0.05: s += 7
+        elif bid_ask_spread_pct <= 0.10: s += 4
+        elif bid_ask_spread_pct <= 0.15: s += 2
+
+    return min(100, max(0, s))
+
+
 # ── Per-ticker scan ───────────────────────────────────────────────────────────
 
 @dataclass
@@ -648,6 +806,9 @@ class ScanRowResult:
     resistance_1_strength: float | None = None
     resistance_2: float | None = None
     resistance_2_strength: float | None = None
+    # CC / CSP attractiveness scores
+    cc_score: int | None = None
+    csp_score: int | None = None
 
 
 def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None = None) -> ScanRowResult | None:
@@ -854,6 +1015,43 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
             bars, earn_days,
         )
 
+        cc_score = _calc_cc_score(
+            price=price,
+            sma_200=sma_200,
+            sma_50=sma_50,
+            sma_golden_cross=golden_cross,
+            resistance_1=resistances[0]["price"] if resistances else None,
+            price_vs_sma200_pct=price_vs_sma200_pct,
+            price_vs_sma50_pct=price_vs_sma50_pct,
+            iv_rank=iv_rank,
+            atm_call_premium=atm_premium,
+            iv=atm_iv,
+            hv=hv,
+            premium_pct=premium_pct,
+            open_interest=atm_oi,
+            bid_ask_spread_pct=spread_pct,
+            support_1=supports[0]["price"] if supports else None,
+            sma_regime=regime,
+        )
+
+        csp_score = _calc_csp_score(
+            price=price,
+            sma_200=sma_200,
+            sma_50=sma_50,
+            sma_golden_cross=golden_cross,
+            sma_regime=regime,
+            support_1=supports[0]["price"] if supports else None,
+            support_1_strength=supports[0]["strength"] if supports else None,
+            support_2=supports[1]["price"] if len(supports) > 1 else None,
+            iv_rank=iv_rank,
+            atm_put_premium=best_put_premium,
+            iv=atm_iv,
+            hv=hv,
+            premium_pct=premium_pct,
+            open_interest=atm_oi,
+            bid_ask_spread_pct=spread_pct,
+        )
+
         return ScanRowResult(
             ticker=ticker,
             metrics=metrics,
@@ -896,6 +1094,8 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
             resistance_1_strength=resistances[0]["strength"] if len(resistances) > 0 else None,
             resistance_2=round(resistances[1]["price"], 2) if len(resistances) > 1 else None,
             resistance_2_strength=resistances[1]["strength"] if len(resistances) > 1 else None,
+            cc_score=cc_score,
+            csp_score=csp_score,
         )
     except Exception as exc:
         logger.warning("scan_ticker failed for %s: %s", ticker, exc)
@@ -970,6 +1170,9 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
         best_put_strike=result.best_put_strike,
         best_put_expiry=result.best_put_expiry,
         best_put_dte=result.best_put_dte,
+        # CC / CSP scores
+        cc_score=result.cc_score,
+        csp_score=result.csp_score,
     ))
 
     # Record IV snapshot for IV rank history (one row per ticker per day)

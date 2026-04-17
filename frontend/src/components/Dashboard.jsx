@@ -7,6 +7,8 @@ const SORT_OPTIONS = [
   { key: "iv_hv",        label: "IV/HV" },
   { key: "chain",        label: "Chain" },
   { key: "risk_reward",  label: "Risk/Reward" },
+  { key: "cc_score",     label: "CC Score" },
+  { key: "csp_score",    label: "CSP Score" },
 ];
 
 const PREM_TIMEFRAMES = [3, 7, 14, 21, 30];
@@ -26,6 +28,8 @@ function sortRows(arr, key, premTimeframe = 30) {
   if (key === "iv_hv")       return s.sort((a, b) => (b.breakdown?.iv_hv ?? 0) - (a.breakdown?.iv_hv ?? 0));
   if (key === "chain")       return s.sort((a, b) => (b.breakdown?.chain ?? 0) - (a.breakdown?.chain ?? 0));
   if (key === "risk_reward") return s.sort((a, b) => (b.safety_score ?? 0) - (a.safety_score ?? 0));
+  if (key === "cc_score")    return s.sort((a, b) => (b.cc_score ?? 0) - (a.cc_score ?? 0));
+  if (key === "csp_score")   return s.sort((a, b) => (b.csp_score ?? 0) - (a.csp_score ?? 0));
   return s;
 }
 
@@ -178,6 +182,8 @@ export default function Dashboard() {
   const [premRange, setPremRange] = useState([0, 50]);
   const [oiRange, setOiRange] = useState([0, 50000]);
   const [safetyRange, setSafetyRange] = useState([0, 5000]);
+  const [ccScoreRange, setCcScoreRange] = useState([0, 100]);
+  const [cspScoreRange, setCspScoreRange] = useState([0, 100]);
 
   // Scan trigger state
   const [scanning, setScanning] = useState(false);
@@ -344,6 +350,10 @@ export default function Dashboard() {
         (r.open_interest < oiRange[0] || r.open_interest > oiRange[1])) return false;
     if (r.safety_score != null &&
         (r.safety_score < safetyRange[0] || r.safety_score > safetyRange[1])) return false;
+    if (r.cc_score != null &&
+        (r.cc_score < ccScoreRange[0] || r.cc_score > ccScoreRange[1])) return false;
+    if (r.csp_score != null &&
+        (r.csp_score < cspScoreRange[0] || r.csp_score > cspScoreRange[1])) return false;
     return true;
   };
 
@@ -358,6 +368,8 @@ export default function Dashboard() {
     setPremRange([0, 50]);
     setOiRange([0, 50000]);
     setSafetyRange([0, 5000]);
+    setCcScoreRange([0, 100]);
+    setCspScoreRange([0, 100]);
   };
 
   // ── Row sets ──────────────────────────────────────────────────────
@@ -565,6 +577,16 @@ export default function Dashboard() {
           <div className="filter-slider-item">
             <span className="filter-slider-label">SAFETY SCORE</span>
             <DualSlider min={0} max={5000} step={10} value={safetyRange} onChange={setSafetyRange}
+              fmt={v => `${v}`} />
+          </div>
+          <div className="filter-slider-item">
+            <span className="filter-slider-label">CC SCORE</span>
+            <DualSlider min={0} max={100} value={ccScoreRange} onChange={setCcScoreRange}
+              fmt={v => `${v}`} />
+          </div>
+          <div className="filter-slider-item">
+            <span className="filter-slider-label">CSP SCORE</span>
+            <DualSlider min={0} max={100} value={cspScoreRange} onChange={setCspScoreRange}
               fmt={v => `${v}`} />
           </div>
           <button className="filter-reset-btn" onClick={resetFilters}>Reset Filters</button>
