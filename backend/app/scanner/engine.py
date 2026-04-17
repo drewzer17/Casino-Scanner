@@ -109,6 +109,67 @@ def fetch_expirations(symbol: str) -> list[str]:
     return sorted(dates)
 
 
+def fetch_earnings_calendar(year: int, month: int) -> dict[str, date]:
+    """Return {TICKER: earnings_date} for every earnings event in a calendar month.
+
+    Tradier /v1/markets/calendar returns a day-by-day structure; each day may
+    have an 'earnings' list with a 'symbol' field.  A single dict is returned
+    instead of a list when there is only one event — normalise in all cases.
+    """
+    data = _get("/v1/markets/calendar", {"month": month, "year": year})
+    days = ((data.get("calendar") or {}).get("days") or {}).get("day") or []
+    if isinstance(days, dict):
+        days = [days]
+
+    result: dict[str, date] = {}
+    for day in days:
+        date_str = day.get("date")
+        if not date_str:
+            continue
+        try:
+            day_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        earnings = day.get("earnings") or []
+        if isinstance(earnings, dict):
+            earnings = [earnings]
+        for entry in earnings:
+            sym = (entry.get("symbol") or "").upper()
+            if sym and sym not in result:
+                result[sym] = day_date  # keep the earliest date if symbol appears twice
+    return result
+
+
+def build_earnings_lookup() -> dict[str, int]:
+    """Build {TICKER: days_until_earnings} by fetching the current and next two months.
+
+    Called once per scan run — results are passed into every scan_ticker call so
+    we make 3 calendar API calls total instead of one per ticker.
+
+    Only earnings within the next 90 days are kept (beyond that they don't affect
+    catalyst scoring).  Past earnings (negative days) are excluded.
+    """
+    today = date.today()
+    year, month = today.year, today.month
+
+    lookup: dict[str, int] = {}
+    for offset in range(3):  # current month + next 2
+        m = (month - 1 + offset) % 12 + 1
+        y = year + (month - 1 + offset) // 12
+        try:
+            for sym, earn_date in fetch_earnings_calendar(y, m).items():
+                days = (earn_date - today).days
+                if 0 <= days <= 90:
+                    # If a symbol appears in multiple months keep the nearest date
+                    if sym not in lookup or days < lookup[sym]:
+                        lookup[sym] = days
+        except Exception as exc:
+            logger.warning("earnings calendar %d-%02d failed: %s", y, m, exc)
+
+    logger.info("earnings lookup: %d tickers with upcoming earnings", len(lookup))
+    return lookup
+
+
 def fetch_chain(symbol: str, expiration: str) -> list[dict]:
     """Return all option contracts for the given expiry."""
     data = _get("/v1/markets/options/chains", {
@@ -229,8 +290,8 @@ class ScanRowResult:
     notes: str | None = None
 
 
-def scan_ticker(ticker: str, price: float | None = None) -> ScanRowResult | None:
-    """Scan one ticker via Tradier. price may be pre-fetched from a batch quote call."""
+def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None = None) -> ScanRowResult | None:
+    """Scan one ticker via Tradier. price and earn_days may be pre-fetched by the caller."""
     try:
         # 1. Price — fall back to individual quote if not pre-fetched
         if price is None:
@@ -288,9 +349,8 @@ def scan_ticker(ticker: str, price: float | None = None) -> ScanRowResult | None
         # Unusual volume from pre-fetched quote if available
         unusual_vol = False
 
-        # Earnings: not available from Tradier without a separate premium endpoint
-        earn_days: int | None = None
-
+        # earn_days is pre-fetched from the earnings calendar lookup in run_scan
+        # (passed in as a parameter — no per-ticker API call needed)
         iv_ramp = (
             iv_rank is not None and iv_rank >= 70
             and earn_days is not None and 0 < earn_days <= 21
@@ -331,9 +391,9 @@ def scan_ticker(ticker: str, price: float | None = None) -> ScanRowResult | None
 
 # ── Timeout wrapper ───────────────────────────────────────────────────────────
 
-def _scan_with_timeout(ticker: str, price: float | None = None) -> ScanRowResult | None:
+def _scan_with_timeout(ticker: str, price: float | None = None, earn_days: int | None = None) -> ScanRowResult | None:
     with ThreadPoolExecutor(max_workers=1) as pool:
-        future = pool.submit(scan_ticker, ticker, price)
+        future = pool.submit(scan_ticker, ticker, price, earn_days)
         try:
             return future.result(timeout=TICKER_TIMEOUT)
         except FuturesTimeout:
@@ -412,6 +472,13 @@ def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = 
     run.tickers_total = len(universe)
     db.commit()
 
+    # Build earnings lookup once for the entire scan (3 calendar API calls total)
+    earnings_lookup: dict[str, int] = {}
+    try:
+        earnings_lookup = build_earnings_lookup()
+    except Exception as exc:
+        logger.warning("earnings lookup failed, catalyst scores will be 0: %s", exc)
+
     for batch_start in range(0, len(remaining), BATCH_SIZE):
         batch = remaining[batch_start : batch_start + BATCH_SIZE]
         logger.info("run_id=%s batch %d-%d / %d", run.id,
@@ -430,7 +497,7 @@ def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = 
                 logger.warning("quote batch failed (%s): %s", q_symbols, exc)
 
         for ticker in batch:
-            result = _scan_with_timeout(ticker, price=prices.get(ticker))
+            result = _scan_with_timeout(ticker, price=prices.get(ticker), earn_days=earnings_lookup.get(ticker))
             if result is None:
                 errored += 1
             else:
