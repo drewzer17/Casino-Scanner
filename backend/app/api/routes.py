@@ -158,6 +158,7 @@ def _to_out(
         resistance_1_strength=row.resistance_1_strength,
         resistance_2=row.resistance_2,
         resistance_2_strength=row.resistance_2_strength,
+        safety_score=row.safety_score,
         # Multi-expiry
         best_expiry=row.best_expiry,
         best_dte=row.best_dte,

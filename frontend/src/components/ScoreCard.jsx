@@ -241,22 +241,27 @@ export default function ScoreCard({ row, onClick }) {
         <div className="factor">
           <div className="v">{fmt(b.iv_rank, 0)}</div>
           <div className="k">IVR</div>
+          <div className="r">{row.iv_rank != null ? `${Math.round(row.iv_rank)}%` : ""}</div>
         </div>
         <div className="factor">
           <div className="v">{fmt(b.premium, 0)}</div>
           <div className="k">PREM</div>
+          <div className="r">{row.atm_call_premium != null ? `$${row.atm_call_premium.toFixed(2)}` : ""}</div>
         </div>
         <div className="factor">
           <div className="v">{fmt(b.iv_hv, 0)}</div>
           <div className="k">IV/HV</div>
+          <div className="r">{row.iv != null && row.hv != null && row.hv > 0 ? `${(row.iv / row.hv).toFixed(1)}x` : ""}</div>
         </div>
         <div className="factor">
           <div className="v">{fmt(b.catalyst, 0)}</div>
           <div className="k">CAT</div>
+          <div className="r">{row.earnings_days != null ? `${row.earnings_days}d` : ""}</div>
         </div>
         <div className="factor">
           <div className="v">{fmt(b.chain, 0)}</div>
           <div className="k">CHAIN</div>
+          <div className="r">{row.open_interest != null ? (row.open_interest >= 1000 ? `${(row.open_interest / 1000).toFixed(1)}K` : `${row.open_interest}`) + " OI" : ""}</div>
         </div>
       </div>
 
@@ -291,6 +296,9 @@ export default function ScoreCard({ row, onClick }) {
           <span className="chip">earn {row.earnings_days}d</span>
         )}
         {row.unusual_volume && <span className="chip">unusual vol</span>}
+        {row.safety_score != null && (
+          <span className="chip chip-safety">safety {row.safety_score.toFixed(1)}</span>
+        )}
       </div>
       {premExpanded && row.expiry_data?.length > 0 && (
         <PremExpansion expiryData={row.expiry_data} price={row.price} />

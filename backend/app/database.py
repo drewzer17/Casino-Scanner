@@ -51,6 +51,7 @@ def init_db() -> None:
         "ALTER TABLE scan_results ADD COLUMN premium_otm2 FLOAT",
     ]:
         _add_column_if_missing(_ddl)
+    _add_column_if_missing("ALTER TABLE scan_results ADD COLUMN safety_score FLOAT")
     # Multi-expiry columns added in v4
     for _ddl in [
         "ALTER TABLE scan_results ADD COLUMN best_expiry TEXT",

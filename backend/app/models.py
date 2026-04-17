@@ -70,6 +70,8 @@ class ScanResult(Base):
     resistance_2: Mapped[float | None] = mapped_column(Float, nullable=True)
     resistance_2_strength: Mapped[float | None] = mapped_column(Float, nullable=True)
 
+    safety_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+
     # Multi-expiry premium data
     best_expiry: Mapped[str | None] = mapped_column(Text, nullable=True)   # e.g. "2025-05-01"
     best_dte: Mapped[int | None] = mapped_column(Integer, nullable=True)

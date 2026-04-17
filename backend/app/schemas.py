@@ -69,6 +69,8 @@ class ScanResultOut(BaseModel):
     sma_regime: str | None = None             # UPTREND / DOWNTREND / TRANSITIONAL
     sma_golden_cross: bool | None = None      # True=golden cross, False=death cross
 
+    safety_score: float | None = None
+
     # Multi-expiry premium data
     best_expiry: str | None = None
     best_dte: int | None = None

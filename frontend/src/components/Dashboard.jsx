@@ -1,20 +1,31 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 const SORT_OPTIONS = [
-  { key: "score",   label: "Score" },
-  { key: "iv_rank", label: "IV Rank" },
-  { key: "premium", label: "Premium $" },
-  { key: "iv_hv",   label: "IV/HV" },
-  { key: "chain",   label: "Chain" },
+  { key: "score",        label: "Score" },
+  { key: "iv_rank",      label: "IV Rank" },
+  { key: "premium",      label: "Premium $" },
+  { key: "iv_hv",        label: "IV/HV" },
+  { key: "chain",        label: "Chain" },
+  { key: "risk_reward",  label: "Risk/Reward" },
 ];
 
-function sortRows(arr, key) {
+const PREM_TIMEFRAMES = [3, 7, 14, 21, 30];
+
+function getBestPremInWindow(row, maxDte) {
+  if (!row.expiry_data?.length) return row.atm_call_premium ?? 0;
+  const inWindow = row.expiry_data.filter(e => e.dte <= maxDte);
+  if (!inWindow.length) return 0;
+  return Math.max(...inWindow.map(e => e.atm_call_prem ?? 0));
+}
+
+function sortRows(arr, key, premTimeframe = 30) {
   const s = [...arr];
-  if (key === "score")   return s.sort((a, b) => b.score - a.score);
-  if (key === "iv_rank") return s.sort((a, b) => (b.iv_rank ?? 0) - (a.iv_rank ?? 0));
-  if (key === "premium") return s.sort((a, b) => (b.atm_call_premium ?? 0) - (a.atm_call_premium ?? 0));
-  if (key === "iv_hv")   return s.sort((a, b) => (b.breakdown?.iv_hv ?? 0) - (a.breakdown?.iv_hv ?? 0));
-  if (key === "chain")   return s.sort((a, b) => (b.breakdown?.chain ?? 0) - (a.breakdown?.chain ?? 0));
+  if (key === "score")       return s.sort((a, b) => b.score - a.score);
+  if (key === "iv_rank")     return s.sort((a, b) => (b.iv_rank ?? 0) - (a.iv_rank ?? 0));
+  if (key === "premium")     return s.sort((a, b) => getBestPremInWindow(b, premTimeframe) - getBestPremInWindow(a, premTimeframe));
+  if (key === "iv_hv")       return s.sort((a, b) => (b.breakdown?.iv_hv ?? 0) - (a.breakdown?.iv_hv ?? 0));
+  if (key === "chain")       return s.sort((a, b) => (b.breakdown?.chain ?? 0) - (a.breakdown?.chain ?? 0));
+  if (key === "risk_reward") return s.sort((a, b) => (b.safety_score ?? 0) - (a.safety_score ?? 0));
   return s;
 }
 import { api } from "../api/client.js";
@@ -113,6 +124,7 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [active, setActive] = useState("sell_now");
   const [sort, setSort] = useState("score");
+  const [premTimeframe, setPremTimeframe] = useState(30);
 
   // Ticker detail modal
   const [selectedRow, setSelectedRow] = useState(null);
@@ -224,7 +236,7 @@ export default function Dashboard() {
     buy_sell_later: data.buy_sell_later.filter(priceFilter).length,
     watchlist: data.watchlist.filter(priceFilter).length,
   };
-  const rows = sortRows((data[active] || []).filter(priceFilter), sort);
+  const rows = sortRows((data[active] || []).filter(priceFilter), sort, premTimeframe);
 
   return (
     <>
@@ -280,6 +292,18 @@ export default function Dashboard() {
             onClick={() => setSort(opt.key)}
           >{opt.label}</button>
         ))}
+        {sort === "premium" && (
+          <span className="sort-timeframe">
+            <span className="sort-label" style={{ marginLeft: 10 }}>within</span>
+            {PREM_TIMEFRAMES.map(d => (
+              <button
+                key={d}
+                className={`sort-btn${premTimeframe === d ? " active" : ""}`}
+                onClick={() => setPremTimeframe(d)}
+              >{d}d</button>
+            ))}
+          </span>
+        )}
       </div>
 
       <TopMovers movers={movers} />

@@ -41,20 +41,19 @@ class ScoreBreakdown:
 
 
 def score_iv_rank(iv_rank: float | None) -> float:
+    """0–20 pts, granular 10-tier scale so the top end spreads out."""
     if iv_rank is None:
         return 0.0
-    if iv_rank >= 80:
-        return 20
-    if iv_rank >= 60:
-        return 16
-    if iv_rank >= 50:
-        return 13
-    if iv_rank >= 40:
-        return 10
-    if iv_rank >= 30:
-        return 6
-    if iv_rank >= 20:
-        return 3
+    if iv_rank >= 95: return 20.0
+    if iv_rank >= 85: return 18.0
+    if iv_rank >= 75: return 16.0
+    if iv_rank >= 65: return 14.0
+    if iv_rank >= 55: return 12.0
+    if iv_rank >= 45: return 10.0
+    if iv_rank >= 35: return  8.0
+    if iv_rank >= 25: return  6.0
+    if iv_rank >= 15: return  4.0
+    if iv_rank >=  5: return  2.0
     return 0.0
 
 
@@ -69,51 +68,49 @@ def score_premium(premium_pct: float | None, premium_otm2: float | None = None) 
     pct_score = 0.0
     if premium_pct is not None:
         pct = premium_pct * 100  # 0.03 -> 3.0
-        if pct >= 5:
-            pct_score = 10.0
-        elif pct >= 3.5:
-            pct_score = 8.5
-        elif pct >= 2.5:
-            pct_score = 7.0
-        elif pct >= 2:
-            pct_score = 5.0
-        elif pct >= 1.5:
-            pct_score = 3.0
-        elif pct >= 1:
-            pct_score = 1.5
+        if pct >= 8:   pct_score = 10.0
+        elif pct >= 6: pct_score =  9.0
+        elif pct >= 5: pct_score =  8.0
+        elif pct >= 4: pct_score =  7.0
+        elif pct >= 3: pct_score =  6.0
+        elif pct >= 2.5: pct_score = 5.0
+        elif pct >= 2: pct_score =  4.0
+        elif pct >= 1.5: pct_score = 3.0
+        elif pct >= 1: pct_score =  2.0
+        elif pct >= 0.5: pct_score = 1.0
 
-    # ── Dollar component (0-10): 2 OTM premium per contract ──────────────────
+    # ── Dollar component (0-10): 2 OTM call premium per contract ─────────────
     dollar_score = 0.0
     if premium_otm2 is not None:
         dollars = premium_otm2 * 100  # per-share -> per-contract
-        if dollars >= 10:
-            dollar_score = 10.0
-        elif dollars >= 7:
-            dollar_score = 8.0
-        elif dollars >= 5:
-            dollar_score = 6.0
-        elif dollars >= 3:
-            dollar_score = 4.0
-        elif dollars >= 1:
-            dollar_score = 2.0
+        if dollars >= 15:  dollar_score = 10.0
+        elif dollars >= 10: dollar_score =  9.0
+        elif dollars >= 7:  dollar_score =  8.0
+        elif dollars >= 5:  dollar_score =  7.0
+        elif dollars >= 4:  dollar_score =  6.0
+        elif dollars >= 3:  dollar_score =  5.0
+        elif dollars >= 2:  dollar_score =  4.0
+        elif dollars >= 1.5: dollar_score = 3.0
+        elif dollars >= 1:  dollar_score =  2.0
+        elif dollars >= 0.5: dollar_score = 1.0
 
     return pct_score + dollar_score
 
 
 def score_iv_vs_hv(iv: float | None, hv: float | None) -> float:
+    """0–20 pts, granular 9-tier scale so high IV/HV ratios spread out."""
     if iv is None or hv is None or hv <= 0:
         return 0.0
     ratio = iv / hv
-    if ratio > 1.5:
-        return 20
-    if ratio > 1.3:
-        return 16
-    if ratio > 1.15:
-        return 12
-    if ratio > 1.0:
-        return 8
-    if ratio > 0.9:
-        return 4
+    if ratio >= 3.0:  return 20.0
+    if ratio >= 2.5:  return 18.0
+    if ratio >= 2.0:  return 16.0
+    if ratio >= 1.7:  return 14.0
+    if ratio >= 1.5:  return 12.0
+    if ratio >= 1.3:  return 10.0
+    if ratio >= 1.15: return  8.0
+    if ratio >= 1.0:  return  6.0
+    if ratio >= 0.9:  return  4.0
     return 0.0
 
 
@@ -157,22 +154,21 @@ def score_catalyst(
 
 
 def score_chain(open_interest: int | None, spread_pct: float | None) -> float:
-    """Chain quality tiers: both conditions in a tier must be true."""
+    """Chain quality: combined OI + spread matrix, 9 tiers to spread out the top end."""
     if open_interest is None or spread_pct is None:
         return 0.0
     oi = open_interest
     spread = spread_pct * 100  # 0.03 -> 3
 
-    if oi > 5000 and spread < 3:
-        return 20
-    if oi > 2000 and spread < 5:
-        return 16
-    if oi > 1000 and spread < 8:
-        return 12
-    if oi > 500 and spread < 10:
-        return 8
-    if oi > 200 and spread < 15:
-        return 4
+    if oi > 20000 and spread < 2:  return 20.0
+    if oi > 10000 and spread < 3:  return 18.0
+    if oi > 5000  and spread < 3:  return 16.0
+    if oi > 3000  and spread < 5:  return 14.0
+    if oi > 2000  and spread < 5:  return 12.0
+    if oi > 1000  and spread < 8:  return 10.0
+    if oi > 500   and spread < 10: return  8.0
+    if oi > 200   and spread < 15: return  6.0
+    if oi > 100   and spread < 20: return  4.0
     return 0.0
 
 

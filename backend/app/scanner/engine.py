@@ -148,6 +148,14 @@ def fetch_earnings_calendar(year: int, month: int) -> dict[str, date]:
     if isinstance(days, dict):
         days = [days]
 
+    # Log a sample to diagnose whether Tradier returns earnings data
+    days_with_earnings = [d for d in days if d.get("earnings")]
+    logger.info(
+        "Calendar %d-%02d: %d days total, %d have earnings entries, sample: %s",
+        year, month, len(days), len(days_with_earnings),
+        days_with_earnings[0] if days_with_earnings else "(none)",
+    )
+
     result: dict[str, date] = {}
     for day in days:
         date_str = day.get("date")
@@ -541,6 +549,57 @@ def _contract_mid(contract: dict | None) -> float | None:
     return None
 
 
+# ── Safety score ─────────────────────────────────────────────────────────────
+
+def _calc_safety_score(
+    premium_otm2: float | None,
+    iv: float | None,
+    hv: float | None,
+    price: float,
+    support_1: float | None,
+    bars: list[Bar],
+    earn_days: int | None,
+) -> float | None:
+    """Risk-adjusted premium score.
+
+    Premium Safety = (2OTM dollar premium) × (IV/HV ratio) × (support distance %)
+                   ÷ (avg daily range % × earnings penalty)
+
+    Higher = more premium for less risk. Comparable across tickers.
+    """
+    if not premium_otm2 or premium_otm2 <= 0 or price <= 0:
+        return None
+
+    dollar_prem = premium_otm2 * 100                    # per-contract $
+    iv_hv = (iv / hv) if (iv and hv and hv > 0) else 1.0
+    support_dist = (
+        (price - support_1) / price * 100
+        if support_1 and support_1 < price
+        else 5.0
+    )
+
+    recent = bars[-30:] if len(bars) >= 30 else bars
+    if recent:
+        ranges = [(b.high - b.low) / b.close * 100 for b in recent if b.close > 0]
+        avg_range = sum(ranges) / len(ranges) if ranges else 5.0
+    else:
+        avg_range = 5.0
+
+    if earn_days is None or earn_days > 30:
+        penalty = 1.0
+    elif earn_days >= 14:
+        penalty = 1.5
+    elif earn_days >= 7:
+        penalty = 3.0
+    else:
+        penalty = 5.0
+
+    if avg_range <= 0:
+        return None
+
+    return round((dollar_prem * iv_hv * support_dist) / (avg_range * penalty), 2)
+
+
 # ── Per-ticker scan ───────────────────────────────────────────────────────────
 
 @dataclass
@@ -559,6 +618,7 @@ class ScanRowResult:
     breakdown_catalyst: float
     breakdown_chain: float
     notes: str | None = None
+    safety_score: float | None = None
     # Multi-expiry premium data
     best_expiry: str | None = None
     best_dte: int | None = None
@@ -789,6 +849,12 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
 
         bucket = assign_bucket(final_score, iv_rank, premium_pct, earn_days)
 
+        safety_score = _calc_safety_score(
+            premium_otm2, atm_iv, hv, price,
+            supports[0]["price"] if supports else None,
+            bars, earn_days,
+        )
+
         return ScanRowResult(
             ticker=ticker,
             metrics=metrics,
@@ -803,6 +869,7 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
             breakdown_iv_hv=breakdown.iv_hv,
             breakdown_catalyst=breakdown.catalyst,
             breakdown_chain=breakdown.chain,
+            safety_score=safety_score,
             # Multi-expiry
             best_expiry=best_expiry,
             best_dte=best_dte,
@@ -886,6 +953,7 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
         resistance_1_strength=result.resistance_1_strength,
         resistance_2=result.resistance_2,
         resistance_2_strength=result.resistance_2_strength,
+        safety_score=result.safety_score,
         # Multi-expiry
         best_expiry=result.best_expiry,
         best_dte=result.best_dte,

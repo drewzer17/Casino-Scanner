@@ -164,6 +164,16 @@ body {
   font-size: 10px;
 }
 
+.factor .r {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  opacity: 0.75;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .meta {
   margin-top: 10px;
   display: flex;
@@ -855,6 +865,15 @@ body {
   border-color: var(--accent);
   color: var(--accent);
   background: rgba(255, 204, 51, 0.08);
+}
+
+.chip.chip-safety {
+  color: var(--accent);
+  border-color: rgba(255, 204, 51, 0.3);
+}
+
+.sort-timeframe {
+  display: contents;
 }
 
 /* ── Premium chip clickable state ────────────────────────────────────────── */
