@@ -28,21 +28,50 @@ function sortRows(arr, key, premTimeframe = 30) {
   if (key === "risk_reward") return s.sort((a, b) => (b.safety_score ?? 0) - (a.safety_score ?? 0));
   return s;
 }
+
+export function rangeScore(row) {
+  if (row.resistance_1 == null || row.support_1 == null || row.price == null) return null;
+  const span = row.resistance_1 - row.support_1;
+  if (span <= 0) return null;
+  return Math.max(0, Math.min(100, ((row.price - row.support_1) / span) * 100));
+}
+
+function DualSlider({ min, max, value, onChange, step = 1, fmt = v => String(v) }) {
+  const [lo, hi] = value;
+  const pctLo = ((lo - min) / (max - min)) * 100;
+  const pctHi = ((hi - min) / (max - min)) * 100;
+  return (
+    <div className="ds-wrap">
+      <div className="ds-vals">
+        <span>{fmt(lo)}</span>
+        <span>{fmt(hi)}</span>
+      </div>
+      <div className="ds-track">
+        <div className="ds-fill" style={{ left: `${pctLo}%`, width: `${pctHi - pctLo}%` }} />
+        <input type="range" className="ds-input" min={min} max={max} step={step} value={lo}
+          onChange={e => { const v = Number(e.target.value); onChange([Math.min(v, hi), hi]); }}
+        />
+        <input type="range" className="ds-input" min={min} max={max} step={step} value={hi}
+          onChange={e => { const v = Number(e.target.value); onChange([lo, Math.max(v, lo)]); }}
+        />
+      </div>
+    </div>
+  );
+}
+
 import { api } from "../api/client.js";
 import BucketTabs from "./BucketTabs.jsx";
 import PremiumScanner from "./PremiumScanner.jsx";
+import RangeScanner from "./RangeScanner.jsx";
 import ScoreCard from "./ScoreCard.jsx";
 import TickerModal from "./TickerModal.jsx";
 
-// FastAPI returns naive UTC strings without a trailing 'Z'.
-// Appending 'Z' ensures the Date constructor treats them as UTC in all browsers.
 function toUtcDate(isoString) {
   if (!isoString) return null;
   const s = isoString.endsWith("Z") || isoString.includes("+") ? isoString : isoString + "Z";
   return new Date(s);
 }
 
-// "Apr 16, 2026 at 7:36 PM CDT"
 function formatCentral(isoString) {
   const d = toUtcDate(isoString);
   if (!d) return "in progress";
@@ -61,7 +90,6 @@ function formatCentral(isoString) {
   return `${datePart} at ${timePart}`;
 }
 
-// "8 minutes ago", "2 hours ago", etc.
 function timeAgo(isoString) {
   const d = toUtcDate(isoString);
   if (!d) return null;
@@ -127,7 +155,7 @@ export default function Dashboard() {
   const [sort, setSort] = useState("score");
   const [premTimeframe, setPremTimeframe] = useState(30);
   const [showAll, setShowAll] = useState(false);
-  const [showPremium, setShowPremium] = useState(false);
+  const [view, setView] = useState("cards"); // "cards" | "premium" | "range"
   const [scanMode, setScanMode] = useState(null); // "normal" | "extensive" | null
   const [sourceFilter, setSourceFilter] = useState("all");
   const [reloadMsg, setReloadMsg] = useState(null);
@@ -141,6 +169,15 @@ export default function Dashboard() {
   // Price display filter
   const [minPrice, setMinPrice] = useState(10);
   const [maxPrice, setMaxPrice] = useState(300);
+
+  // Advanced filters
+  const [crossFilter, setCrossFilter] = useState("all");
+  const [trendFilter, setTrendFilter] = useState("all");
+  const [signalFilter, setSignalFilter] = useState("all");
+  const [ivRankRange, setIvRankRange] = useState([0, 100]);
+  const [premRange, setPremRange] = useState([0, 50]);
+  const [oiRange, setOiRange] = useState([0, 50000]);
+  const [safetyRange, setSafetyRange] = useState([0, 5000]);
 
   // Scan trigger state
   const [scanning, setScanning] = useState(false);
@@ -183,7 +220,6 @@ export default function Dashboard() {
     }, 5000);
   }, [refreshData]);
 
-  // On mount: fetch data, and also check if a scan is already running
   useEffect(() => {
     let cancelled = false;
 
@@ -194,7 +230,6 @@ export default function Dashboard() {
       .then((m) => { if (!cancelled) setMovers(m); })
       .catch(() => {});
 
-    // Check if a scan is already in progress so the button reflects current state
     api.scanStatus()
       .then((status) => {
         if (!cancelled && status.status === "running") {
@@ -264,6 +299,7 @@ export default function Dashboard() {
   if (error) return <div className="error">Error loading scan: {error}</div>;
   if (!data) return <div className="empty">Loading latest scan…</div>;
 
+  // ── Base filters ──────────────────────────────────────────────────
   const priceFilter = (r) =>
     (r.price == null) || (r.price >= minPrice && r.price <= maxPrice);
 
@@ -277,12 +313,58 @@ export default function Dashboard() {
       (r.company_name || "").toLowerCase().includes(q);
   };
 
-  const combinedFilter = (r) => priceFilter(r) && sourceFilterFn(r) && searchFilter(r);
+  // ── Advanced toggle filters ───────────────────────────────────────
+  const crossFn = (r, opt = crossFilter) => {
+    if (opt === "golden") return r.sma_golden_cross === true;
+    if (opt === "death")  return r.sma_golden_cross === false;
+    return true;
+  };
 
+  const trendFn = (r, opt = trendFilter) => {
+    if (opt === "all") return true;
+    return r.sma_regime === opt;
+  };
+
+  const signalFn = (r, opt = signalFilter) => {
+    if (opt === "all") return true;
+    const rs = rangeScore(r);
+    if (opt === "price_discovery")  return r.resistance_1 == null;
+    if (opt === "near_support")     return rs !== null && rs <= 30;
+    if (opt === "near_resistance")  return rs !== null && rs >= 70;
+    return true;
+  };
+
+  // ── Slider filters ────────────────────────────────────────────────
+  const sliderFn = (r) => {
+    if (r.iv_rank != null &&
+        (r.iv_rank < ivRankRange[0] || r.iv_rank > ivRankRange[1])) return false;
+    if (r.atm_call_premium != null &&
+        (r.atm_call_premium < premRange[0] || r.atm_call_premium > premRange[1])) return false;
+    if (r.open_interest != null &&
+        (r.open_interest < oiRange[0] || r.open_interest > oiRange[1])) return false;
+    if (r.safety_score != null &&
+        (r.safety_score < safetyRange[0] || r.safety_score > safetyRange[1])) return false;
+    return true;
+  };
+
+  const baseFn = (r) => priceFilter(r) && sourceFilterFn(r) && searchFilter(r) && sliderFn(r);
+  const combinedFilter = (r) => baseFn(r) && crossFn(r) && trendFn(r) && signalFn(r);
+
+  const resetFilters = () => {
+    setCrossFilter("all");
+    setTrendFilter("all");
+    setSignalFilter("all");
+    setIvRankRange([0, 100]);
+    setPremRange([0, 50]);
+    setOiRange([0, 50000]);
+    setSafetyRange([0, 5000]);
+  };
+
+  // ── Row sets ──────────────────────────────────────────────────────
   const counts = {
-    sell_now: data.sell_now.filter(combinedFilter).length,
+    sell_now:      data.sell_now.filter(combinedFilter).length,
     buy_sell_later: data.buy_sell_later.filter(combinedFilter).length,
-    watchlist: data.watchlist.filter(combinedFilter).length,
+    watchlist:     data.watchlist.filter(combinedFilter).length,
   };
 
   const allRows = [
@@ -291,15 +373,20 @@ export default function Dashboard() {
     ...data.watchlist,
   ];
   const filteredAll = allRows.filter(combinedFilter);
-  const premiumRows = allRows.filter(combinedFilter);
+  const viewRows    = allRows.filter(combinedFilter);
 
-  // Source counts for filter buttons (from all scan results regardless of bucket)
+  // Cascading counts for toggle filters (each group excludes itself)
+  const countForCross  = (opt) => allRows.filter(r => baseFn(r) && trendFn(r) && signalFn(r) && crossFn(r, opt)).length;
+  const countForTrend  = (opt) => allRows.filter(r => baseFn(r) && crossFn(r) && signalFn(r) && trendFn(r, opt)).length;
+  const countForSignal = (opt) => allRows.filter(r => baseFn(r) && crossFn(r) && trendFn(r) && signalFn(r, opt)).length;
+
+  // Source counts (unaffected by source filter itself)
   const sourceCounts = {
-    sp500:    allRows.filter(r => (r.sources||[]).includes("sp500")).length,
+    sp500:     allRows.filter(r => (r.sources||[]).includes("sp500")).length,
     nasdaq100: allRows.filter(r => (r.sources||[]).includes("nasdaq100")).length,
     ai_sector: allRows.filter(r => (r.sources||[]).includes("ai_sector")).length,
-    ai_nuclear: allRows.filter(r => (r.sources||[]).includes("ai_nuclear")).length,
-    custom:   allRows.filter(r => (r.sources||[]).includes("custom")).length,
+    ai_nuclear:allRows.filter(r => (r.sources||[]).includes("ai_nuclear")).length,
+    custom:    allRows.filter(r => (r.sources||[]).includes("custom")).length,
   };
 
   const rows = showAll
@@ -316,12 +403,20 @@ export default function Dashboard() {
             {formatCentral(data.finished_at)}
             {data.finished_at && ` · ${timeAgo(data.finished_at)}`}
           </div>
-          <button
-            className={`prem-view-btn${showPremium ? " active" : ""}`}
-            onClick={() => setShowPremium(v => !v)}
-          >
-            {showPremium ? "← Cards" : "Premium Scanner"}
-          </button>
+          <div className="view-btns">
+            <button
+              className={`prem-view-btn${view === "premium" ? " active" : ""}`}
+              onClick={() => setView(v => v === "premium" ? "cards" : "premium")}
+            >
+              {view === "premium" ? "← Cards" : "Premium Scanner"}
+            </button>
+            <button
+              className={`range-view-btn${view === "range" ? " active" : ""}`}
+              onClick={() => setView(v => v === "range" ? "cards" : "range")}
+            >
+              {view === "range" ? "← Cards" : "Range Scanner"}
+            </button>
+          </div>
           <div className="search-wrap">
             <input
               className="search-input"
@@ -382,7 +477,101 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {!showPremium && (
+      {/* ── Filter bar ── */}
+      <div className="filter-bar">
+        <div className="filter-toggles">
+          {/* CROSS */}
+          <div className="filter-group">
+            <span className="filter-group-label">CROSS</span>
+            {[
+              { key: "all",    label: "All" },
+              { key: "golden", label: "Golden Cross" },
+              { key: "death",  label: "Death Cross" },
+            ].map(opt => (
+              <button
+                key={opt.key}
+                className={`filter-toggle-btn${crossFilter === opt.key ? " active" : ""}${crossFilter === opt.key && opt.key === "golden" ? " golden" : ""}${crossFilter === opt.key && opt.key === "death" ? " death" : ""}`}
+                onClick={() => setCrossFilter(opt.key)}
+              >
+                {opt.label}
+                {opt.key !== "all" && (
+                  <span className="filter-count">{countForCross(opt.key)}</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* TREND */}
+          <div className="filter-group">
+            <span className="filter-group-label">TREND</span>
+            {[
+              { key: "all",          label: "All" },
+              { key: "UPTREND",      label: "Uptrend" },
+              { key: "DOWNTREND",    label: "Downtrend" },
+              { key: "TRANSITIONAL", label: "Transitional" },
+            ].map(opt => (
+              <button
+                key={opt.key}
+                className={`filter-toggle-btn${trendFilter === opt.key ? " active" : ""}`}
+                onClick={() => setTrendFilter(opt.key)}
+              >
+                {opt.label}
+                {opt.key !== "all" && (
+                  <span className="filter-count">{countForTrend(opt.key)}</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* SIGNAL */}
+          <div className="filter-group">
+            <span className="filter-group-label">SIGNAL</span>
+            {[
+              { key: "all",              label: "All" },
+              { key: "price_discovery",  label: "Price Discovery", cls: "pd" },
+              { key: "near_support",     label: "Near Support" },
+              { key: "near_resistance",  label: "Near Resistance" },
+            ].map(opt => (
+              <button
+                key={opt.key}
+                className={`filter-toggle-btn${signalFilter === opt.key ? " active" : ""}${signalFilter === opt.key && opt.cls ? ` ${opt.cls}` : ""}`}
+                onClick={() => setSignalFilter(opt.key)}
+              >
+                {opt.label}
+                {opt.key !== "all" && (
+                  <span className="filter-count">{countForSignal(opt.key)}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="filter-sliders">
+          <div className="filter-slider-item">
+            <span className="filter-slider-label">IV RANK</span>
+            <DualSlider min={0} max={100} value={ivRankRange} onChange={setIvRankRange}
+              fmt={v => `${v}`} />
+          </div>
+          <div className="filter-slider-item">
+            <span className="filter-slider-label">PREMIUM $</span>
+            <DualSlider min={0} max={50} step={0.5} value={premRange} onChange={setPremRange}
+              fmt={v => `$${Number(v).toFixed(1)}`} />
+          </div>
+          <div className="filter-slider-item">
+            <span className="filter-slider-label">CHAIN OI</span>
+            <DualSlider min={0} max={50000} step={500} value={oiRange} onChange={setOiRange}
+              fmt={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`} />
+          </div>
+          <div className="filter-slider-item">
+            <span className="filter-slider-label">SAFETY SCORE</span>
+            <DualSlider min={0} max={5000} step={10} value={safetyRange} onChange={setSafetyRange}
+              fmt={v => `${v}`} />
+          </div>
+          <button className="filter-reset-btn" onClick={resetFilters}>Reset Filters</button>
+        </div>
+      </div>
+
+      {view === "cards" && (
         <div className="sort-bar">
           <span className="sort-label">Sort</span>
           {SORT_OPTIONS.map(opt => (
@@ -409,18 +598,20 @@ export default function Dashboard() {
 
       <TopMovers movers={movers} />
 
-      {showPremium ? (
-        <PremiumScanner rows={premiumRows} onRowClick={setSelectedRow} />
+      {view === "premium" ? (
+        <PremiumScanner rows={viewRows} onRowClick={setSelectedRow} />
+      ) : view === "range" ? (
+        <RangeScanner rows={viewRows} onRowClick={setSelectedRow} />
       ) : (
         <>
           <div className="source-filter-row">
             {[
-              { key: "all",        label: "All",       count: allRows.length },
-              { key: "sp500",      label: "S&P 500",   count: sourceCounts.sp500 },
-              { key: "nasdaq100",  label: "Nasdaq 100",count: sourceCounts.nasdaq100 },
-              { key: "ai_sector",  label: "AI Sector", count: sourceCounts.ai_sector },
-              { key: "ai_nuclear", label: "Nuclear",   count: sourceCounts.ai_nuclear },
-              { key: "custom",     label: "Custom",    count: sourceCounts.custom },
+              { key: "all",        label: "All",        count: allRows.length },
+              { key: "sp500",      label: "S&P 500",    count: sourceCounts.sp500 },
+              { key: "nasdaq100",  label: "Nasdaq 100", count: sourceCounts.nasdaq100 },
+              { key: "ai_sector",  label: "AI Sector",  count: sourceCounts.ai_sector },
+              { key: "ai_nuclear", label: "Nuclear",    count: sourceCounts.ai_nuclear },
+              { key: "custom",     label: "Custom",     count: sourceCounts.custom },
             ].map(({ key, label, count }) => count > 0 || key === "all" ? (
               <button
                 key={key}

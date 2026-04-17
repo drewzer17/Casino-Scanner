@@ -97,7 +97,8 @@ const REGIME_CLASS = {
 };
 
 function SmaPanel({ row }) {
-  const hasAny = row.sma_200 || row.sma_50 || row.support_1 || row.resistance_1;
+  const isPD = row.resistance_1 == null;
+  const hasAny = row.sma_200 || row.sma_50 || row.support_1 || row.resistance_1 || isPD;
   if (!hasAny) return null;
 
   const arrow = (pct) => (pct == null ? "" : pct >= 0 ? " ▲" : " ▼");
@@ -132,6 +133,9 @@ function SmaPanel({ row }) {
             <span className={`regime-tag ${REGIME_CLASS[row.sma_regime] ?? ""}`}>
               {row.sma_regime}
             </span>
+          )}
+          {isPD && (
+            <span className="regime-tag regime-pd">PRICE DISCOVERY</span>
           )}
         </div>
       )}

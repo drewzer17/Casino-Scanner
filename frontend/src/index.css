@@ -636,6 +636,7 @@ body {
 .regime-up  { background: rgba(74,222,128,0.15);  color: var(--green); }
 .regime-dn  { background: rgba(248,113,113,0.15); color: var(--red); }
 .regime-mid { background: rgba(250,204,21,0.12);  color: var(--yellow); }
+.regime-pd  { background: rgba(168,85,247,0.15);  color: #a855f7; }
 
 .sr-row {
   display: flex;
@@ -1349,6 +1350,206 @@ body {
   line-height: 1;
 }
 .search-clear:hover { color: var(--text); }
+
+/* ── View buttons ────────────────────────────────────────────────── */
+.view-btns { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+
+.range-view-btn {
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid #3b82f6;
+  background: transparent;
+  color: #3b82f6;
+  transition: all 0.15s;
+}
+.range-view-btn.active,
+.range-view-btn:hover { background: #3b82f6; color: #fff; }
+
+/* ── Filter bar ──────────────────────────────────────────────────── */
+.filter-bar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.filter-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.filter-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-right: 2px;
+  white-space: nowrap;
+}
+
+.filter-toggle-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 3px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  transition: all 0.1s;
+}
+.filter-toggle-btn:hover { border-color: var(--text-muted); color: var(--text); }
+.filter-toggle-btn.active          { background: var(--accent);  border-color: var(--accent);  color: #fff; }
+.filter-toggle-btn.active.golden   { background: var(--green);   border-color: var(--green); }
+.filter-toggle-btn.active.death    { background: var(--red);     border-color: var(--red); }
+.filter-toggle-btn.active.pd       { background: #a855f7;        border-color: #a855f7; }
+
+.filter-count {
+  background: rgba(255,255,255,0.2);
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.filter-sliders {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 20px;
+}
+
+.filter-slider-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 130px;
+  flex: 1;
+}
+
+.filter-slider-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.filter-reset-btn {
+  align-self: flex-end;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 5px 12px;
+  white-space: nowrap;
+  transition: all 0.1s;
+  flex-shrink: 0;
+}
+.filter-reset-btn:hover { border-color: var(--text); color: var(--text); }
+
+/* ── Dual slider ─────────────────────────────────────────────────── */
+.ds-wrap { width: 100%; }
+
+.ds-vals {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.ds-track {
+  position: relative;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 10px 0 4px;
+}
+
+.ds-fill {
+  position: absolute;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.ds-input {
+  position: absolute;
+  width: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  pointer-events: none;
+  margin: 0;
+  height: 4px;
+}
+.ds-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+  pointer-events: all;
+  position: relative;
+  z-index: 1;
+}
+.ds-input::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+  pointer-events: all;
+  border-style: solid;
+}
+
+/* ── Range Scanner signals ───────────────────────────────────────── */
+.rs-signal { font-weight: 700; font-size: 12px; }
+.rs-pd      { color: #a855f7; }
+.rs-csp     { color: var(--red); }
+.rs-cc      { color: var(--green); }
+.rs-neutral { color: var(--text-muted); }
+
+.rs-cross  { font-size: 12px; font-weight: 600; }
+.rs-golden { color: var(--green); }
+.rs-death  { color: var(--red); }
+
+.rs-discovery-label { color: #a855f7; font-size: 11px; font-style: italic; }
+
+.prem-scanner-th.center { text-align: center; }
+.prem-scanner-td.center { text-align: center; }
 
 .prem-type-badge {
   font-weight: 700;
