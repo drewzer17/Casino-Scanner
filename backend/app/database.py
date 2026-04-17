@@ -82,6 +82,9 @@ def init_db() -> None:
         ")"
     )
 
+    # Company name column added in v6
+    _add_column_if_missing("ALTER TABLE scan_results ADD COLUMN company_name VARCHAR(128)")
+
     # ATM put premium columns added in v5
     for _ddl in [
         "ALTER TABLE scan_results ADD COLUMN atm_put_premium FLOAT",

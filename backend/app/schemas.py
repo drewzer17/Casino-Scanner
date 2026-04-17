@@ -42,6 +42,7 @@ class ScanResultOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     ticker: str
+    company_name: str | None = None
     price: float | None
     iv_rank: float | None
     iv: float | None

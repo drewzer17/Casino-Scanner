@@ -78,6 +78,9 @@ class ScanResult(Base):
     best_strike: Mapped[float | None] = mapped_column(Float, nullable=True)  # ATM strike for best expiry
     expiry_data: Mapped[str | None] = mapped_column(Text, nullable=True)    # JSON list of ExpiryRow
 
+    # Company name from Tradier quote description field
+    company_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+
     # ATM put premium (stored from normal scan — same expiry as best_expiry)
     atm_put_premium: Mapped[float | None] = mapped_column(Float, nullable=True)
     best_put_strike: Mapped[float | None] = mapped_column(Float, nullable=True)

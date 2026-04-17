@@ -135,6 +135,9 @@ export default function Dashboard() {
   // Ticker detail modal
   const [selectedRow, setSelectedRow] = useState(null);
 
+  // Search
+  const [searchQuery, setSearchQuery] = useState("");
+
   // Price display filter
   const [minPrice, setMinPrice] = useState(10);
   const [maxPrice, setMaxPrice] = useState(300);
@@ -267,7 +270,14 @@ export default function Dashboard() {
   const sourceFilterFn = (r) =>
     sourceFilter === "all" || (r.sources || []).includes(sourceFilter);
 
-  const combinedFilter = (r) => priceFilter(r) && sourceFilterFn(r);
+  const searchFilter = (r) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return r.ticker.toLowerCase().includes(q) ||
+      (r.company_name || "").toLowerCase().includes(q);
+  };
+
+  const combinedFilter = (r) => priceFilter(r) && sourceFilterFn(r) && searchFilter(r);
 
   const counts = {
     sell_now: data.sell_now.filter(combinedFilter).length,
@@ -312,6 +322,18 @@ export default function Dashboard() {
           >
             {showPremium ? "← Cards" : "Premium Scanner"}
           </button>
+          <div className="search-wrap">
+            <input
+              className="search-input"
+              type="text"
+              placeholder="Search ticker or company…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button className="search-clear" onClick={() => setSearchQuery("")}>✕</button>
+            )}
+          </div>
         </div>
         <div className="header-right">
           <button

@@ -630,6 +630,8 @@ class ScanRowResult:
     best_put_strike: float | None = None
     best_put_expiry: str | None = None
     best_put_dte: int | None = None
+    # Company name from Tradier quote
+    company_name: str | None = None
     # SMA
     sma_200: float | None = None
     sma_50: float | None = None
@@ -921,6 +923,7 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
     db.add(models.ScanResult(
         run_id=run_id,
         ticker=result.ticker,
+        company_name=result.company_name,
         price=result.price,
         iv_rank=result.metrics.iv_rank,
         iv=result.metrics.iv,
@@ -1152,6 +1155,7 @@ def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = 
 
         # Pre-fetch quotes for the whole batch (≤20 tickers per Tradier call)
         prices: dict[str, float] = {}
+        company_names: dict[str, str] = {}
         for q_start in range(0, len(batch), QUOTE_BATCH):
             q_symbols = batch[q_start : q_start + QUOTE_BATCH]
             try:
@@ -1159,6 +1163,9 @@ def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = 
                     raw = q.get("last")
                     if _is_valid(raw):
                         prices[sym] = float(raw)
+                    desc = (q.get("description") or "").strip()
+                    if desc:
+                        company_names[sym] = desc
             except Exception as exc:
                 logger.warning("quote batch failed (%s): %s", q_symbols, exc)
 
@@ -1183,6 +1190,7 @@ def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = 
             if result is None:
                 errored += 1
             else:
+                result.company_name = company_names.get(ticker)
                 scanned += 1
                 _persist_result(db, run.id, result)
 

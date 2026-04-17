@@ -137,7 +137,14 @@ const COLS = [
 
 function cellValue(item, key) {
   switch (key) {
-    case "ticker":     return item.ticker;
+    case "ticker":     return (
+      <span>
+        {item.ticker}
+        {item.company_name && (
+          <span className="company-name company-name-table">{item.company_name}</span>
+        )}
+      </span>
+    );
     case "type":       return (
       <span className={`prem-type-badge prem-type-${item._type.toLowerCase()}`}>
         {item._type}

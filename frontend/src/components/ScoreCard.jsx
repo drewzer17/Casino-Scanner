@@ -248,6 +248,9 @@ export default function ScoreCard({ row, onClick, showBucket = false }) {
               <span className={`bucket-tag ${bucketTag.cls}`}>{bucketTag.label}</span>
             )}
           </div>
+          {row.company_name && (
+            <div className="company-name">{row.company_name}</div>
+          )}
           <div className="price">
             ${fmt(row.price, 2)} · IVR {fmt(row.iv_rank, 0)}
           </div>

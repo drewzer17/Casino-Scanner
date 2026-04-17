@@ -132,6 +132,7 @@ def _to_out(
 ) -> ScanResultOut:
     return ScanResultOut(
         ticker=row.ticker,
+        company_name=row.company_name,
         price=_san(row.price),
         iv_rank=_san(row.iv_rank),
         iv=_san(row.iv),
