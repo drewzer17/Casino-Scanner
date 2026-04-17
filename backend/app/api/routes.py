@@ -1013,7 +1013,7 @@ def debug_scoring(ticker: str) -> dict:
 
 
 @router.get("/ticker/{ticker}/chains", response_model=None)
-def ticker_chains(ticker: str) -> dict:
+def ticker_chains(ticker: str, db: Session = Depends(get_db)) -> dict:
     """Live multi-expiry premium table for a ticker (fetched on demand, not during scan).
 
     Returns all expirations within 7-45 days with ATM + 4 OTM calls + puts.
@@ -1027,6 +1027,23 @@ def ticker_chains(ticker: str) -> dict:
     from datetime import date as _date
 
     ticker = ticker.strip().upper()
+
+    # Get actual stock price from latest completed scan result
+    _run = _latest_run(db)
+    _row = None
+    if _run:
+        _row = db.execute(
+            select(models.ScanResult)
+            .where(models.ScanResult.ticker == ticker, models.ScanResult.run_id == _run.id)
+        ).scalar_one_or_none()
+    if _row is None:
+        _row = db.execute(
+            select(models.ScanResult)
+            .where(models.ScanResult.ticker == ticker)
+            .order_by(models.ScanResult.created_at.desc())
+            .limit(1)
+        ).scalar_one_or_none()
+    actual_price: float | None = _row.price if _row else None
 
     try:
         exps = fetch_expirations(ticker)
@@ -1049,9 +1066,11 @@ def ticker_chains(ticker: str) -> dict:
             )
             if not calls:
                 continue
-            # Use mid-chain strike as approximate price (good enough for OTM selection)
-            mid_idx = len(calls) // 2
-            approx_price = float(calls[mid_idx]["strike"])
+            # Use actual stock price; fall back to chain midpoint only if DB has no price
+            if actual_price:
+                approx_price = actual_price
+            else:
+                approx_price = float(calls[len(calls) // 2]["strike"])
 
             atm_c, _, _ = _pick_call_strikes(chain, approx_price)
             atm_strike = float(atm_c["strike"]) if atm_c else None
