@@ -174,6 +174,10 @@ export default function Dashboard() {
   const [minPrice, setMinPrice] = useState(10);
   const [maxPrice, setMaxPrice] = useState(300);
 
+  // Mode selector
+  const [mode, setMode] = useState("all"); // "all" | "cc" | "csp"
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   // Advanced filters
   const [crossFilter, setCrossFilter] = useState("all");
   const [trendFilter, setTrendFilter] = useState("all");
@@ -251,6 +255,22 @@ export default function Dashboard() {
       stopPolling();
     };
   }, [startPolling]);
+
+  // Auto-sort and reset filters when mode changes
+  useEffect(() => {
+    if (mode === "cc")       setSort("cc_score");
+    else if (mode === "csp") setSort("csp_score");
+    else                     setSort("score");
+    setCrossFilter("all");
+    setTrendFilter("all");
+    setSignalFilter("all");
+    setIvRankRange([0, 100]);
+    setPremRange([0, 50]);
+    setOiRange([0, 50000]);
+    setSafetyRange([0, 5000]);
+    setCcScoreRange([0, 100]);
+    setCspScoreRange([0, 100]);
+  }, [mode]);
 
   const handleRunScan = async () => {
     if (scanning) return;
@@ -348,11 +368,11 @@ export default function Dashboard() {
         (r.atm_call_premium < premRange[0] || r.atm_call_premium > premRange[1])) return false;
     if (r.open_interest != null &&
         (r.open_interest < oiRange[0] || r.open_interest > oiRange[1])) return false;
-    if (r.safety_score != null &&
+    if (mode === "all" && r.safety_score != null &&
         (r.safety_score < safetyRange[0] || r.safety_score > safetyRange[1])) return false;
-    if (r.cc_score != null &&
+    if (mode !== "csp" && r.cc_score != null &&
         (r.cc_score < ccScoreRange[0] || r.cc_score > ccScoreRange[1])) return false;
-    if (r.csp_score != null &&
+    if (mode !== "cc" && r.csp_score != null &&
         (r.csp_score < cspScoreRange[0] || r.csp_score > cspScoreRange[1])) return false;
     return true;
   };
@@ -361,16 +381,27 @@ export default function Dashboard() {
   const combinedFilter = (r) => baseFn(r) && crossFn(r) && trendFn(r) && signalFn(r);
 
   const resetFilters = () => {
-    setCrossFilter("all");
-    setTrendFilter("all");
-    setSignalFilter("all");
-    setIvRankRange([0, 100]);
-    setPremRange([0, 50]);
-    setOiRange([0, 50000]);
-    setSafetyRange([0, 5000]);
-    setCcScoreRange([0, 100]);
-    setCspScoreRange([0, 100]);
+    setMode("all"); // triggers the mode useEffect which resets everything else
   };
+
+  // ── Signal options per mode ───────────────────────────────────────
+  const signalOpts = mode === "cc"
+    ? [
+        { key: "all",             label: "All" },
+        { key: "price_discovery", label: "Price Discovery", cls: "pd" },
+        { key: "near_resistance", label: "Near Resistance" },
+      ]
+    : mode === "csp"
+    ? [
+        { key: "all",         label: "All" },
+        { key: "near_support", label: "Near Support" },
+      ]
+    : [
+        { key: "all",             label: "All" },
+        { key: "price_discovery", label: "Price Discovery", cls: "pd" },
+        { key: "near_support",    label: "Near Support" },
+        { key: "near_resistance", label: "Near Resistance" },
+      ];
 
   // ── Row sets ──────────────────────────────────────────────────────
   const counts = {
@@ -402,7 +433,7 @@ export default function Dashboard() {
   };
 
   const rows = showAll
-    ? sortRows(filteredAll, "score", premTimeframe)
+    ? sortRows(filteredAll, sort, premTimeframe)
     : sortRows((data[active] || []).filter(combinedFilter), sort, premTimeframe);
 
   return (
@@ -489,109 +520,136 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Filter bar ── */}
-      <div className="filter-bar">
-        <div className="filter-toggles">
-          {/* CROSS */}
-          <div className="filter-group">
-            <span className="filter-group-label">CROSS</span>
-            {[
-              { key: "all",    label: "All" },
-              { key: "golden", label: "Golden Cross" },
-              { key: "death",  label: "Death Cross" },
-            ].map(opt => (
-              <button
-                key={opt.key}
-                className={`filter-toggle-btn${crossFilter === opt.key ? " active" : ""}${crossFilter === opt.key && opt.key === "golden" ? " golden" : ""}${crossFilter === opt.key && opt.key === "death" ? " death" : ""}`}
-                onClick={() => setCrossFilter(opt.key)}
-              >
-                {opt.label}
-                {opt.key !== "all" && (
-                  <span className="filter-count">{countForCross(opt.key)}</span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* TREND */}
-          <div className="filter-group">
-            <span className="filter-group-label">TREND</span>
-            {[
-              { key: "all",          label: "All" },
-              { key: "UPTREND",      label: "Uptrend" },
-              { key: "DOWNTREND",    label: "Downtrend" },
-              { key: "TRANSITIONAL", label: "Transitional" },
-            ].map(opt => (
-              <button
-                key={opt.key}
-                className={`filter-toggle-btn${trendFilter === opt.key ? " active" : ""}`}
-                onClick={() => setTrendFilter(opt.key)}
-              >
-                {opt.label}
-                {opt.key !== "all" && (
-                  <span className="filter-count">{countForTrend(opt.key)}</span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* SIGNAL */}
-          <div className="filter-group">
-            <span className="filter-group-label">SIGNAL</span>
-            {[
-              { key: "all",              label: "All" },
-              { key: "price_discovery",  label: "Price Discovery", cls: "pd" },
-              { key: "near_support",     label: "Near Support" },
-              { key: "near_resistance",  label: "Near Resistance" },
-            ].map(opt => (
-              <button
-                key={opt.key}
-                className={`filter-toggle-btn${signalFilter === opt.key ? " active" : ""}${signalFilter === opt.key && opt.cls ? ` ${opt.cls}` : ""}`}
-                onClick={() => setSignalFilter(opt.key)}
-              >
-                {opt.label}
-                {opt.key !== "all" && (
-                  <span className="filter-count">{countForSignal(opt.key)}</span>
-                )}
-              </button>
-            ))}
-          </div>
+      {/* ── Mode Selector ── */}
+      <div className="mode-selector">
+        <div className="mode-btns">
+          <button
+            className={`mode-btn mode-btn-all${mode === "all" ? " active" : ""}`}
+            onClick={() => setMode("all")}
+          >ALL</button>
+          <button
+            className={`mode-btn mode-btn-cc${mode === "cc" ? " active" : ""}`}
+            onClick={() => setMode("cc")}
+          >CC MODE</button>
+          <button
+            className={`mode-btn mode-btn-csp${mode === "csp" ? " active" : ""}`}
+            onClick={() => setMode("csp")}
+          >CSP MODE</button>
         </div>
-
-        <div className="filter-sliders">
-          <div className="filter-slider-item">
-            <span className="filter-slider-label">IV RANK</span>
-            <DualSlider min={0} max={100} value={ivRankRange} onChange={setIvRankRange}
-              fmt={v => `${v}`} />
-          </div>
-          <div className="filter-slider-item">
-            <span className="filter-slider-label">PREMIUM $</span>
-            <DualSlider min={0} max={50} step={0.5} value={premRange} onChange={setPremRange}
-              fmt={v => `$${Number(v).toFixed(1)}`} />
-          </div>
-          <div className="filter-slider-item">
-            <span className="filter-slider-label">CHAIN OI</span>
-            <DualSlider min={0} max={50000} step={500} value={oiRange} onChange={setOiRange}
-              fmt={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`} />
-          </div>
-          <div className="filter-slider-item">
-            <span className="filter-slider-label">SAFETY SCORE</span>
-            <DualSlider min={0} max={5000} step={10} value={safetyRange} onChange={setSafetyRange}
-              fmt={v => `${v}`} />
-          </div>
-          <div className="filter-slider-item">
-            <span className="filter-slider-label">CC SCORE</span>
-            <DualSlider min={0} max={100} value={ccScoreRange} onChange={setCcScoreRange}
-              fmt={v => `${v}`} />
-          </div>
-          <div className="filter-slider-item">
-            <span className="filter-slider-label">CSP SCORE</span>
-            <DualSlider min={0} max={100} value={cspScoreRange} onChange={setCspScoreRange}
-              fmt={v => `${v}`} />
-          </div>
-          <button className="filter-reset-btn" onClick={resetFilters}>Reset Filters</button>
+        <div className="mode-selector-right">
+          <button
+            className={`filters-collapse-btn${filtersOpen ? " open" : ""}`}
+            onClick={() => setFiltersOpen(v => !v)}
+          >{filtersOpen ? "▲ Filters" : "▼ Filters"}</button>
+          <button className="filter-reset-btn" onClick={resetFilters}>Reset</button>
         </div>
       </div>
+
+      {/* ── Collapsible filter bar ── */}
+      {filtersOpen && (
+        <div className="filter-bar">
+          <div className="filter-toggles">
+            {/* CROSS */}
+            <div className="filter-group">
+              <span className="filter-group-label">CROSS</span>
+              {[
+                { key: "all",    label: "All" },
+                { key: "golden", label: "Golden Cross" },
+                { key: "death",  label: "Death Cross" },
+              ].map(opt => (
+                <button
+                  key={opt.key}
+                  className={`filter-toggle-btn${crossFilter === opt.key ? " active" : ""}${crossFilter === opt.key && opt.key === "golden" ? " golden" : ""}${crossFilter === opt.key && opt.key === "death" ? " death" : ""}`}
+                  onClick={() => setCrossFilter(opt.key)}
+                >
+                  {opt.label}
+                  {opt.key !== "all" && (
+                    <span className="filter-count">{countForCross(opt.key)}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* TREND */}
+            <div className="filter-group">
+              <span className="filter-group-label">TREND</span>
+              {[
+                { key: "all",          label: "All" },
+                { key: "UPTREND",      label: "Uptrend" },
+                { key: "DOWNTREND",    label: "Downtrend" },
+                { key: "TRANSITIONAL", label: "Transitional" },
+              ].map(opt => (
+                <button
+                  key={opt.key}
+                  className={`filter-toggle-btn${trendFilter === opt.key ? " active" : ""}`}
+                  onClick={() => setTrendFilter(opt.key)}
+                >
+                  {opt.label}
+                  {opt.key !== "all" && (
+                    <span className="filter-count">{countForTrend(opt.key)}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* SIGNAL */}
+            <div className="filter-group">
+              <span className="filter-group-label">SIGNAL</span>
+              {signalOpts.map(opt => (
+                <button
+                  key={opt.key}
+                  className={`filter-toggle-btn${signalFilter === opt.key ? " active" : ""}${signalFilter === opt.key && opt.cls ? ` ${opt.cls}` : ""}`}
+                  onClick={() => setSignalFilter(opt.key)}
+                >
+                  {opt.label}
+                  {opt.key !== "all" && (
+                    <span className="filter-count">{countForSignal(opt.key)}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="filter-sliders">
+            {mode !== "csp" && (
+              <div className="filter-slider-item">
+                <span className="filter-slider-label">CC SCORE</span>
+                <DualSlider min={0} max={100} value={ccScoreRange} onChange={setCcScoreRange}
+                  fmt={v => `${v}`} />
+              </div>
+            )}
+            {mode !== "cc" && (
+              <div className="filter-slider-item">
+                <span className="filter-slider-label">CSP SCORE</span>
+                <DualSlider min={0} max={100} value={cspScoreRange} onChange={setCspScoreRange}
+                  fmt={v => `${v}`} />
+              </div>
+            )}
+            <div className="filter-slider-item">
+              <span className="filter-slider-label">IV RANK</span>
+              <DualSlider min={0} max={100} value={ivRankRange} onChange={setIvRankRange}
+                fmt={v => `${v}`} />
+            </div>
+            <div className="filter-slider-item">
+              <span className="filter-slider-label">PREMIUM $</span>
+              <DualSlider min={0} max={50} step={0.5} value={premRange} onChange={setPremRange}
+                fmt={v => `$${Number(v).toFixed(1)}`} />
+            </div>
+            <div className="filter-slider-item">
+              <span className="filter-slider-label">CHAIN OI</span>
+              <DualSlider min={0} max={50000} step={500} value={oiRange} onChange={setOiRange}
+                fmt={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`} />
+            </div>
+            {mode === "all" && (
+              <div className="filter-slider-item">
+                <span className="filter-slider-label">SAFETY SCORE</span>
+                <DualSlider min={0} max={5000} step={10} value={safetyRange} onChange={setSafetyRange}
+                  fmt={v => `${v}`} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {view === "cards" && (
         <div className="sort-bar">

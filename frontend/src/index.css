@@ -1565,3 +1565,78 @@ body {
 
 .score-cc  { color: var(--green); font-weight: 700; }
 .score-csp { color: var(--red);   font-weight: 700; }
+
+/* ── Mode Selector ── */
+.mode-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.mode-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.mode-btn {
+  padding: 10px 24px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mode-btn:hover {
+  border-color: var(--text-muted);
+  color: var(--text);
+}
+
+.mode-btn-all.active {
+  border-color: var(--text);
+  color: var(--text);
+  background: rgba(255,255,255,0.07);
+}
+
+.mode-btn-cc.active {
+  border-color: var(--green);
+  color: var(--green);
+  background: rgba(74,222,128,0.1);
+}
+
+.mode-btn-csp.active {
+  border-color: var(--red);
+  color: var(--red);
+  background: rgba(248,113,113,0.1);
+}
+
+.mode-selector-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filters-collapse-btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: all 0.15s;
+}
+
+.filters-collapse-btn:hover,
+.filters-collapse-btn.open {
+  border-color: var(--accent);
+  color: var(--accent);
+}
