@@ -186,13 +186,12 @@ export default function TickerModal({ row, onClose }) {
   const [chainsLoading, setChainsLoading] = useState(true);
   const [chainsError, setChainsError] = useState(null);
 
-  // Editable level overrides (null = use DB value)
+  // Editable S/R levels — seeded from wheel response on first load so display
+  // and wheel suggestions always reference the same data source.
   const [overrides, setOverrides] = useState({
-    support_1: row.support_1,
-    support_2: row.support_2,
-    resistance_1: row.resistance_1,
-    resistance_2: row.resistance_2,
+    support_1: null, support_2: null, resistance_1: null, resistance_2: null,
   });
+  const initialLoadDone = useRef(false);
   const debounceRef = useRef(null);
 
   const fetchWheel = (s1, r1) => {
@@ -201,22 +200,25 @@ export default function TickerModal({ row, onClose }) {
     api.wheel(row.ticker, s1, r1)
       .then((w) => {
         setWheel(w);
-        // Backfill any null overrides from the wheel response (same DB data,
-        // but wheel reads from latest completed run which may differ from card row)
-        setOverrides((prev) => ({
-          support_1:    prev.support_1    ?? w.support_1    ?? null,
-          support_2:    prev.support_2    ?? w.support_2    ?? null,
-          resistance_1: prev.resistance_1 ?? w.resistance_1 ?? null,
-          resistance_2: prev.resistance_2 ?? w.resistance_2 ?? null,
-        }));
+        // On first load, seed overrides from wheel (authoritative DB source).
+        // On user-triggered refetches, keep their edits.
+        if (!initialLoadDone.current) {
+          initialLoadDone.current = true;
+          setOverrides({
+            support_1:    w.support_1    ?? null,
+            support_2:    w.support_2    ?? null,
+            resistance_1: w.resistance_1 ?? null,
+            resistance_2: w.resistance_2 ?? null,
+          });
+        }
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   };
 
-  // Initial fetch
+  // Initial fetch — pass no overrides so backend uses its own DB S/R values
   useEffect(() => {
-    fetchWheel(overrides.support_1, overrides.resistance_1);
+    fetchWheel(null, null);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Debounced refetch when overrides change
@@ -314,11 +316,11 @@ export default function TickerModal({ row, onClose }) {
               <div className="sr-level-group">
                 <div className="sr-level-header resist">Resistance</div>
                 <LevelInput label="R2" value={overrides.resistance_2} onChange={(v) => handleOverride("resistance_2", v)} colorClass="resist" />
-                {row.resistance_2_strength && <StrengthBar strength={row.resistance_2_strength} />}
+                {wheel?.resistance_2_strength && <StrengthBar strength={wheel.resistance_2_strength} />}
                 {distPct(overrides.resistance_2) && <div className="level-dist">{distPct(overrides.resistance_2)} from price</div>}
 
                 <LevelInput label="R1" value={overrides.resistance_1} onChange={(v) => handleOverride("resistance_1", v)} colorClass="resist" />
-                {row.resistance_1_strength && <StrengthBar strength={row.resistance_1_strength} />}
+                {wheel?.resistance_1_strength && <StrengthBar strength={wheel.resistance_1_strength} />}
                 {distPct(overrides.resistance_1) && <div className="level-dist">{distPct(overrides.resistance_1)} from price</div>}
               </div>
 
@@ -349,11 +351,11 @@ export default function TickerModal({ row, onClose }) {
               <div className="sr-level-group" style={{ marginTop: 8 }}>
                 <div className="sr-level-header support">Support</div>
                 <LevelInput label="S1" value={overrides.support_1} onChange={(v) => handleOverride("support_1", v)} colorClass="support" />
-                {row.support_1_strength && <StrengthBar strength={row.support_1_strength} />}
+                {wheel?.support_1_strength && <StrengthBar strength={wheel.support_1_strength} />}
                 {distPct(overrides.support_1) && <div className="level-dist">{distPct(overrides.support_1)} from price</div>}
 
                 <LevelInput label="S2" value={overrides.support_2} onChange={(v) => handleOverride("support_2", v)} colorClass="support" />
-                {row.support_2_strength && <StrengthBar strength={row.support_2_strength} />}
+                {wheel?.support_2_strength && <StrengthBar strength={wheel.support_2_strength} />}
                 {distPct(overrides.support_2) && <div className="level-dist">{distPct(overrides.support_2)} from price</div>}
               </div>
             </div>
