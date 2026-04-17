@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import threading
 from datetime import datetime, timedelta
 
@@ -102,6 +103,18 @@ def _compute_deltas(
 router = APIRouter(prefix="/api", tags=["scanner"])
 
 
+def _san(val: float | None) -> float | None:
+    """Replace NaN/Inf with None so FastAPI can serialize the response."""
+    if val is None:
+        return None
+    try:
+        if math.isnan(val) or math.isinf(val):
+            return None
+    except (TypeError, ValueError):
+        return None
+    return val
+
+
 def _parse_expiry_data(raw: str | None) -> list[ExpiryRow]:
     """Deserialize expiry_data JSON, returning [] on any error (handles old format gracefully)."""
     if not raw:
@@ -118,51 +131,51 @@ def _to_out(
 ) -> ScanResultOut:
     return ScanResultOut(
         ticker=row.ticker,
-        price=row.price,
-        iv_rank=row.iv_rank,
-        iv=row.iv,
-        hv=row.hv,
-        atm_call_premium=row.atm_call_premium,
-        premium_pct=row.premium_pct,
-        premium_otm1=row.premium_otm1,
-        premium_otm2=row.premium_otm2,
+        price=_san(row.price),
+        iv_rank=_san(row.iv_rank),
+        iv=_san(row.iv),
+        hv=_san(row.hv),
+        atm_call_premium=_san(row.atm_call_premium),
+        premium_pct=_san(row.premium_pct),
+        premium_otm1=_san(row.premium_otm1),
+        premium_otm2=_san(row.premium_otm2),
         open_interest=row.open_interest,
-        bid_ask_spread_pct=row.bid_ask_spread_pct,
+        bid_ask_spread_pct=_san(row.bid_ask_spread_pct),
         earnings_days=row.earnings_days,
         unusual_volume=row.unusual_volume,
-        score=row.score,
+        score=_san(row.score) or 0.0,
         bucket=row.bucket,
         breakdown=ScoreBreakdown(
-            iv_rank=row.score_iv_rank,
-            premium=row.score_premium,
-            iv_hv=row.score_iv_hv,
-            catalyst=row.score_catalyst,
-            chain=row.score_chain,
+            iv_rank=_san(row.score_iv_rank) or 0.0,
+            premium=_san(row.score_premium) or 0.0,
+            iv_hv=_san(row.score_iv_hv) or 0.0,
+            catalyst=_san(row.score_catalyst) or 0.0,
+            chain=_san(row.score_chain) or 0.0,
         ),
         history=history or [],
         notes=row.notes,
         created_at=row.created_at,
         # SMA
-        sma_200=row.sma_200,
-        sma_50=row.sma_50,
-        price_vs_sma200_pct=row.price_vs_sma200_pct,
-        price_vs_sma50_pct=row.price_vs_sma50_pct,
+        sma_200=_san(row.sma_200),
+        sma_50=_san(row.sma_50),
+        price_vs_sma200_pct=_san(row.price_vs_sma200_pct),
+        price_vs_sma50_pct=_san(row.price_vs_sma50_pct),
         sma_regime=row.sma_regime,
         sma_golden_cross=row.sma_golden_cross,
         # S/R
-        support_1=row.support_1,
-        support_1_strength=row.support_1_strength,
-        support_2=row.support_2,
-        support_2_strength=row.support_2_strength,
-        resistance_1=row.resistance_1,
-        resistance_1_strength=row.resistance_1_strength,
-        resistance_2=row.resistance_2,
-        resistance_2_strength=row.resistance_2_strength,
-        safety_score=row.safety_score,
+        support_1=_san(row.support_1),
+        support_1_strength=_san(row.support_1_strength),
+        support_2=_san(row.support_2),
+        support_2_strength=_san(row.support_2_strength),
+        resistance_1=_san(row.resistance_1),
+        resistance_1_strength=_san(row.resistance_1_strength),
+        resistance_2=_san(row.resistance_2),
+        resistance_2_strength=_san(row.resistance_2_strength),
+        safety_score=_san(row.safety_score),
         # Multi-expiry
         best_expiry=row.best_expiry,
         best_dte=row.best_dte,
-        best_strike=row.best_strike,
+        best_strike=_san(row.best_strike),
         expiry_data=_parse_expiry_data(row.expiry_data),
     )
 
