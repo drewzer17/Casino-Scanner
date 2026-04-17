@@ -31,7 +31,7 @@ body {
 
 .header {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 24px;
 }
@@ -269,6 +269,67 @@ body {
   border-radius: 999px;
   background: var(--bg);
   color: var(--text-muted);
+}
+
+/* ── Header right column (button + price filter) ──────────────────────────── */
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.price-filter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 10px;
+}
+
+.price-filter-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+
+.price-filter-prefix {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.price-filter-input {
+  width: 56px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  padding: 1px 2px;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.price-filter-input::-webkit-outer-spin-button,
+.price-filter-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.price-filter-input:focus {
+  border-bottom-color: var(--accent);
+}
+
+.price-filter-sep {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 0 2px;
 }
 
 /* ── Run Scan button ───────────────────────────────────────────────────────── */

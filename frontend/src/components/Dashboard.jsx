@@ -94,6 +94,10 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [active, setActive] = useState("sell_now");
 
+  // Price display filter
+  const [minPrice, setMinPrice] = useState(10);
+  const [maxPrice, setMaxPrice] = useState(300);
+
   // Scan trigger state
   const [scanning, setScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(null);
@@ -189,12 +193,15 @@ export default function Dashboard() {
   if (error) return <div className="error">Error loading scan: {error}</div>;
   if (!data) return <div className="empty">Loading latest scan…</div>;
 
+  const priceFilter = (r) =>
+    (r.price == null) || (r.price >= minPrice && r.price <= maxPrice);
+
   const counts = {
-    sell_now: data.sell_now.length,
-    buy_sell_later: data.buy_sell_later.length,
-    watchlist: data.watchlist.length,
+    sell_now: data.sell_now.filter(priceFilter).length,
+    buy_sell_later: data.buy_sell_later.filter(priceFilter).length,
+    watchlist: data.watchlist.filter(priceFilter).length,
   };
-  const rows = data[active] || [];
+  const rows = (data[active] || []).filter(priceFilter);
 
   return (
     <>
@@ -207,13 +214,38 @@ export default function Dashboard() {
             {data.finished_at && ` · ${timeAgo(data.finished_at)}`}
           </div>
         </div>
-        <button
-          className={`scan-btn${scanning ? " scanning" : ""}`}
-          onClick={handleRunScan}
-          disabled={scanning}
-        >
-          {scanBtnLabel()}
-        </button>
+        <div className="header-right">
+          <button
+            className={`scan-btn${scanning ? " scanning" : ""}`}
+            onClick={handleRunScan}
+            disabled={scanning}
+          >
+            {scanBtnLabel()}
+          </button>
+          <div className="price-filter">
+            <label className="price-filter-label">Price</label>
+            <span className="price-filter-prefix">$</span>
+            <input
+              className="price-filter-input"
+              type="number"
+              min={0}
+              max={maxPrice}
+              value={minPrice}
+              onChange={(e) => setMinPrice(Number(e.target.value))}
+              placeholder="Min"
+            />
+            <span className="price-filter-sep">–</span>
+            <span className="price-filter-prefix">$</span>
+            <input
+              className="price-filter-input"
+              type="number"
+              min={minPrice}
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(Number(e.target.value))}
+              placeholder="Max"
+            />
+          </div>
+        </div>
       </div>
 
       <TopMovers movers={movers} />
