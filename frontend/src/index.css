@@ -47,10 +47,52 @@ body {
   font-size: 14px;
 }
 
+.tabs-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 0;
+}
+
+.tabs-spacer {
+  flex: 1;
+  border-bottom: 1px solid var(--border);
+  height: 1px;
+  margin-bottom: 0;
+  align-self: flex-end;
+}
+
+.show-all-btn {
+  margin-bottom: 0;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  align-self: center;
+  margin-left: auto;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.show-all-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(99,102,241,0.08);
+}
+
+.show-all-btn:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
 .tabs {
   display: flex;
   gap: 8px;
-  margin-bottom: 16px;
+  flex: 1;
   border-bottom: 1px solid var(--border);
 }
 
@@ -107,6 +149,37 @@ body {
   font-size: 18px;
   font-weight: 700;
   letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bucket-tag {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.bucket-tag-sell {
+  background: rgba(74,222,128,0.15);
+  color: var(--green);
+  border: 1px solid rgba(74,222,128,0.3);
+}
+
+.bucket-tag-buy {
+  background: rgba(245,197,66,0.12);
+  color: var(--yellow);
+  border: 1px solid rgba(245,197,66,0.25);
+}
+
+.bucket-tag-watch {
+  background: rgba(139,148,167,0.1);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
 }
 
 .price {

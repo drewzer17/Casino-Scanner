@@ -125,6 +125,7 @@ export default function Dashboard() {
   const [active, setActive] = useState("sell_now");
   const [sort, setSort] = useState("score");
   const [premTimeframe, setPremTimeframe] = useState(30);
+  const [showAll, setShowAll] = useState(false);
 
   // Ticker detail modal
   const [selectedRow, setSelectedRow] = useState(null);
@@ -236,7 +237,15 @@ export default function Dashboard() {
     buy_sell_later: data.buy_sell_later.filter(priceFilter).length,
     watchlist: data.watchlist.filter(priceFilter).length,
   };
-  const rows = sortRows((data[active] || []).filter(priceFilter), sort, premTimeframe);
+
+  const allRows = [
+    ...data.sell_now,
+    ...data.buy_sell_later,
+    ...data.watchlist,
+  ];
+  const rows = showAll
+    ? sortRows(allRows, "score", premTimeframe)
+    : sortRows((data[active] || []).filter(priceFilter), sort, premTimeframe);
 
   return (
     <>
@@ -308,14 +317,23 @@ export default function Dashboard() {
 
       <TopMovers movers={movers} />
 
-      <BucketTabs active={active} counts={counts} onChange={setActive} />
+      <div className="tabs-row">
+        {!showAll && <BucketTabs active={active} counts={counts} onChange={setActive} />}
+        {showAll && <div className="tabs-spacer" />}
+        <button
+          className={`show-all-btn${showAll ? " active" : ""}`}
+          onClick={() => setShowAll(v => !v)}
+        >
+          {showAll ? `Show Buckets` : `Show All (${allRows.length})`}
+        </button>
+      </div>
 
       {rows.length === 0 ? (
         <div className="empty">No tickers in this bucket.</div>
       ) : (
         <div className="grid">
           {rows.map((r) => (
-            <ScoreCard key={r.ticker} row={r} onClick={() => setSelectedRow(r)} />
+            <ScoreCard key={r.ticker} row={r} showBucket={showAll} onClick={() => setSelectedRow(r)} />
           ))}
         </div>
       )}

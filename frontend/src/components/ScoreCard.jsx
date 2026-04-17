@@ -228,14 +228,26 @@ function PremExpansion({ expiryData, price }) {
   );
 }
 
-export default function ScoreCard({ row, onClick }) {
+const BUCKET_TAG = {
+  sell_now: { label: "Sell Now", cls: "bucket-tag-sell" },
+  buy_sell_later: { label: "Buy Later", cls: "bucket-tag-buy" },
+  watchlist: { label: "Watchlist", cls: "bucket-tag-watch" },
+};
+
+export default function ScoreCard({ row, onClick, showBucket = false }) {
   const [premExpanded, setPremExpanded] = useState(false);
   const b = row.breakdown || {};
+  const bucketTag = BUCKET_TAG[row.bucket];
   return (
     <div className="card" onClick={onClick} style={{ cursor: onClick ? "pointer" : "default" }}>
       <div className="card-header">
         <div className="card-ticker-info">
-          <div className="ticker">{row.ticker}</div>
+          <div className="ticker">
+            {row.ticker}
+            {showBucket && bucketTag && (
+              <span className={`bucket-tag ${bucketTag.cls}`}>{bucketTag.label}</span>
+            )}
+          </div>
           <div className="price">
             ${fmt(row.price, 2)} · IVR {fmt(row.iv_rank, 0)}
           </div>
