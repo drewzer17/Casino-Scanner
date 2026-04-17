@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api/client.js";
 import BucketTabs from "./BucketTabs.jsx";
 import ScoreCard from "./ScoreCard.jsx";
@@ -94,16 +94,97 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [active, setActive] = useState("sell_now");
 
+  // Scan trigger state
+  const [scanning, setScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState(null);
+  const pollRef = useRef(null);
+
+  const stopPolling = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  };
+
+  const refreshData = useCallback(() => {
+    api.scanLatest()
+      .then(setData)
+      .catch((e) => setError(e.message));
+    api.movers()
+      .then(setMovers)
+      .catch(() => {});
+  }, []);
+
+  const startPolling = useCallback(() => {
+    stopPolling();
+    pollRef.current = setInterval(async () => {
+      try {
+        const status = await api.scanStatus();
+        setScanProgress(status);
+        if (status.status === "completed" || status.status === "failed") {
+          stopPolling();
+          setScanning(false);
+          setScanProgress(null);
+          if (status.status === "completed") {
+            refreshData();
+          }
+        }
+      } catch {
+        // polling errors are non-fatal
+      }
+    }, 5000);
+  }, [refreshData]);
+
+  // On mount: fetch data, and also check if a scan is already running
   useEffect(() => {
     let cancelled = false;
+
     api.scanLatest()
       .then((d) => { if (!cancelled) setData(d); })
       .catch((e) => { if (!cancelled) setError(e.message); });
     api.movers()
       .then((m) => { if (!cancelled) setMovers(m); })
-      .catch(() => {}); // movers failure is non-fatal
-    return () => { cancelled = true; };
-  }, []);
+      .catch(() => {});
+
+    // Check if a scan is already in progress so the button reflects current state
+    api.scanStatus()
+      .then((status) => {
+        if (!cancelled && status.status === "running") {
+          setScanning(true);
+          setScanProgress(status);
+          startPolling();
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+      stopPolling();
+    };
+  }, [startPolling]);
+
+  const handleRunScan = async () => {
+    if (scanning) return;
+    setScanning(true);
+    setScanProgress(null);
+    try {
+      await api.triggerScan();
+      startPolling();
+    } catch (e) {
+      setScanning(false);
+      setScanProgress(null);
+    }
+  };
+
+  const scanBtnLabel = () => {
+    if (!scanning) return "Run Scan";
+    if (scanProgress) {
+      const done = scanProgress.tickers_scanned ?? 0;
+      const total = scanProgress.tickers_total ?? 500;
+      return `Scanning… ${done}/${total}`;
+    }
+    return "Starting…";
+  };
 
   if (error) return <div className="error">Error loading scan: {error}</div>;
   if (!data) return <div className="empty">Loading latest scan…</div>;
@@ -126,6 +207,13 @@ export default function Dashboard() {
             {data.finished_at && ` · ${timeAgo(data.finished_at)}`}
           </div>
         </div>
+        <button
+          className={`scan-btn${scanning ? " scanning" : ""}`}
+          onClick={handleRunScan}
+          disabled={scanning}
+        >
+          {scanBtnLabel()}
+        </button>
       </div>
 
       <TopMovers movers={movers} />

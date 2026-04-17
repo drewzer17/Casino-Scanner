@@ -18,6 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from .api import router as api_router
 from .config import settings
 from .database import init_db
+from .scheduler import start_scheduler, stop_scheduler
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
@@ -42,6 +43,12 @@ app.include_router(api_router)
 @app.on_event("startup")
 def _on_startup() -> None:
     init_db()
+    start_scheduler()
+
+
+@app.on_event("shutdown")
+def _on_shutdown() -> None:
+    stop_scheduler()
 
 
 # ── Static asset bundles produced by `vite build` ──────────────────────────────
