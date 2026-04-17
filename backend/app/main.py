@@ -43,6 +43,17 @@ app.include_router(api_router)
 @app.on_event("startup")
 def _on_startup() -> None:
     init_db()
+    # Sync ticker universe CSV → DB (idempotent, safe to run on every boot)
+    from .database import SessionLocal
+    from .universe import sync_universe_from_csv
+    _db = SessionLocal()
+    try:
+        sync_universe_from_csv(_db)
+    except Exception as _exc:
+        import logging as _logging
+        _logging.getLogger(__name__).warning("Universe CSV sync failed on startup: %s", _exc)
+    finally:
+        _db.close()
     start_scheduler()
 
 

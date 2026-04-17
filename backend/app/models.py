@@ -85,6 +85,20 @@ Index("ix_scan_results_run_bucket", ScanResult.run_id, ScanResult.bucket)
 Index("ix_scan_results_ticker_created", ScanResult.ticker, ScanResult.created_at)
 
 
+class TickerUniverse(Base):
+    __tablename__ = "ticker_universe"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    ticker: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
+    source: Mapped[str] = mapped_column(String(32), nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("ticker", "source", name="uq_ticker_universe_ticker_source"),
+    )
+
+
 class IvHistory(Base):
     __tablename__ = "iv_history"
 

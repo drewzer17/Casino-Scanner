@@ -128,6 +128,7 @@ def _parse_expiry_data(raw: str | None) -> list[ExpiryRow]:
 def _to_out(
     row: models.ScanResult,
     history: list[TimeframeDelta] | None = None,
+    sources: list[str] | None = None,
 ) -> ScanResultOut:
     return ScanResultOut(
         ticker=row.ticker,
@@ -177,6 +178,7 @@ def _to_out(
         best_dte=row.best_dte,
         best_strike=_san(row.best_strike),
         expiry_data=_parse_expiry_data(row.expiry_data),
+        sources=sources or [],
     )
 
 
@@ -209,12 +211,17 @@ def scan_latest(db: Session = Depends(get_db)) -> ScanLatestOut:
     # Compute score history for all timeframes (12 queries total, all indexed)
     lookup = _history_lookup(db, run.id)
 
+    # Bulk-fetch ticker→sources mapping and universe size (2 queries)
+    from ..universe import ticker_sources_from_db, universe_size_from_db
+    ticker_sources = ticker_sources_from_db(db)
+    univ_size = universe_size_from_db(db)
+
     sell_now: list[ScanResultOut] = []
     buy_sell_later: list[ScanResultOut] = []
     watchlist: list[ScanResultOut] = []
     for row in rows:
         hist = _compute_deltas(row.ticker, row.score, row.bucket, lookup)
-        out = _to_out(row, history=hist)
+        out = _to_out(row, history=hist, sources=ticker_sources.get(row.ticker, []))
         if row.bucket == "sell_now":
             sell_now.append(out)
         elif row.bucket == "buy_sell_later":
@@ -227,6 +234,7 @@ def scan_latest(db: Session = Depends(get_db)) -> ScanLatestOut:
         started_at=run.started_at,
         finished_at=run.finished_at,
         tickers_scanned=run.tickers_scanned,
+        universe_size=univ_size,
         sell_now=sell_now,
         buy_sell_later=buy_sell_later,
         watchlist=watchlist,
@@ -777,13 +785,13 @@ def debug_errors(db: Session = Depends(get_db)) -> dict:
     These tickers either timed out, had no options chain, had no price, or raised
     an unhandled exception during scan_ticker().
     """
-    from ..universe import load_universe
+    from ..universe import load_universe_from_db
 
     run = _latest_run(db)
     if run is None:
         raise HTTPException(status_code=404, detail="No completed scan runs yet")
 
-    universe = load_universe()
+    universe = load_universe_from_db(db)
     universe_set = set(universe)
 
     scanned_tickers: set[str] = set(
@@ -1153,6 +1161,39 @@ def ticker_chains(ticker: str, db: Session = Depends(get_db)) -> dict:
             expiry_rows.append({"expiry": exp, "dte": dte, "error": str(exc)})
 
     return {"ticker": ticker, "expirations": expiry_rows}
+
+
+@router.post("/universe/reload")
+def universe_reload(db: Session = Depends(get_db)) -> dict:
+    """Re-sync ticker_universe.csv → database.  Safe to call at any time.
+
+    Inserts rows from the CSV that are missing in the DB.  Never deletes rows
+    (custom entries added through the UI are preserved).
+    """
+    from ..universe import sync_universe_from_csv, universe_size_from_db
+    inserted = sync_universe_from_csv(db)
+    total = universe_size_from_db(db)
+    return {
+        "status": "ok",
+        "inserted": inserted,
+        "universe_size": total,
+        "message": f"Synced CSV → DB: {inserted} new rows added, {total} distinct active tickers total.",
+    }
+
+
+@router.get("/universe/sources")
+def universe_sources(db: Session = Depends(get_db)) -> dict:
+    """Return each source tag and its ticker count from the active universe."""
+    from ..universe import ticker_sources_from_db, universe_size_from_db
+    mapping = ticker_sources_from_db(db)
+    source_counts: dict[str, int] = {}
+    for sources in mapping.values():
+        for s in sources:
+            source_counts[s] = source_counts.get(s, 0) + 1
+    return {
+        "universe_size": universe_size_from_db(db),
+        "sources": source_counts,
+    }
 
 
 @router.get("/health")

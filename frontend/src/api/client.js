@@ -9,6 +9,15 @@ async function get(path) {
   return res.json();
 }
 
+async function post(path) {
+  const res = await fetch(`${BASE}${path}`, { method: "POST" });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`${res.status} ${res.statusText}: ${body}`);
+  }
+  return res.json();
+}
+
 export const api = {
   scanLatest: () => get("/api/scan/latest"),
   ticker: (symbol) => get(`/api/ticker/${encodeURIComponent(symbol)}`),
@@ -24,4 +33,5 @@ export const api = {
     return get(`/api/ticker/${encodeURIComponent(ticker)}/wheel${qs ? "?" + qs : ""}`);
   },
   chains: (ticker) => get(`/api/ticker/${encodeURIComponent(ticker)}/chains`),
+  reloadUniverse: () => post("/api/universe/reload"),
 };

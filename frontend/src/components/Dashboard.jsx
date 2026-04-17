@@ -129,6 +129,8 @@ export default function Dashboard() {
   const [showAll, setShowAll] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
   const [scanMode, setScanMode] = useState(null); // "normal" | "extensive" | null
+  const [sourceFilter, setSourceFilter] = useState("all");
+  const [reloadMsg, setReloadMsg] = useState(null);
 
   // Ticker detail modal
   const [selectedRow, setSelectedRow] = useState(null);
@@ -236,6 +238,17 @@ export default function Dashboard() {
     }
   };
 
+  const handleReloadUniverse = async () => {
+    try {
+      const res = await api.reloadUniverse();
+      setReloadMsg(`✓ ${res.message}`);
+      setTimeout(() => setReloadMsg(null), 5000);
+    } catch (e) {
+      setReloadMsg(`Error: ${e.message}`);
+      setTimeout(() => setReloadMsg(null), 5000);
+    }
+  };
+
   const scanProgressLabel = () => {
     if (scanProgress) {
       const done = scanProgress.tickers_scanned ?? 0;
@@ -251,10 +264,15 @@ export default function Dashboard() {
   const priceFilter = (r) =>
     (r.price == null) || (r.price >= minPrice && r.price <= maxPrice);
 
+  const sourceFilterFn = (r) =>
+    sourceFilter === "all" || (r.sources || []).includes(sourceFilter);
+
+  const combinedFilter = (r) => priceFilter(r) && sourceFilterFn(r);
+
   const counts = {
-    sell_now: data.sell_now.filter(priceFilter).length,
-    buy_sell_later: data.buy_sell_later.filter(priceFilter).length,
-    watchlist: data.watchlist.filter(priceFilter).length,
+    sell_now: data.sell_now.filter(combinedFilter).length,
+    buy_sell_later: data.buy_sell_later.filter(combinedFilter).length,
+    watchlist: data.watchlist.filter(combinedFilter).length,
   };
 
   const allRows = [
@@ -262,11 +280,21 @@ export default function Dashboard() {
     ...data.buy_sell_later,
     ...data.watchlist,
   ];
-  const premiumRows = allRows.filter(priceFilter);
+  const filteredAll = allRows.filter(combinedFilter);
+  const premiumRows = allRows.filter(combinedFilter);
+
+  // Source counts for filter buttons (from all scan results regardless of bucket)
+  const sourceCounts = {
+    sp500:    allRows.filter(r => (r.sources||[]).includes("sp500")).length,
+    nasdaq100: allRows.filter(r => (r.sources||[]).includes("nasdaq100")).length,
+    ai_sector: allRows.filter(r => (r.sources||[]).includes("ai_sector")).length,
+    ai_nuclear: allRows.filter(r => (r.sources||[]).includes("ai_nuclear")).length,
+    custom:   allRows.filter(r => (r.sources||[]).includes("custom")).length,
+  };
 
   const rows = showAll
-    ? sortRows(allRows, "score", premTimeframe)
-    : sortRows((data[active] || []).filter(priceFilter), sort, premTimeframe);
+    ? sortRows(filteredAll, "score", premTimeframe)
+    : sortRows((data[active] || []).filter(combinedFilter), sort, premTimeframe);
 
   return (
     <>
@@ -274,7 +302,7 @@ export default function Dashboard() {
         <div>
           <h1>Casino Scanner</h1>
           <div className="subtitle">
-            Run #{data.run_id} · {data.tickers_scanned} tickers ·{" "}
+            Run #{data.run_id} · {data.universe_size || data.tickers_scanned} tickers ·{" "}
             {formatCentral(data.finished_at)}
             {data.finished_at && ` · ${timeAgo(data.finished_at)}`}
           </div>
@@ -300,6 +328,12 @@ export default function Dashboard() {
           >
             {scanning && scanMode === "normal" ? scanProgressLabel() : "Run Scan"}
           </button>
+          <div className="reload-universe-wrap">
+            <button className="reload-universe-btn" onClick={handleReloadUniverse}>
+              Reload Universe
+            </button>
+            {reloadMsg && <span className="reload-universe-msg">{reloadMsg}</span>}
+          </div>
           <div className="price-filter">
             <label className="price-filter-label">Price</label>
             <span className="price-filter-prefix">$</span>
@@ -357,6 +391,25 @@ export default function Dashboard() {
         <PremiumScanner rows={premiumRows} onRowClick={setSelectedRow} />
       ) : (
         <>
+          <div className="source-filter-row">
+            {[
+              { key: "all",        label: "All",       count: allRows.length },
+              { key: "sp500",      label: "S&P 500",   count: sourceCounts.sp500 },
+              { key: "nasdaq100",  label: "Nasdaq 100",count: sourceCounts.nasdaq100 },
+              { key: "ai_sector",  label: "AI Sector", count: sourceCounts.ai_sector },
+              { key: "ai_nuclear", label: "Nuclear",   count: sourceCounts.ai_nuclear },
+              { key: "custom",     label: "Custom",    count: sourceCounts.custom },
+            ].map(({ key, label, count }) => count > 0 || key === "all" ? (
+              <button
+                key={key}
+                className={`source-filter-btn${sourceFilter === key ? " active" : ""}`}
+                onClick={() => { setSourceFilter(key); setShowAll(false); }}
+              >
+                {label}
+                <span className="source-filter-count">{count}</span>
+              </button>
+            ) : null)}
+          </div>
           <div className="tabs-row">
             {!showAll && <BucketTabs active={active} counts={counts} onChange={(k) => { setActive(k); setShowAll(false); }} />}
             {showAll && <div className="tabs-spacer" />}

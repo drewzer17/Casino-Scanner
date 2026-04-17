@@ -1045,7 +1045,17 @@ def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = 
     """
     if scanner_fn is None:
         scanner_fn = _scan_with_timeout
-    universe = tickers if tickers is not None else load_universe()
+    if tickers is not None:
+        universe = tickers
+    else:
+        # Load from DB — the CSV-synced ticker_universe table is the source of truth
+        try:
+            from ..universe import load_universe_from_db
+            universe = load_universe_from_db(db)
+            logger.info("loaded %d tickers from ticker_universe table", len(universe))
+        except Exception as exc:
+            logger.warning("DB universe load failed, falling back to JSON: %s", exc)
+            universe = load_universe()
     if limit is not None:
         universe = universe[:limit]
 

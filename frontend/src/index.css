@@ -415,6 +415,86 @@ body {
   gap: 8px;
 }
 
+/* ── Reload Universe button ────────────────────────────────────── */
+.reload-universe-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reload-universe-btn {
+  padding: 5px 11px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.reload-universe-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.reload-universe-msg {
+  font-size: 11px;
+  color: var(--green);
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Source filter row ─────────────────────────────────────────── */
+.source-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0 4px;
+  flex-wrap: wrap;
+}
+
+.source-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+
+.source-filter-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.source-filter-btn.active {
+  border-color: var(--accent);
+  background: rgba(255, 204, 51, 0.1);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.source-filter-count {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.source-filter-btn.active .source-filter-count {
+  opacity: 0.8;
+}
+
 .price-filter {
   display: flex;
   align-items: center;

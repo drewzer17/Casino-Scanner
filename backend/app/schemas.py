@@ -77,6 +77,9 @@ class ScanResultOut(BaseModel):
     best_strike: float | None = None
     expiry_data: list[ExpiryRow] = []
 
+    # Universe source tags (e.g. ["sp500", "ai_sector"]) — populated from ticker_universe table
+    sources: list[str] = []
+
     # Auto-detected support / resistance
     support_1: float | None = None
     support_1_strength: float | None = None
@@ -93,6 +96,7 @@ class ScanLatestOut(BaseModel):
     started_at: datetime
     finished_at: datetime | None
     tickers_scanned: int
+    universe_size: int = 0
     sell_now: list[ScanResultOut]
     buy_sell_later: list[ScanResultOut]
     watchlist: list[ScanResultOut]

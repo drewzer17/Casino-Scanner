@@ -70,6 +70,17 @@ def init_db() -> None:
         "CONSTRAINT uq_iv_history_ticker_date UNIQUE (ticker, recorded_date)"
         ")"
     )
+    # ticker_universe table — CSV-driven source-of-truth for the scan universe
+    _add_column_if_missing(
+        "CREATE TABLE IF NOT EXISTS ticker_universe ("
+        "id SERIAL PRIMARY KEY, "
+        "ticker VARCHAR(16) NOT NULL, "
+        "source VARCHAR(32) NOT NULL, "
+        "active BOOLEAN NOT NULL DEFAULT TRUE, "
+        "created_at TIMESTAMP DEFAULT NOW(), "
+        "CONSTRAINT uq_ticker_universe_ticker_source UNIQUE (ticker, source)"
+        ")"
+    )
 
     # SMA + S/R columns added in v2
     for _ddl in [
