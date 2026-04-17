@@ -6,6 +6,15 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
+class ExpiryRow(BaseModel):
+    expiry: str
+    dte: int
+    atm_strike: float | None = None
+    atm_prem: float | None = None
+    otm1_prem: float | None = None
+    otm2_prem: float | None = None
+
+
 class ScoreBreakdown(BaseModel):
     iv_rank: float
     premium: float
@@ -53,6 +62,12 @@ class ScanResultOut(BaseModel):
     price_vs_sma50_pct: float | None = None
     sma_regime: str | None = None             # UPTREND / DOWNTREND / TRANSITIONAL
     sma_golden_cross: bool | None = None      # True=golden cross, False=death cross
+
+    # Multi-expiry premium data
+    best_expiry: str | None = None
+    best_dte: int | None = None
+    best_strike: float | None = None
+    expiry_data: list[ExpiryRow] = []
 
     # Auto-detected support / resistance
     support_1: float | None = None

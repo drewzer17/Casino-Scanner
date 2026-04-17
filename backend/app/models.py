@@ -70,6 +70,12 @@ class ScanResult(Base):
     resistance_2: Mapped[float | None] = mapped_column(Float, nullable=True)
     resistance_2_strength: Mapped[float | None] = mapped_column(Float, nullable=True)
 
+    # Multi-expiry premium data
+    best_expiry: Mapped[str | None] = mapped_column(Text, nullable=True)   # e.g. "2025-05-01"
+    best_dte: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    best_strike: Mapped[float | None] = mapped_column(Float, nullable=True)  # ATM strike for best expiry
+    expiry_data: Mapped[str | None] = mapped_column(Text, nullable=True)    # JSON list of ExpiryRow
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 

@@ -6,6 +6,12 @@ function fmt(v, digits = 2) {
   return Number(v).toFixed(digits);
 }
 
+function fmtExpiry(exp) {
+  if (!exp) return "—";
+  const [y, m, d] = exp.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 function fmtDollar(v, digits = 2) {
   if (v == null) return "—";
   return `$${Number(v).toFixed(digits)}`;
@@ -304,6 +310,39 @@ export default function TickerModal({ row, onClose }) {
             </div>
           </div>
         </div>
+
+        {/* ── Expiry table (full width) ── */}
+        {row.expiry_data && row.expiry_data.length > 0 && (
+          <div className="expiry-section">
+            <div className="modal-section-title">Options Premiums by Expiry</div>
+            <table className="expiry-table">
+              <thead>
+                <tr>
+                  <th>Expiry</th>
+                  <th>DTE</th>
+                  <th>ATM Strike</th>
+                  <th>ATM Prem</th>
+                  <th>1 OTM</th>
+                  <th>2 OTM</th>
+                </tr>
+              </thead>
+              <tbody>
+                {row.expiry_data.map((e) => (
+                  <tr key={e.expiry} className={e.expiry === row.best_expiry ? "expiry-best" : ""}>
+                    <td>{fmtExpiry(e.expiry)}</td>
+                    <td>{e.dte}d</td>
+                    <td>{e.atm_strike != null ? `$${e.atm_strike.toFixed(0)}` : "—"}</td>
+                    <td>{e.atm_prem != null ? `$${(e.atm_prem * 100).toFixed(2)}` : "—"}</td>
+                    <td>{e.otm1_prem != null ? `$${(e.otm1_prem * 100).toFixed(2)}` : "—"}</td>
+                    <td className={e.expiry === row.best_expiry ? "expiry-best-val" : ""}>
+                      {e.otm2_prem != null ? `$${(e.otm2_prem * 100).toFixed(2)}` : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

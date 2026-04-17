@@ -27,29 +27,35 @@ function fmtDollar(v) {
   return `$${Number(v).toFixed(2)}`;
 }
 
+function fmtExpiry(exp) {
+  if (!exp) return null;
+  const [y, m, d] = exp.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 const BUCKET_RANK = { sell_now: 2, buy_sell_later: 1, watchlist: 0 };
 
-// Determine gradient class from score trajectory
+// Determine gradient class from score trajectory (anchors: 14d and 7d)
 function trajectoryClass(history, currentScore, currentBucket) {
   const byDays = {};
   for (const h of (history || [])) byDays[h.days] = h;
 
+  const score14 = byDays[14]?.prev_score ?? null;
   const score7 = byDays[7]?.prev_score ?? null;
-  const score3 = byDays[3]?.prev_score ?? null;
-  const bucket7 = byDays[7]?.prev_bucket ?? null;
+  const bucket14 = byDays[14]?.prev_bucket ?? null;
 
-  if (score7 === null || score3 === null) return "traj-neutral";
+  if (score14 === null || score7 === null) return "traj-neutral";
 
+  const up14 = currentScore > score14;
   const up7 = currentScore > score7;
-  const up3 = currentScore > score3;
 
-  if (up7 && up3) return "traj-green";
-  if (up7 && !up3) return "traj-green-yellow";
-  if (!up7 && up3) return "traj-yellow-green";
+  if (up14 && up7) return "traj-green";
+  if (up14 && !up7) return "traj-green-yellow";
+  if (!up14 && up7) return "traj-yellow-green";
 
   const droppedBucket =
-    bucket7 !== null &&
-    BUCKET_RANK[currentBucket] < (BUCKET_RANK[bucket7] ?? 99);
+    bucket14 !== null &&
+    BUCKET_RANK[currentBucket] < (BUCKET_RANK[bucket14] ?? 99);
   return droppedBucket ? "traj-red" : "traj-yellow";
 }
 
@@ -58,6 +64,7 @@ function TrajectoryStrip({ history, currentScore, currentBucket }) {
   for (const h of (history || [])) byDays[h.days] = h;
 
   const slots = [
+    { label: "14d", score: byDays[14]?.prev_score ?? null },
     { label: "7d", score: byDays[7]?.prev_score ?? null },
     { label: "5d", score: byDays[5]?.prev_score ?? null },
     { label: "4d", score: byDays[4]?.prev_score ?? null },
@@ -199,12 +206,35 @@ export default function ScoreCard({ row, onClick }) {
 
       <div className="meta">
         <span className="chip">
-          prem {fmtPct(row.premium_pct, 2)}
-          {row.premium_otm2 != null && (
-            <span style={{ color: "var(--text-muted)" }}>
-              {" "}(${(row.premium_otm2 * 100).toFixed(2)} 2OTM)
-            </span>
-          )}
+          {(() => {
+            const bestPrem = row.premium_otm2 != null
+              ? row.premium_otm2 * 100
+              : row.atm_call_premium != null
+              ? row.atm_call_premium * 100
+              : null;
+            const expLabel = fmtExpiry(row.best_expiry);
+            if (bestPrem != null && expLabel && row.best_dte != null && row.best_strike != null) {
+              return (
+                <>
+                  best: ${bestPrem.toFixed(2)}{" "}
+                  <span style={{ color: "var(--text-muted)" }}>
+                    ({expLabel}, {row.best_dte}d, ${row.best_strike} strike)
+                  </span>
+                </>
+              );
+            }
+            // Fallback: old-style display
+            return (
+              <>
+                prem {fmtPct(row.premium_pct, 2)}
+                {row.premium_otm2 != null && (
+                  <span style={{ color: "var(--text-muted)" }}>
+                    {" "}(${(row.premium_otm2 * 100).toFixed(2)} 2OTM)
+                  </span>
+                )}
+              </>
+            );
+          })()}
         </span>
         <span className="chip">OI {row.open_interest ?? "—"}</span>
         <span className="chip">

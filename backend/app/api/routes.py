@@ -1,6 +1,7 @@
 """Public API endpoints."""
 from __future__ import annotations
 
+import json
 import logging
 import threading
 from datetime import datetime, timedelta
@@ -12,6 +13,7 @@ from sqlalchemy.orm import Session
 from .. import models
 from ..database import SessionLocal, get_db
 from ..schemas import (
+    ExpiryRow,
     MoverOut,
     MoversOut,
     ScanLatestOut,
@@ -29,7 +31,7 @@ _scan_lock = threading.Lock()
 
 # ── Score history helpers ──────────────────────────────────────────────────────
 
-HISTORY_DAYS = [1, 2, 3, 4, 5, 7]
+HISTORY_DAYS = [1, 2, 3, 4, 5, 7, 14]
 _BUCKET_RANK = {"sell_now": 2, "buy_sell_later": 1, "watchlist": 0}
 
 
@@ -146,6 +148,11 @@ def _to_out(
         resistance_1_strength=row.resistance_1_strength,
         resistance_2=row.resistance_2,
         resistance_2_strength=row.resistance_2_strength,
+        # Multi-expiry
+        best_expiry=row.best_expiry,
+        best_dte=row.best_dte,
+        best_strike=row.best_strike,
+        expiry_data=[ExpiryRow(**e) for e in json.loads(row.expiry_data)] if row.expiry_data else [],
     )
 
 
@@ -560,6 +567,90 @@ def ticker_wheel(
         base.annualized_yield_pct = round(monthly_yield * 12, 2) if monthly_yield else None
 
     return base
+
+
+@router.get("/debug/ticker/{ticker}", response_model=None)
+def debug_ticker(ticker: str) -> dict:
+    """Raw Tradier data for any ticker — all expirations, all strikes, bid/ask/mid, IV.
+
+    Useful for diagnosing which expiry was selected, what premiums look like, etc.
+    Works for any ticker regardless of scan history.
+    """
+    from ..scanner.engine import (
+        fetch_expirations,
+        fetch_chain,
+        _nearest_expiry,
+        _expirations_for_premium,
+        _pick_call_strikes,
+        _contract_mid,
+        _is_valid,
+    )
+    from datetime import date as _date, datetime as _dt
+
+    ticker = ticker.strip().upper()
+
+    try:
+        exps = fetch_expirations(ticker)
+    except Exception as exc:
+        return {"ticker": ticker, "error": f"fetch_expirations failed: {exc}"}
+
+    today = _date.today()
+    iv_exp = _nearest_expiry(exps)
+    prem_exps = _expirations_for_premium(exps)[:5]
+
+    results_by_expiry: list[dict] = []
+    for exp in exps:
+        try:
+            dte = (_dt.strptime(exp, "%Y-%m-%d").date() - today).days
+        except ValueError:
+            dte = None
+
+        try:
+            chain = fetch_chain(ticker, exp)
+        except Exception as exc:
+            results_by_expiry.append({"expiry": exp, "dte": dte, "error": str(exc)})
+            continue
+
+        calls = [c for c in chain if c.get("option_type") == "call"]
+        strikes_data: list[dict] = []
+        for c in sorted(calls, key=lambda x: float(x.get("strike") or 0)):
+            bid = float(c.get("bid") or 0)
+            ask = float(c.get("ask") or 0)
+            mid = (bid + ask) / 2 if bid > 0 and ask > 0 else None
+            greeks = c.get("greeks") or {}
+            iv_raw = greeks.get("smv_vol") or greeks.get("mid_iv") or greeks.get("iv")
+            strikes_data.append({
+                "strike": c.get("strike"),
+                "bid": bid or None,
+                "ask": ask or None,
+                "mid": round(mid, 4) if mid else None,
+                "mid_per_contract": round(mid * 100, 2) if mid else None,
+                "oi": c.get("open_interest"),
+                "iv": float(iv_raw) if _is_valid(iv_raw) else None,
+            })
+
+        # Which was selected as ATM?
+        atm, otm1, otm2 = _pick_call_strikes(chain, 0)  # will return None without price
+        # Re-call with approximate price from chain midpoint if available
+        atm_note = "need price to determine ATM; use /api/ticker/{ticker} for scan data"
+
+        results_by_expiry.append({
+            "expiry": exp,
+            "dte": dte,
+            "is_iv_expiry": exp == iv_exp,
+            "is_prem_expiry": any(e == exp for _, e in prem_exps),
+            "calls_count": len(calls),
+            "strikes": strikes_data,
+        })
+
+    return {
+        "ticker": ticker,
+        "all_expirations": exps,
+        "iv_expiry": iv_exp,
+        "premium_expirations": [{"dte": d, "expiry": e} for d, e in prem_exps],
+        "note": "Scores and best-expiry selection require a price; run a scan or see /api/ticker/{ticker}",
+        "expirations_detail": results_by_expiry,
+    }
 
 
 @router.get("/health")

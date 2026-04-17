@@ -768,6 +768,53 @@ body {
   padding: 8px 0;
 }
 
+/* ── Expiry table (in modal, full width) ─────────────────────────────────── */
+.expiry-section {
+  border-top: 1px solid var(--border);
+  padding: 16px 24px 20px;
+}
+
+.expiry-section .modal-section-title {
+  margin-bottom: 10px;
+}
+
+.expiry-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.expiry-table th {
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  padding: 4px 10px 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.expiry-table td {
+  padding: 5px 10px;
+  border-bottom: 1px solid rgba(34,40,55,0.5);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.expiry-table tr:last-child td {
+  border-bottom: none;
+}
+
+.expiry-table tr.expiry-best td {
+  background: rgba(255, 204, 51, 0.05);
+}
+
+.expiry-best-val {
+  color: var(--accent);
+  font-weight: 700 !important;
+}
+
 @media (max-width: 600px) {
   .modal-body { grid-template-columns: 1fr; }
   .modal-col + .modal-col { border-left: none; border-top: 1px solid var(--border); }
