@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api/client.js";
 import BucketTabs from "./BucketTabs.jsx";
 import ScoreCard from "./ScoreCard.jsx";
+import TickerModal from "./TickerModal.jsx";
 
 // FastAPI returns naive UTC strings without a trailing 'Z'.
 // Appending 'Z' ensures the Date constructor treats them as UTC in all browsers.
@@ -93,6 +94,9 @@ export default function Dashboard() {
   const [movers, setMovers] = useState(null);
   const [error, setError] = useState(null);
   const [active, setActive] = useState("sell_now");
+
+  // Ticker detail modal
+  const [selectedRow, setSelectedRow] = useState(null);
 
   // Price display filter
   const [minPrice, setMinPrice] = useState(10);
@@ -257,9 +261,12 @@ export default function Dashboard() {
       ) : (
         <div className="grid">
           {rows.map((r) => (
-            <ScoreCard key={r.ticker} row={r} />
+            <ScoreCard key={r.ticker} row={r} onClick={() => setSelectedRow(r)} />
           ))}
         </div>
+      )}
+      {selectedRow && (
+        <TickerModal row={selectedRow} onClose={() => setSelectedRow(null)} />
       )}
     </>
   );

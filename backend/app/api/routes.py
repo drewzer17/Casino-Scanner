@@ -17,7 +17,9 @@ from ..schemas import (
     ScanLatestOut,
     ScanResultOut,
     ScoreBreakdown,
+    StrikeSuggestion,
     TimeframeDelta,
+    WheelOut,
 )
 
 logger = logging.getLogger(__name__)
@@ -126,6 +128,22 @@ def _to_out(
         history=history or [],
         notes=row.notes,
         created_at=row.created_at,
+        # SMA
+        sma_200=row.sma_200,
+        sma_50=row.sma_50,
+        price_vs_sma200_pct=row.price_vs_sma200_pct,
+        price_vs_sma50_pct=row.price_vs_sma50_pct,
+        sma_regime=row.sma_regime,
+        sma_golden_cross=row.sma_golden_cross,
+        # S/R
+        support_1=row.support_1,
+        support_1_strength=row.support_1_strength,
+        support_2=row.support_2,
+        support_2_strength=row.support_2_strength,
+        resistance_1=row.resistance_1,
+        resistance_1_strength=row.resistance_1_strength,
+        resistance_2=row.resistance_2,
+        resistance_2_strength=row.resistance_2_strength,
     )
 
 
@@ -407,6 +425,139 @@ def scan_test() -> dict:
         "tickers": TEST_TICKERS,
         "results": results,
     }
+
+
+@router.get("/ticker/{ticker}/wheel", response_model=WheelOut)
+def ticker_wheel(
+    ticker: str,
+    db: Session = Depends(get_db),
+    support_1: float | None = None,
+    resistance_1: float | None = None,
+) -> WheelOut:
+    """Live wheel math for a ticker.
+
+    Fetches the nearest 30-DTE option chain from Tradier, finds the best
+    CSP strike (at/below support_1) and CC strike (at/above resistance_1),
+    and returns combined premium + yield estimates.
+
+    Optional query params support_1 and resistance_1 override the DB-stored
+    levels so the frontend can recalculate after user edits.
+    """
+    from ..scanner.engine import (
+        fetch_chain,
+        fetch_expirations,
+        _nearest_expiry,
+        _is_valid,
+    )
+    import math as _math
+
+    ticker = ticker.strip().upper()
+
+    # Latest scan result for this ticker
+    row = db.execute(
+        select(models.ScanResult)
+        .where(models.ScanResult.ticker == ticker)
+        .order_by(models.ScanResult.created_at.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+
+    price = row.price if row else None
+
+    # Use overrides if provided, else fall back to DB values
+    s1 = support_1 if support_1 is not None else (row.support_1 if row else None)
+    r1 = resistance_1 if resistance_1 is not None else (row.resistance_1 if row else None)
+
+    base = WheelOut(
+        ticker=ticker,
+        price=price,
+        expiration=None,
+        support_1=row.support_1 if row else None,
+        support_1_strength=row.support_1_strength if row else None,
+        support_2=row.support_2 if row else None,
+        support_2_strength=row.support_2_strength if row else None,
+        resistance_1=row.resistance_1 if row else None,
+        resistance_1_strength=row.resistance_1_strength if row else None,
+        resistance_2=row.resistance_2 if row else None,
+        resistance_2_strength=row.resistance_2_strength if row else None,
+        sma_200=row.sma_200 if row else None,
+        sma_50=row.sma_50 if row else None,
+        price_vs_sma200_pct=row.price_vs_sma200_pct if row else None,
+        price_vs_sma50_pct=row.price_vs_sma50_pct if row else None,
+        sma_regime=row.sma_regime if row else None,
+        sma_golden_cross=row.sma_golden_cross if row else None,
+    )
+
+    if price is None:
+        return base
+
+    # Fetch live chain
+    try:
+        exps = fetch_expirations(ticker)
+        exp = _nearest_expiry(exps)
+        if not exp:
+            return base
+        chain = fetch_chain(ticker, exp)
+        base.expiration = exp
+    except Exception as exc:
+        logger.warning("wheel chain fetch failed for %s: %s", ticker, exc)
+        return base
+
+    def _mid(contract: dict) -> float | None:
+        bid = float(contract.get("bid") or 0)
+        ask = float(contract.get("ask") or 0)
+        if bid > 0 and ask > 0:
+            return (bid + ask) / 2
+        return None
+
+    puts = [c for c in chain if c.get("option_type") == "put" and _is_valid(c.get("strike"))]
+    calls = [c for c in chain if c.get("option_type") == "call" and _is_valid(c.get("strike"))]
+
+    # CSP: highest-strike put at or below s1 (or 5% below price if no s1)
+    csp_target = s1 if s1 else price * 0.95
+    csp_candidates = [p for p in puts if float(p["strike"]) <= csp_target]
+    if csp_candidates:
+        best_put = max(csp_candidates, key=lambda p: float(p["strike"]))
+        csp_mid = _mid(best_put)
+        csp_strike = float(best_put["strike"])
+        base.csp = StrikeSuggestion(
+            strike=csp_strike,
+            premium=round(csp_mid, 2) if csp_mid else None,
+            bid=float(best_put.get("bid") or 0) or None,
+            ask=float(best_put.get("ask") or 0) or None,
+        )
+        if csp_mid:
+            base.csp_effective_basis = round(csp_strike - csp_mid, 2)
+
+    # CC: lowest-strike call at or above r1 (or 5% above price if no r1)
+    cc_target = r1 if r1 else price * 1.05
+    cc_candidates = [c for c in calls if float(c["strike"]) >= cc_target]
+    if cc_candidates:
+        best_call = min(cc_candidates, key=lambda c: float(c["strike"]))
+        cc_mid = _mid(best_call)
+        cc_strike = float(best_call["strike"])
+        base.cc = StrikeSuggestion(
+            strike=cc_strike,
+            premium=round(cc_mid, 2) if cc_mid else None,
+            bid=float(best_call.get("bid") or 0) or None,
+            ask=float(best_call.get("ask") or 0) or None,
+        )
+        if cc_mid:
+            base.cc_profit_if_called = round((cc_strike - price + cc_mid) * 100, 2)
+
+    # Combined wheel math
+    csp_prem = base.csp.premium if base.csp else None
+    cc_prem = base.cc.premium if base.cc else None
+    if csp_prem is not None and cc_prem is not None:
+        combined = csp_prem + cc_prem
+        csp_stk = base.csp.strike if base.csp else price * 0.95
+        capital = price * 100 + csp_stk * 100
+        monthly_yield = (combined * 100 / capital * 100) if capital > 0 else None
+        base.combined_premium_per_share = round(combined, 2)
+        base.capital_required = round(capital, 2)
+        base.monthly_yield_pct = round(monthly_yield, 2) if monthly_yield else None
+        base.annualized_yield_pct = round(monthly_yield * 12, 2) if monthly_yield else None
+
+    return base
 
 
 @router.get("/health")

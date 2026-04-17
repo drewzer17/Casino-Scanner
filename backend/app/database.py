@@ -45,6 +45,24 @@ def init_db() -> None:
     _add_column_if_missing(
         "ALTER TABLE scan_runs ADD COLUMN tickers_total INTEGER DEFAULT 0"
     )
+    # SMA + S/R columns added in v2
+    for _ddl in [
+        "ALTER TABLE scan_results ADD COLUMN sma_200 FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN sma_50 FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN price_vs_sma200_pct FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN price_vs_sma50_pct FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN sma_regime VARCHAR(32)",
+        "ALTER TABLE scan_results ADD COLUMN sma_golden_cross BOOLEAN",
+        "ALTER TABLE scan_results ADD COLUMN support_1 FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN support_1_strength FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN support_2 FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN support_2_strength FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN resistance_1 FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN resistance_1_strength FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN resistance_2 FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN resistance_2_strength FLOAT",
+    ]:
+        _add_column_if_missing(_ddl)
 
 
 def _add_column_if_missing(ddl: str) -> None:

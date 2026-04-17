@@ -16,6 +16,17 @@ function fmt(v, digits = 2) {
   return Number(v).toFixed(digits);
 }
 
+function fmtSignedPct(v, digits = 1) {
+  if (v === null || v === undefined) return null;
+  const sign = v >= 0 ? "+" : "";
+  return `${sign}${v.toFixed(digits)}%`;
+}
+
+function fmtDollar(v) {
+  if (v === null || v === undefined) return "—";
+  return `$${Number(v).toFixed(2)}`;
+}
+
 const BUCKET_RANK = { sell_now: 2, buy_sell_later: 1, watchlist: 0 };
 
 // Determine gradient class from score trajectory
@@ -36,7 +47,6 @@ function trajectoryClass(history, currentScore, currentBucket) {
   if (up7 && !up3) return "traj-green-yellow";
   if (!up7 && up3) return "traj-yellow-green";
 
-  // lower than both 7d and 3d
   const droppedBucket =
     bucket7 !== null &&
     BUCKET_RANK[currentBucket] < (BUCKET_RANK[bucket7] ?? 99);
@@ -73,10 +83,80 @@ function TrajectoryStrip({ history, currentScore, currentBucket }) {
   );
 }
 
-export default function ScoreCard({ row }) {
+const REGIME_CLASS = {
+  UPTREND: "regime-up",
+  DOWNTREND: "regime-dn",
+  TRANSITIONAL: "regime-mid",
+};
+
+function SmaPanel({ row }) {
+  const hasAny = row.sma_200 || row.sma_50 || row.support_1 || row.resistance_1;
+  if (!hasAny) return null;
+
+  const arrow = (pct) => (pct == null ? "" : pct >= 0 ? " ▲" : " ▼");
+
+  return (
+    <div className="sma-panel">
+      {(row.sma_200 || row.sma_50) && (
+        <div className="sma-row">
+          {row.sma_200 && (
+            <span className="sma-item">
+              <span className="sma-label">200d</span>{" "}
+              <span className="sma-val">{fmtDollar(row.sma_200)}</span>
+              {row.price_vs_sma200_pct != null && (
+                <span className={`sma-pct ${row.price_vs_sma200_pct >= 0 ? "up" : "dn"}`}>
+                  {fmtSignedPct(row.price_vs_sma200_pct)}{arrow(row.price_vs_sma200_pct)}
+                </span>
+              )}
+            </span>
+          )}
+          {row.sma_50 && (
+            <span className="sma-item">
+              <span className="sma-label">50d</span>{" "}
+              <span className="sma-val">{fmtDollar(row.sma_50)}</span>
+              {row.price_vs_sma50_pct != null && (
+                <span className={`sma-pct ${row.price_vs_sma50_pct >= 0 ? "up" : "dn"}`}>
+                  {fmtSignedPct(row.price_vs_sma50_pct)}{arrow(row.price_vs_sma50_pct)}
+                </span>
+              )}
+            </span>
+          )}
+          {row.sma_regime && (
+            <span className={`regime-tag ${REGIME_CLASS[row.sma_regime] ?? ""}`}>
+              {row.sma_regime}
+            </span>
+          )}
+        </div>
+      )}
+
+      {(row.support_1 || row.resistance_1) && row.price && (
+        <div className="sr-row">
+          {row.support_1 && (
+            <span className="sr-item support">
+              S1 {fmtDollar(row.support_1)}
+              <span className="sr-dist">
+                {fmtSignedPct(((row.support_1 - row.price) / row.price) * 100)}
+              </span>
+            </span>
+          )}
+          {row.resistance_1 && (
+            <span className="sr-item resist">
+              R1 {fmtDollar(row.resistance_1)}
+              <span className="sr-dist">
+                {fmtSignedPct(((row.resistance_1 - row.price) / row.price) * 100)}
+              </span>
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function ScoreCard({ row, onClick }) {
   const b = row.breakdown || {};
   return (
-    <div className="card">
+    <div className="card" onClick={onClick} style={{ cursor: onClick ? "pointer" : "default" }}>
       <div className="card-header">
         <div className="card-ticker-info">
           <div className="ticker">{row.ticker}</div>
@@ -114,6 +194,8 @@ export default function ScoreCard({ row }) {
           <div className="k">CHAIN</div>
         </div>
       </div>
+
+      <SmaPanel row={row} />
 
       <div className="meta">
         <span className="chip">prem {fmtPct(row.premium_pct, 2)}</span>

@@ -4,7 +4,7 @@ No pandas, no numpy, no C extensions. All math is pure Python.
 
 Tradier endpoints used per ticker:
   1. GET /v1/markets/quotes          — batch up to 20, pre-fetched per batch
-  2. GET /v1/markets/history         — 1 year of daily closes for HV
+  2. GET /v1/markets/history         — 1 year of daily OHLCV for HV + SMA + S/R
   3. GET /v1/markets/options/expirations  — available expiry dates
   4. GET /v1/markets/options/chains  — full chain for the chosen expiry
 
@@ -23,7 +23,7 @@ import logging
 import math
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeout
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from typing import Iterable
 
@@ -82,8 +82,18 @@ def fetch_quotes(symbols: list[str]) -> dict[str, dict]:
     return {q["symbol"]: q for q in quote if q.get("symbol")}
 
 
-def fetch_closes(symbol: str, days: int = 365) -> list[float]:
-    """Return a list of daily close prices, oldest-first."""
+@dataclass
+class Bar:
+    date: str
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: float
+
+
+def fetch_bars(symbol: str, days: int = 365) -> list[Bar]:
+    """Return list of daily OHLCV bars, oldest-first."""
     end = date.today()
     start = end - timedelta(days=days)
     data = _get("/v1/markets/history", {
@@ -96,7 +106,20 @@ def fetch_closes(symbol: str, days: int = 365) -> list[float]:
     days_data = hist.get("day") or []
     if isinstance(days_data, dict):
         days_data = [days_data]
-    return [float(d["close"]) for d in days_data if _is_valid(d.get("close"))]
+    result: list[Bar] = []
+    for d in days_data:
+        try:
+            result.append(Bar(
+                date=str(d.get("date", "")),
+                open=float(d.get("open") or 0),
+                high=float(d.get("high") or 0),
+                low=float(d.get("low") or 0),
+                close=float(d.get("close") or 0),
+                volume=float(d.get("volume") or 0),
+            ))
+        except (TypeError, ValueError):
+            continue
+    return [b for b in result if b.close > 0]
 
 
 def fetch_expirations(symbol: str) -> list[str]:
@@ -236,6 +259,160 @@ def _iv_rank_from_history(closes: list[float], current_iv: float | None) -> floa
     return max(0.0, min(100.0, (current_iv - lo) / (hi - lo) * 100))
 
 
+# ── SMA helpers ───────────────────────────────────────────────────────────────
+
+def _calc_sma(closes: list[float], period: int) -> float | None:
+    if len(closes) < period:
+        return None
+    return sum(closes[-period:]) / period
+
+
+def _sma_regime(price: float, sma_50: float | None, sma_200: float | None) -> str | None:
+    if sma_50 is None or sma_200 is None:
+        return None
+    if price > sma_50 and price > sma_200:
+        return "UPTREND"
+    if price < sma_50 and price < sma_200:
+        return "DOWNTREND"
+    return "TRANSITIONAL"
+
+
+def _sma_score_modifier(
+    price: float,
+    sma_50: float | None,
+    sma_200: float | None,
+    regime: str | None,
+    golden_cross: bool | None,
+) -> float:
+    """Small ±5 adjustment to the 0-100 score based on SMA position."""
+    adj = 0.0
+    if sma_200 is not None and price > 0:
+        pct_vs_200 = (price - sma_200) / sma_200
+        if 0 < pct_vs_200 <= 0.03:   # sitting just above 200 SMA: institutional support
+            adj += 3.0
+        if pct_vs_200 > 0.20:         # overextended above 200 SMA
+            adj -= 2.0
+    if sma_50 is not None and price > 0 and regime == "UPTREND":
+        pct_vs_50 = (price - sma_50) / sma_50
+        if 0 < pct_vs_50 <= 0.03:    # sitting just above 50 SMA in uptrend
+            adj += 2.0
+    if golden_cross is False:          # death cross
+        adj -= 2.0
+    return max(-5.0, min(5.0, adj))
+
+
+# ── Support / Resistance detection ───────────────────────────────────────────
+
+def _find_support_resistance(
+    bars: list[Bar],
+    price: float,
+    window: int = 5,
+    cluster_pct: float = 0.02,
+    gap_threshold: float = 0.05,
+) -> tuple[list[dict], list[dict]]:
+    """Detect swing-based S/R zones from OHLCV history.
+
+    Returns (supports, resistances), each a list of dicts:
+      {'price': float, 'strength': float, 'touches': int}
+    Sorted S1=closest below price, S2=further; R1=closest above, R2=further.
+    """
+    n = len(bars)
+    if n < window * 2 + 5 or price <= 0:
+        return [], []
+
+    avg_vol = sum(b.volume for b in bars) / n if n > 0 else 1.0
+
+    # Gap ranges: don't place S/R inside earnings-day gaps (>5% open vs prev close)
+    gaps: list[tuple[float, float]] = []
+    for i in range(1, n):
+        prev_close = bars[i - 1].close
+        curr_open = bars[i].open
+        if prev_close > 0:
+            gap_pct = abs(curr_open - prev_close) / prev_close
+            if gap_pct > gap_threshold:
+                lo = min(prev_close, curr_open)
+                hi = max(prev_close, curr_open)
+                gaps.append((lo, hi))
+
+    def in_gap(p: float) -> bool:
+        return any(lo <= p <= hi for lo, hi in gaps)
+
+    def recency_weight(idx: int) -> float:
+        bars_ago = n - 1 - idx
+        if bars_ago <= 63:    # ~3 months
+            return 3.0
+        if bars_ago <= 126:   # ~6 months
+            return 2.0
+        return 1.0
+
+    def vol_mult(vol: float) -> float:
+        return 2.0 if avg_vol > 0 and vol > avg_vol else 1.0
+
+    support_pts: list[dict] = []
+    resistance_pts: list[dict] = []
+
+    for i in range(window, n - window):
+        low = bars[i].low
+        if low > 0 and not in_gap(low):
+            if (all(low <= bars[i - j].low for j in range(1, window + 1)) and
+                    all(low <= bars[i + j].low for j in range(1, window + 1))):
+                support_pts.append({
+                    "price": low,
+                    "weight": recency_weight(i) * vol_mult(bars[i].volume),
+                })
+
+        high = bars[i].high
+        if high > 0 and not in_gap(high):
+            if (all(high >= bars[i - j].high for j in range(1, window + 1)) and
+                    all(high >= bars[i + j].high for j in range(1, window + 1))):
+                resistance_pts.append({
+                    "price": high,
+                    "weight": recency_weight(i) * vol_mult(bars[i].volume),
+                })
+
+    def cluster_and_score(pts: list[dict]) -> list[dict]:
+        if not pts:
+            return []
+        sorted_pts = sorted(pts, key=lambda p: p["price"])
+        clusters: list[list[dict]] = []
+        current: list[dict] = [sorted_pts[0]]
+        for pt in sorted_pts[1:]:
+            ref = current[0]["price"]
+            if ref > 0 and abs(pt["price"] - ref) / ref <= cluster_pct:
+                current.append(pt)
+            else:
+                clusters.append(current)
+                current = [pt]
+        clusters.append(current)
+
+        result = []
+        for cluster in clusters:
+            avg_price = sum(p["price"] for p in cluster) / len(cluster)
+            strength = round(sum(p["weight"] for p in cluster), 1)
+            result.append({"price": avg_price, "strength": strength, "touches": len(cluster)})
+        return result
+
+    all_supports = cluster_and_score(support_pts)
+    all_resistances = cluster_and_score(resistance_pts)
+
+    # A broken support (price already below it) is excluded; same for resistances
+    valid_supports = [s for s in all_supports if s["price"] < price * 0.98]
+    valid_resistances = [r for r in all_resistances if r["price"] > price * 1.02]
+
+    # Proximity-first: take closest 5, then pick 2 strongest among those
+    valid_supports.sort(key=lambda s: -s["price"])    # highest (closest) first
+    valid_resistances.sort(key=lambda r: r["price"])  # lowest (closest) first
+
+    top2_s = sorted(valid_supports[:5], key=lambda s: -s["strength"])[:2]
+    top2_r = sorted(valid_resistances[:5], key=lambda r: -r["strength"])[:2]
+
+    # Final sort: S1=closest below, S2=further below; R1=closest above, R2=further above
+    top2_s.sort(key=lambda s: -s["price"])
+    top2_r.sort(key=lambda r: r["price"])
+
+    return top2_s, top2_r
+
+
 # ── Options helpers ───────────────────────────────────────────────────────────
 
 def _nearest_expiry(exp_dates: Iterable[str], min_days: int = 21, max_days: int = 45) -> str | None:
@@ -288,6 +465,22 @@ class ScanRowResult:
     breakdown_catalyst: float
     breakdown_chain: float
     notes: str | None = None
+    # SMA
+    sma_200: float | None = None
+    sma_50: float | None = None
+    price_vs_sma200_pct: float | None = None
+    price_vs_sma50_pct: float | None = None
+    sma_regime: str | None = None
+    sma_golden_cross: bool | None = None
+    # Support / Resistance
+    support_1: float | None = None
+    support_1_strength: float | None = None
+    support_2: float | None = None
+    support_2_strength: float | None = None
+    resistance_1: float | None = None
+    resistance_1_strength: float | None = None
+    resistance_2: float | None = None
+    resistance_2_strength: float | None = None
 
 
 def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None = None) -> ScanRowResult | None:
@@ -303,10 +496,22 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
                 return None
             price = float(raw)
 
-        # 2. Historical closes → HV
-        closes = fetch_closes(ticker)
+        # 2. Historical OHLCV bars → HV + SMA + S/R
+        bars = fetch_bars(ticker)
+        closes = [b.close for b in bars]
         log_ret = _log_returns(closes)
         hv = _annualized_vol(log_ret, HV_WINDOW)
+
+        # SMA calculations
+        sma_200 = _calc_sma(closes, 200)
+        sma_50 = _calc_sma(closes, 50)
+        price_vs_sma200_pct = ((price - sma_200) / sma_200 * 100) if sma_200 else None
+        price_vs_sma50_pct = ((price - sma_50) / sma_50 * 100) if sma_50 else None
+        regime = _sma_regime(price, sma_50, sma_200)
+        golden_cross = (sma_50 > sma_200) if (sma_50 and sma_200) else None
+
+        # Support / Resistance detection
+        supports, resistances = _find_support_resistance(bars, price)
 
         # 3. Options expirations → Phase A filter 2: must be optionable
         exps = fetch_expirations(ticker)
@@ -348,12 +553,9 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
             iv_rank = 50.0  # neutral placeholder until we have 30d of IV history
 
         premium_pct = (atm_premium / price) if (atm_premium and price) else None
-
-        # Unusual volume from pre-fetched quote if available
         unusual_vol = False
 
         # earn_days is pre-fetched from the earnings calendar lookup in run_scan
-        # (passed in as a parameter — no per-ticker API call needed)
         iv_ramp = (
             iv_rank is not None and iv_rank >= 70
             and earn_days is not None and 0 < earn_days <= 21
@@ -372,20 +574,41 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
             bid_ask_spread_pct=spread_pct,
         )
         breakdown = score_ticker(metrics)
-        bucket = assign_bucket(breakdown.total, iv_rank, premium_pct, earn_days)
+
+        # SMA modifier: small ±5 adjustment baked into the final score
+        sma_adj = _sma_score_modifier(price, sma_50, sma_200, regime, golden_cross)
+        final_score = round(max(0.0, min(100.0, breakdown.total + sma_adj)), 2)
+
+        bucket = assign_bucket(final_score, iv_rank, premium_pct, earn_days)
 
         return ScanRowResult(
             ticker=ticker,
             metrics=metrics,
             price=price,
             atm_call_premium=atm_premium,
-            score=round(breakdown.total, 2),
+            score=final_score,
             bucket=bucket,
             breakdown_iv_rank=breakdown.iv_rank,
             breakdown_premium=breakdown.premium,
             breakdown_iv_hv=breakdown.iv_hv,
             breakdown_catalyst=breakdown.catalyst,
             breakdown_chain=breakdown.chain,
+            # SMA
+            sma_200=round(sma_200, 4) if sma_200 else None,
+            sma_50=round(sma_50, 4) if sma_50 else None,
+            price_vs_sma200_pct=round(price_vs_sma200_pct, 2) if price_vs_sma200_pct is not None else None,
+            price_vs_sma50_pct=round(price_vs_sma50_pct, 2) if price_vs_sma50_pct is not None else None,
+            sma_regime=regime,
+            sma_golden_cross=golden_cross,
+            # S/R
+            support_1=round(supports[0]["price"], 2) if len(supports) > 0 else None,
+            support_1_strength=supports[0]["strength"] if len(supports) > 0 else None,
+            support_2=round(supports[1]["price"], 2) if len(supports) > 1 else None,
+            support_2_strength=supports[1]["strength"] if len(supports) > 1 else None,
+            resistance_1=round(resistances[0]["price"], 2) if len(resistances) > 0 else None,
+            resistance_1_strength=resistances[0]["strength"] if len(resistances) > 0 else None,
+            resistance_2=round(resistances[1]["price"], 2) if len(resistances) > 1 else None,
+            resistance_2_strength=resistances[1]["strength"] if len(resistances) > 1 else None,
         )
     except Exception as exc:
         logger.warning("scan_ticker failed for %s: %s", ticker, exc)
@@ -430,6 +653,22 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
         score_catalyst=result.breakdown_catalyst,
         score_chain=result.breakdown_chain,
         bucket=result.bucket,
+        # SMA
+        sma_200=result.sma_200,
+        sma_50=result.sma_50,
+        price_vs_sma200_pct=result.price_vs_sma200_pct,
+        price_vs_sma50_pct=result.price_vs_sma50_pct,
+        sma_regime=result.sma_regime,
+        sma_golden_cross=result.sma_golden_cross,
+        # S/R
+        support_1=result.support_1,
+        support_1_strength=result.support_1_strength,
+        support_2=result.support_2,
+        support_2_strength=result.support_2_strength,
+        resistance_1=result.resistance_1,
+        resistance_1_strength=result.resistance_1_strength,
+        resistance_2=result.resistance_2,
+        resistance_2_strength=result.resistance_2_strength,
     ))
 
 

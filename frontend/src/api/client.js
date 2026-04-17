@@ -15,4 +15,11 @@ export const api = {
   movers: (days = 7, limit = 5) => get(`/api/movers?days=${days}&limit=${limit}`),
   triggerScan: () => get("/api/scan/run"),
   scanStatus: () => get("/api/scan/status"),
+  wheel: (ticker, support_1 = null, resistance_1 = null) => {
+    const params = new URLSearchParams();
+    if (support_1 != null) params.set("support_1", support_1);
+    if (resistance_1 != null) params.set("resistance_1", resistance_1);
+    const qs = params.toString();
+    return get(`/api/ticker/${encodeURIComponent(ticker)}/wheel${qs ? "?" + qs : ""}`);
+  },
 };

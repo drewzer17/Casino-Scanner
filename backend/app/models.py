@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, Index, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Float, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .database import Base
@@ -49,6 +49,24 @@ class ScanResult(Base):
 
     bucket: Mapped[str] = mapped_column(String(32), index=True, default="watchlist")
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # SMA indicators (computed from 1yr price history)
+    sma_200: Mapped[float | None] = mapped_column(Float, nullable=True)
+    sma_50: Mapped[float | None] = mapped_column(Float, nullable=True)
+    price_vs_sma200_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    price_vs_sma50_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    sma_regime: Mapped[str | None] = mapped_column(String(32), nullable=True)  # UPTREND/DOWNTREND/TRANSITIONAL
+    sma_golden_cross: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+
+    # Auto-detected support / resistance zones
+    support_1: Mapped[float | None] = mapped_column(Float, nullable=True)
+    support_1_strength: Mapped[float | None] = mapped_column(Float, nullable=True)
+    support_2: Mapped[float | None] = mapped_column(Float, nullable=True)
+    support_2_strength: Mapped[float | None] = mapped_column(Float, nullable=True)
+    resistance_1: Mapped[float | None] = mapped_column(Float, nullable=True)
+    resistance_1_strength: Mapped[float | None] = mapped_column(Float, nullable=True)
+    resistance_2: Mapped[float | None] = mapped_column(Float, nullable=True)
+    resistance_2_strength: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
