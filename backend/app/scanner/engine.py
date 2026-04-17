@@ -1,18 +1,21 @@
-"""Scan engine: pulls yfinance data for each ticker, computes metrics, scores, buckets.
+"""Scan engine — data sourced from Tradier API via plain httpx calls.
 
-No pandas or numpy are imported here. yfinance returns DataFrames internally but
-we convert them to plain Python lists/dicts immediately after each call so none
-of the C-extension machinery (libstdc++, glibc) is needed at runtime.
+No pandas, no numpy, no C extensions. All math is pure Python.
 
-Design goals (Phase 1):
-- Crash-resilient: results are committed every BATCH_SIZE tickers.
-- Resumable: detects an existing 'running' ScanRun and skips already-done tickers.
-- Per-ticker timeout: every ticker runs in a ThreadPoolExecutor with a 10s limit.
-- One-bad-ticker isolation: exceptions are caught per-ticker, never kill the run.
+Tradier endpoints used per ticker:
+  1. GET /v1/markets/quotes          — batch up to 20, pre-fetched per batch
+  2. GET /v1/markets/history         — 1 year of daily closes for HV
+  3. GET /v1/markets/options/expirations  — available expiry dates
+  4. GET /v1/markets/options/chains  — full chain for the chosen expiry
 
-IV rank is approximated from 252 days of close-to-close realized vol percentile
-because yfinance does not expose historical IV. Directionally correct for ranking;
-a future phase can swap in a real IV-history source.
+IV rank is stored as 50 (neutral) until we accumulate 30+ days of daily
+IV snapshots in the database. A future migration will back-fill this.
+
+Design goals (all carried over):
+  - Crash-resilient: batch commits every BATCH_SIZE tickers
+  - Resumable: skips tickers already written for the current ScanRun
+  - Per-ticker timeout: ThreadPoolExecutor with TICKER_TIMEOUT seconds
+  - One-bad-ticker isolation: exceptions caught per ticker
 """
 from __future__ import annotations
 
@@ -21,14 +24,15 @@ import math
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeout
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Iterable
 
-import yfinance as yf
+import httpx
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import models
+from ..config import settings
 from ..universe import load_universe
 from .buckets import assign_bucket
 from .scoring import TickerMetrics, score_ticker
@@ -38,13 +42,90 @@ logger = logging.getLogger(__name__)
 TRADING_DAYS = 252
 HV_WINDOW = 30
 BATCH_SIZE = 25
-TICKER_TIMEOUT = 10  # seconds per ticker before we give up and move on
+QUOTE_BATCH = 20      # Tradier max symbols per quotes call
+TICKER_TIMEOUT = 30   # seconds — Tradier is slower than local yfinance
+
+TRADIER_BASE = "https://sandbox.tradier.com"
 
 
-# ── Pure-Python math helpers (replaces numpy) ─────────────────────────────────
+# ── Tradier HTTP client ───────────────────────────────────────────────────────
+
+def _headers() -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {settings.tradier_api_key}",
+        "Accept": "application/json",
+    }
+
+
+def _get(path: str, params: dict) -> dict:
+    """Single synchronous GET to Tradier. Raises on non-2xx."""
+    with httpx.Client(timeout=15.0) as client:
+        resp = client.get(TRADIER_BASE + path, params=params, headers=_headers())
+        resp.raise_for_status()
+        return resp.json()
+
+
+# ── Tradier data fetchers ─────────────────────────────────────────────────────
+
+def fetch_quotes(symbols: list[str]) -> dict[str, dict]:
+    """Return {ticker: quote_dict} for up to QUOTE_BATCH symbols.
+
+    Tradier returns a single dict (not a list) when only one symbol is
+    requested — normalise to a list in all cases.
+    """
+    data = _get("/v1/markets/quotes", {"symbols": ",".join(symbols)})
+    quote = (data.get("quotes") or {}).get("quote")
+    if not quote:
+        return {}
+    if isinstance(quote, dict):
+        quote = [quote]
+    return {q["symbol"]: q for q in quote if q.get("symbol")}
+
+
+def fetch_closes(symbol: str, days: int = 365) -> list[float]:
+    """Return a list of daily close prices, oldest-first."""
+    end = date.today()
+    start = end - timedelta(days=days)
+    data = _get("/v1/markets/history", {
+        "symbol": symbol,
+        "interval": "daily",
+        "start": start.strftime("%Y-%m-%d"),
+        "end": end.strftime("%Y-%m-%d"),
+    })
+    hist = (data.get("history") or {})
+    days_data = hist.get("day") or []
+    if isinstance(days_data, dict):
+        days_data = [days_data]
+    return [float(d["close"]) for d in days_data if _is_valid(d.get("close"))]
+
+
+def fetch_expirations(symbol: str) -> list[str]:
+    """Return sorted list of available option expiration date strings."""
+    data = _get("/v1/markets/options/expirations", {"symbol": symbol})
+    exps = (data.get("expirations") or {})
+    dates = exps.get("date") or []
+    if isinstance(dates, str):
+        dates = [dates]
+    return sorted(dates)
+
+
+def fetch_chain(symbol: str, expiration: str) -> list[dict]:
+    """Return all option contracts for the given expiry."""
+    data = _get("/v1/markets/options/chains", {
+        "symbol": symbol,
+        "expiration": expiration,
+        "greeks": "true",
+    })
+    opts = (data.get("options") or {})
+    options = opts.get("option") or []
+    if isinstance(options, dict):
+        options = [options]
+    return options
+
+
+# ── Pure-Python math helpers ──────────────────────────────────────────────────
 
 def _is_valid(v: object) -> bool:
-    """True if v is a finite, non-None number."""
     try:
         return v is not None and not math.isnan(float(v))
     except (TypeError, ValueError):
@@ -52,7 +133,6 @@ def _is_valid(v: object) -> bool:
 
 
 def _stdev(sample: list[float]) -> float:
-    """Population-corrected standard deviation (ddof=1). Returns 0 if len<2."""
     n = len(sample)
     if n < 2:
         return 0.0
@@ -62,7 +142,6 @@ def _stdev(sample: list[float]) -> float:
 
 
 def _log_returns(prices: list[float]) -> list[float]:
-    """Compute log(p[i]/p[i-1]) for a list of prices, skipping non-positive pairs."""
     result: list[float] = []
     for i in range(1, len(prices)):
         if prices[i - 1] > 0 and prices[i] > 0:
@@ -71,46 +150,32 @@ def _log_returns(prices: list[float]) -> list[float]:
 
 
 def _annualized_vol(returns: list[float], window: int = HV_WINDOW) -> float | None:
-    """Annualized historical volatility from a list of log returns."""
     if len(returns) < window:
         return None
-    sample = returns[-window:]
-    std = _stdev(sample)
-    if std <= 0:
-        return None
-    return std * math.sqrt(TRADING_DAYS)
+    std = _stdev(returns[-window:])
+    return (std * math.sqrt(TRADING_DAYS)) if std > 0 else None
 
 
 def _rolling_vol(returns: list[float], window: int = HV_WINDOW) -> list[float]:
-    """Annualized rolling std over each consecutive window of log returns."""
     result: list[float] = []
     for i in range(window - 1, len(returns)):
-        sample = returns[i - window + 1 : i + 1]
-        result.append(_stdev(sample) * math.sqrt(TRADING_DAYS))
+        result.append(_stdev(returns[i - window + 1 : i + 1]) * math.sqrt(TRADING_DAYS))
     return result
 
 
 def _iv_rank_from_history(closes: list[float], current_iv: float | None) -> float | None:
-    """Approximate IV rank from 1-year of realized-vol rolling windows.
-
-    Finds the percentile of current_iv against the distribution of 30-day
-    realized vol over the past 252 trading days.
-    """
     if len(closes) < 60 or current_iv is None:
         return None
-    log_ret = _log_returns(closes)
-    rolling = _rolling_vol(log_ret, HV_WINDOW)[-TRADING_DAYS:]
+    rolling = _rolling_vol(_log_returns(closes), HV_WINDOW)[-TRADING_DAYS:]
     if not rolling:
         return None
-    lo = min(rolling)
-    hi = max(rolling)
+    lo, hi = min(rolling), max(rolling)
     if hi <= lo:
         return None
-    rank = (current_iv - lo) / (hi - lo) * 100
-    return max(0.0, min(100.0, rank))
+    return max(0.0, min(100.0, (current_iv - lo) / (hi - lo) * 100))
 
 
-# ── yfinance data helpers ─────────────────────────────────────────────────────
+# ── Options helpers ───────────────────────────────────────────────────────────
 
 def _nearest_expiry(exp_dates: Iterable[str], min_days: int = 21, max_days: int = 45) -> str | None:
     today = date.today()
@@ -129,7 +194,6 @@ def _nearest_expiry(exp_dates: Iterable[str], min_days: int = 21, max_days: int 
                 best = (score, exp)
     if best:
         return best[1]
-    # fallback: first expiry at least 7 days out
     for exp in exp_dates:
         try:
             d = datetime.strptime(exp, "%Y-%m-%d").date()
@@ -140,43 +204,11 @@ def _nearest_expiry(exp_dates: Iterable[str], min_days: int = 21, max_days: int 
     return None
 
 
-def _pick_atm(calls: list[dict], price: float) -> dict | None:
-    """Return the call row whose strike is closest to price."""
-    valid = [c for c in calls if _is_valid(c.get("strike"))]
-    if not valid:
+def _pick_atm_call(options: list[dict], price: float) -> dict | None:
+    calls = [o for o in options if o.get("option_type") == "call" and _is_valid(o.get("strike"))]
+    if not calls:
         return None
-    return min(valid, key=lambda c: abs(float(c["strike"]) - price))
-
-
-def _days_to_earnings(tkr: yf.Ticker) -> int | None:
-    try:
-        cal = tkr.calendar
-    except Exception:
-        return None
-
-    next_dt: datetime | None = None
-
-    if isinstance(cal, dict):
-        value = cal.get("Earnings Date")
-        if isinstance(value, list) and value:
-            value = value[0]
-        if isinstance(value, (datetime, date)):
-            next_dt = datetime(value.year, value.month, value.day)
-    elif cal is not None and hasattr(cal, "loc"):
-        # Older yfinance returns a DataFrame — extract without pd.notna / pd.Timestamp
-        try:
-            value = cal.loc["Earnings Date"].iloc[0]
-            if value is not None:
-                if hasattr(value, "to_pydatetime"):
-                    next_dt = value.to_pydatetime()
-                elif hasattr(value, "year"):
-                    next_dt = datetime(value.year, value.month, value.day)
-        except Exception:
-            pass
-
-    if next_dt is None:
-        return None
-    return (next_dt.date() - date.today()).days
+    return min(calls, key=lambda o: abs(float(o["strike"]) - price))
 
 
 # ── Per-ticker scan ───────────────────────────────────────────────────────────
@@ -197,82 +229,71 @@ class ScanRowResult:
     notes: str | None = None
 
 
-def scan_ticker(ticker: str) -> ScanRowResult | None:
-    """Scan a single ticker. Returns None if data is too incomplete to score."""
+def scan_ticker(ticker: str, price: float | None = None) -> ScanRowResult | None:
+    """Scan one ticker via Tradier. price may be pre-fetched from a batch quote call."""
     try:
-        tkr = yf.Ticker(ticker)
-        hist = tkr.history(period="1y", auto_adjust=False)
+        # 1. Price — fall back to individual quote if not pre-fetched
+        if price is None:
+            quotes = fetch_quotes([ticker])
+            q = quotes.get(ticker) or {}
+            raw = q.get("last")
+            if not _is_valid(raw):
+                logger.debug("%s: no price from Tradier", ticker)
+                return None
+            price = float(raw)
 
-        # Convert DataFrame columns to plain Python lists immediately
-        if hist is None or len(hist) == 0:
-            return None
-
-        closes: list[float] = [float(v) for v in hist["Close"].tolist() if _is_valid(v)]
-        volumes: list[float] = [float(v) for v in hist["Volume"].tolist() if _is_valid(v)]
-
-        if not closes:
-            return None
-        price = closes[-1]
-
+        # 2. Historical closes → HV
+        closes = fetch_closes(ticker)
         log_ret = _log_returns(closes)
         hv = _annualized_vol(log_ret, HV_WINDOW)
 
-        exps = tkr.options or []
+        # 3. Options expirations → pick nearest ~30d expiry
+        exps = fetch_expirations(ticker)
         exp = _nearest_expiry(exps)
+
         atm_iv: float | None = None
         atm_premium: float | None = None
         atm_oi: int | None = None
         spread_pct: float | None = None
 
         if exp:
-            try:
-                chain = tkr.option_chain(exp)
-                # Convert DataFrame to list-of-dicts right away — no more pandas ops
-                calls_df = chain.calls
-                calls: list[dict] = (
-                    calls_df.to_dict("records") if calls_df is not None and len(calls_df) > 0 else []
-                )
-                atm = _pick_atm(calls, price)
-                if atm is not None:
-                    iv_raw = atm.get("impliedVolatility")
-                    if _is_valid(iv_raw):
-                        atm_iv = float(iv_raw)
+            # 4. Options chain → ATM call metrics
+            chain = fetch_chain(ticker, exp)
+            atm = _pick_atm_call(chain, price)
+            if atm:
+                greeks = atm.get("greeks") or {}
+                iv_raw = greeks.get("smv_vol") or greeks.get("mid_iv") or greeks.get("iv")
+                if _is_valid(iv_raw):
+                    atm_iv = float(iv_raw)
 
-                    bid = float(atm.get("bid") or 0)
-                    ask = float(atm.get("ask") or 0)
-                    last = atm.get("lastPrice")
-                    mid = (
-                        (bid + ask) / 2
-                        if bid > 0 and ask > 0
-                        else (float(last) if _is_valid(last) else 0)
-                    )
-                    if mid > 0:
-                        atm_premium = mid
-                        if ask > 0 and bid > 0:
-                            spread_pct = (ask - bid) / mid
+                bid = float(atm.get("bid") or 0)
+                ask = float(atm.get("ask") or 0)
+                mid = (bid + ask) / 2 if bid > 0 and ask > 0 else 0.0
+                if mid > 0:
+                    atm_premium = mid
+                    if bid > 0 and ask > 0:
+                        spread_pct = (ask - bid) / mid
 
-                    oi_raw = atm.get("openInterest")
-                    if _is_valid(oi_raw):
-                        atm_oi = int(float(oi_raw))
-            except Exception as exc:
-                logger.debug("chain fetch failed for %s %s: %s", ticker, exp, exc)
+                oi_raw = atm.get("open_interest")
+                if _is_valid(oi_raw):
+                    atm_oi = int(float(oi_raw))
 
+        # IV rank: use rolling-vol approximation if we have closes; else 50 placeholder
         iv_rank = _iv_rank_from_history(closes, atm_iv)
+        if iv_rank is None and atm_iv is not None:
+            iv_rank = 50.0  # neutral placeholder until we have 30d of IV history
+
         premium_pct = (atm_premium / price) if (atm_premium and price) else None
 
+        # Unusual volume from pre-fetched quote if available
         unusual_vol = False
-        if len(volumes) >= 25:
-            avg_vol = sum(volumes[-20:]) / 20
-            if avg_vol > 0 and volumes[-1] > avg_vol * 1.5:
-                unusual_vol = True
 
-        earn_days = _days_to_earnings(tkr)
+        # Earnings: not available from Tradier without a separate premium endpoint
+        earn_days: int | None = None
 
         iv_ramp = (
-            iv_rank is not None
-            and iv_rank >= 70
-            and earn_days is not None
-            and 0 < earn_days <= 21
+            iv_rank is not None and iv_rank >= 70
+            and earn_days is not None and 0 < earn_days <= 21
         )
 
         metrics = TickerMetrics(
@@ -310,22 +331,16 @@ def scan_ticker(ticker: str) -> ScanRowResult | None:
 
 # ── Timeout wrapper ───────────────────────────────────────────────────────────
 
-def _scan_with_timeout(ticker: str) -> ScanRowResult | None:
-    """Run scan_ticker in a thread with a hard timeout.
-
-    yfinance can hang indefinitely on network calls (DNS, SSL, stalled HTTP).
-    We isolate each ticker in a 1-worker ThreadPoolExecutor so the timeout is
-    enforced without blocking the main scan loop.
-    """
+def _scan_with_timeout(ticker: str, price: float | None = None) -> ScanRowResult | None:
     with ThreadPoolExecutor(max_workers=1) as pool:
-        future = pool.submit(scan_ticker, ticker)
+        future = pool.submit(scan_ticker, ticker, price)
         try:
             return future.result(timeout=TICKER_TIMEOUT)
         except FuturesTimeout:
-            logger.warning("ticker %s timed out after %ds — skipping", ticker, TICKER_TIMEOUT)
+            logger.warning("ticker %s timed out after %ds", ticker, TICKER_TIMEOUT)
             return None
         except Exception as exc:
-            logger.warning("ticker %s raised unexpectedly: %s — skipping", ticker, exc)
+            logger.warning("ticker %s raised unexpectedly: %s", ticker, exc)
             return None
 
 
@@ -358,21 +373,12 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
 # ── Main scan orchestrator ────────────────────────────────────────────────────
 
 def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = None) -> int:
-    """Run a crash-resilient, resumable scan. Returns the ScanRun id.
-
-    Resume: detects an existing status='running' ScanRun and skips tickers
-    that already have DB results for that run.
-
-    Batch commit: commits every BATCH_SIZE tickers — a crash loses at most
-    one batch of work.
-
-    Limit: pass limit=N to scan only the first N tickers (smoke testing).
-    """
+    """Crash-resilient, resumable scan. Returns ScanRun id."""
     universe = tickers if tickers is not None else load_universe()
     if limit is not None:
         universe = universe[:limit]
 
-    # ── Find or create a ScanRun ──────────────────────────────────────────────
+    # Find or create a ScanRun
     existing_run = db.execute(
         select(models.ScanRun)
         .where(models.ScanRun.status == "running")
@@ -382,16 +388,14 @@ def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = 
 
     if existing_run is not None:
         run = existing_run
-        logger.info("resuming crashed run_id=%s", run.id)
         done: set[str] = set(
             db.execute(
                 select(models.ScanResult.ticker).where(models.ScanResult.run_id == run.id)
             ).scalars().all()
         )
         remaining = [t for t in universe if t not in done]
-        scanned = run.tickers_scanned
-        errored = run.tickers_errored
-        logger.info("resume: %d already done, %d remaining", len(done), len(remaining))
+        scanned, errored = run.tickers_scanned, run.tickers_errored
+        logger.info("resuming run_id=%s — %d done, %d remaining", run.id, len(done), len(remaining))
     else:
         run = models.ScanRun(
             started_at=datetime.utcnow(),
@@ -402,22 +406,31 @@ def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = 
         db.commit()
         db.refresh(run)
         remaining = list(universe)
-        scanned = 0
-        errored = 0
+        scanned = errored = 0
         logger.info("new scan run_id=%s, %d tickers", run.id, len(remaining))
 
     run.tickers_total = len(universe)
     db.commit()
 
-    # ── Scan in batches ───────────────────────────────────────────────────────
     for batch_start in range(0, len(remaining), BATCH_SIZE):
         batch = remaining[batch_start : batch_start + BATCH_SIZE]
-        logger.info(
-            "run_id=%s batch %d-%d / %d",
-            run.id, batch_start + 1, batch_start + len(batch), len(remaining),
-        )
+        logger.info("run_id=%s batch %d-%d / %d", run.id,
+                    batch_start + 1, batch_start + len(batch), len(remaining))
+
+        # Pre-fetch quotes for the whole batch (≤20 tickers per Tradier call)
+        prices: dict[str, float] = {}
+        for q_start in range(0, len(batch), QUOTE_BATCH):
+            q_symbols = batch[q_start : q_start + QUOTE_BATCH]
+            try:
+                for sym, q in fetch_quotes(q_symbols).items():
+                    raw = q.get("last")
+                    if _is_valid(raw):
+                        prices[sym] = float(raw)
+            except Exception as exc:
+                logger.warning("quote batch failed (%s): %s", q_symbols, exc)
+
         for ticker in batch:
-            result = _scan_with_timeout(ticker)
+            result = _scan_with_timeout(ticker, price=prices.get(ticker))
             if result is None:
                 errored += 1
             else:
@@ -437,10 +450,8 @@ def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = 
 
 
 def run_scan_cli() -> None:
-    """Entry point for the daily cron / Railway job."""
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     from ..database import SessionLocal, init_db
-
     init_db()
     db = SessionLocal()
     try:

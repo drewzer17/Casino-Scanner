@@ -32,6 +32,7 @@ class Settings:
     alert_sms: str
     environment: str
     cors_origins: list[str]
+    tradier_api_key: str
 
 
 def load_settings() -> Settings:
@@ -48,12 +49,15 @@ def load_settings() -> Settings:
     else:
         cors_origins = ["*"]
 
+    tradier_api_key = _clean(os.environ.get("TRADIER_API_KEY"))
+
     return Settings(
         database_url=database_url,
         alert_email=alert_email,
         alert_sms=alert_sms,
         environment=environment,
         cors_origins=cors_origins,
+        tradier_api_key=tradier_api_key,
     )
 
 

@@ -280,7 +280,7 @@ def scan_test() -> dict:
     results = []
     for ticker in TEST_TICKERS:
         try:
-            row = scan_ticker(ticker)
+            row = scan_ticker(ticker, price=None)
             if row is None:
                 results.append({"ticker": ticker, "status": "no_data", "result": None})
             else:
