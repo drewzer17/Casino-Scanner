@@ -511,7 +511,9 @@ def ticker_wheel(
 
     # Use overrides if provided, else fall back to DB values
     s1 = support_1 if support_1 is not None else (row.support_1 if row else None)
+    s2 = row.support_2 if row else None
     r1 = resistance_1 if resistance_1 is not None else (row.resistance_1 if row else None)
+    r2 = row.resistance_2 if row else None
 
     base = WheelOut(
         ticker=ticker,
@@ -558,11 +560,21 @@ def ticker_wheel(
     puts = [c for c in chain if c.get("option_type") == "put" and _is_valid(c.get("strike"))]
     calls = [c for c in chain if c.get("option_type") == "call" and _is_valid(c.get("strike"))]
 
-    # CSP: highest-strike put at or below s1 (or 5% below price if no s1)
-    csp_target = s1 if s1 else price * 0.95
-    csp_candidates = [p for p in puts if float(p["strike"]) <= csp_target]
-    if csp_candidates:
-        best_put = max(csp_candidates, key=lambda p: float(p["strike"]))
+    # CSP: highest-strike put at or below target.
+    # Priority: S1 → S2 → 5% below price (only if no technical level exists).
+    def _csp_candidates(target):
+        return [p for p in puts if float(p["strike"]) <= target]
+
+    csp_pool = []
+    if s1:
+        csp_pool = _csp_candidates(s1)
+    if not csp_pool and s2:
+        csp_pool = _csp_candidates(s2)
+    if not csp_pool:
+        csp_pool = _csp_candidates(price * 0.95)
+
+    if csp_pool:
+        best_put = max(csp_pool, key=lambda p: float(p["strike"]))
         csp_mid = _mid(best_put)
         csp_strike = float(best_put["strike"])
         base.csp = StrikeSuggestion(
@@ -574,11 +586,21 @@ def ticker_wheel(
         if csp_mid:
             base.csp_effective_basis = round(csp_strike - csp_mid, 2)
 
-    # CC: lowest-strike call at or above r1 (or 5% above price if no r1)
-    cc_target = r1 if r1 else price * 1.05
-    cc_candidates = [c for c in calls if float(c["strike"]) >= cc_target]
-    if cc_candidates:
-        best_call = min(cc_candidates, key=lambda c: float(c["strike"]))
+    # CC: lowest-strike call at or above target.
+    # Priority: R1 → R2 → 5% above price (only if no technical level exists).
+    def _cc_candidates(target):
+        return [c for c in calls if float(c["strike"]) >= target]
+
+    cc_pool = []
+    if r1:
+        cc_pool = _cc_candidates(r1)
+    if not cc_pool and r2:
+        cc_pool = _cc_candidates(r2)
+    if not cc_pool:
+        cc_pool = _cc_candidates(price * 1.05)
+
+    if cc_pool:
+        best_call = min(cc_pool, key=lambda c: float(c["strike"]))
         cc_mid = _mid(best_call)
         cc_strike = float(best_call["strike"])
         base.cc = StrikeSuggestion(
