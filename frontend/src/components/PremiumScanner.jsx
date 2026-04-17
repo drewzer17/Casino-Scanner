@@ -13,21 +13,23 @@ function fmtExpiry(exp) {
   return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function getRowData(row, dteFilter) {
+// ── Data extractors ───────────────────────────────────────────────
+
+function getCallData(row, dteFilter) {
   if (dteFilter === "ALL") {
-    return {
-      premium: row.atm_call_premium,
-      premiumPct: row.premium_pct,
-      strike: row.best_strike,
-      expiry: row.best_expiry,
-      dte: row.best_dte,
-    };
-  }
-  // Search expiry_data for entries with dte <= dteFilter
-  const entries = (row.expiry_data || []).filter(
-    e => e.dte != null && e.dte <= dteFilter && e.atm_call_prem != null
-  );
-  if (entries.length > 0) {
+    // Use stored best call (always available from normal scan)
+    if (row.atm_call_premium != null) {
+      return {
+        premium: row.atm_call_premium,
+        premiumPct: row.premium_pct,
+        strike: row.best_strike,
+        expiry: row.best_expiry,
+        dte: row.best_dte,
+      };
+    }
+    // Fall back to best entry in expiry_data
+    const entries = (row.expiry_data || []).filter(e => e.atm_call_prem != null);
+    if (!entries.length) return null;
     entries.sort((a, b) => (b.atm_call_prem ?? 0) - (a.atm_call_prem ?? 0));
     const e = entries[0];
     return {
@@ -38,8 +40,23 @@ function getRowData(row, dteFilter) {
       dte: e.dte,
     };
   }
-  // Fall back to stored best if it fits the DTE filter
-  if (row.best_dte != null && row.best_dte <= dteFilter) {
+  // DTE-filtered: prefer expiry_data entries within window
+  const entries = (row.expiry_data || []).filter(
+    e => e.dte != null && e.dte <= dteFilter && e.atm_call_prem != null
+  );
+  if (entries.length) {
+    entries.sort((a, b) => (b.atm_call_prem ?? 0) - (a.atm_call_prem ?? 0));
+    const e = entries[0];
+    return {
+      premium: e.atm_call_prem,
+      premiumPct: (e.atm_call_prem && row.price) ? e.atm_call_prem / row.price : null,
+      strike: e.atm_strike,
+      expiry: e.expiry,
+      dte: e.dte,
+    };
+  }
+  // Fall back to stored best if it fits
+  if (row.best_dte != null && row.best_dte <= dteFilter && row.atm_call_premium != null) {
     return {
       premium: row.atm_call_premium,
       premiumPct: row.premium_pct,
@@ -51,8 +68,29 @@ function getRowData(row, dteFilter) {
   return null;
 }
 
+function getPutData(row, dteFilter) {
+  // Put premium only comes from expiry_data (populated by extensive scans)
+  const entries = (row.expiry_data || []).filter(
+    e => e.atm_put_prem != null &&
+      (dteFilter === "ALL" || (e.dte != null && e.dte <= dteFilter))
+  );
+  if (!entries.length) return null;
+  entries.sort((a, b) => (b.atm_put_prem ?? 0) - (a.atm_put_prem ?? 0));
+  const e = entries[0];
+  return {
+    premium: e.atm_put_prem,
+    premiumPct: (e.atm_put_prem && row.price) ? e.atm_put_prem / row.price : null,
+    strike: e.atm_strike,
+    expiry: e.expiry,
+    dte: e.dte,
+  };
+}
+
+// ── Columns ───────────────────────────────────────────────────────
+
 const COLS = [
   { key: "ticker",     label: "Ticker",    align: "left" },
+  { key: "type",       label: "Type",      align: "left" },
   { key: "price",      label: "Price",     align: "right" },
   { key: "premium",    label: "Premium $", align: "right" },
   { key: "premiumPct", label: "Premium %", align: "right" },
@@ -62,38 +100,46 @@ const COLS = [
   { key: "oi",         label: "OI",        align: "right" },
 ];
 
-function cellValue(enriched, key) {
+function cellValue(item, key) {
   switch (key) {
-    case "ticker":     return enriched.ticker;
-    case "price":      return enriched.price != null ? `$${fmt(enriched.price)}` : "—";
-    case "premium":    return enriched._d.premium != null ? `$${fmt(enriched._d.premium)}` : "—";
-    case "premiumPct": return enriched._d.premiumPct != null ? `${fmt(enriched._d.premiumPct * 100)}%` : "—";
-    case "strike":     return enriched._d.strike != null ? `$${fmt(enriched._d.strike, 0)}` : "—";
-    case "expiry":     return fmtExpiry(enriched._d.expiry);
-    case "dte":        return enriched._d.dte != null ? `${enriched._d.dte}d` : "—";
+    case "ticker":     return item.ticker;
+    case "type":       return (
+      <span className={`prem-type-badge prem-type-${item._type.toLowerCase()}`}>
+        {item._type}
+      </span>
+    );
+    case "price":      return item.price != null ? `$${fmt(item.price)}` : "—";
+    case "premium":    return item._d.premium != null ? `$${fmt(item._d.premium)}` : "—";
+    case "premiumPct": return item._d.premiumPct != null ? `${fmt(item._d.premiumPct * 100)}%` : "—";
+    case "strike":     return item._d.strike != null ? `$${fmt(item._d.strike, 0)}` : "—";
+    case "expiry":     return fmtExpiry(item._d.expiry);
+    case "dte":        return item._d.dte != null ? `${item._d.dte}d` : "—";
     case "oi":
-      return enriched.open_interest != null
-        ? enriched.open_interest >= 1000
-          ? `${(enriched.open_interest / 1000).toFixed(1)}K`
-          : String(enriched.open_interest)
+      return item.open_interest != null
+        ? item.open_interest >= 1000
+          ? `${(item.open_interest / 1000).toFixed(1)}K`
+          : String(item.open_interest)
         : "—";
     default: return "—";
   }
 }
 
-function sortValue(enriched, key) {
+function sortValue(item, key) {
   switch (key) {
-    case "ticker":     return enriched.ticker;
-    case "price":      return enriched.price ?? -1;
-    case "premium":    return enriched._d.premium ?? -1;
-    case "premiumPct": return enriched._d.premiumPct ?? -1;
-    case "strike":     return enriched._d.strike ?? -1;
-    case "expiry":     return enriched._d.expiry ?? "";
-    case "dte":        return enriched._d.dte ?? 9999;
-    case "oi":         return enriched.open_interest ?? -1;
+    case "ticker":     return item.ticker;
+    case "type":       return item._type;
+    case "price":      return item.price ?? -1;
+    case "premium":    return item._d.premium ?? -1;
+    case "premiumPct": return item._d.premiumPct ?? -1;
+    case "strike":     return item._d.strike ?? -1;
+    case "expiry":     return item._d.expiry ?? "";
+    case "dte":        return item._d.dte ?? 9999;
+    case "oi":         return item.open_interest ?? -1;
     default: return 0;
   }
 }
+
+// ── Component ─────────────────────────────────────────────────────
 
 export default function PremiumScanner({ rows, onRowClick }) {
   const [dteFilter, setDteFilter] = useState("ALL");
@@ -105,25 +151,28 @@ export default function PremiumScanner({ rows, onRowClick }) {
       setSortAsc(v => !v);
     } else {
       setSortCol(key);
-      setSortAsc(key === "ticker" || key === "expiry");
+      setSortAsc(key === "ticker" || key === "type" || key === "expiry");
     }
   };
 
-  const enriched = rows
-    .map(row => {
-      const d = getRowData(row, dteFilter);
-      if (!d) return null;
-      return { ...row, _d: d };
-    })
-    .filter(Boolean);
+  // Expand each ticker into up to 2 items: one CC, one CSP
+  const items = [];
+  for (const row of rows) {
+    const callD = getCallData(row, dteFilter);
+    const putD  = getPutData(row, dteFilter);
+    if (callD) items.push({ ...row, _d: callD, _type: "CC",  _key: `${row.ticker}-CC` });
+    if (putD)  items.push({ ...row, _d: putD,  _type: "CSP", _key: `${row.ticker}-CSP` });
+  }
 
-  const sorted = [...enriched].sort((a, b) => {
+  const sorted = [...items].sort((a, b) => {
     const av = sortValue(a, sortCol);
     const bv = sortValue(b, sortCol);
     if (av < bv) return sortAsc ? -1 : 1;
     if (av > bv) return sortAsc ? 1 : -1;
     return 0;
   });
+
+  const uniqueTickers = new Set(sorted.map(i => i.ticker)).size;
 
   return (
     <div>
@@ -136,7 +185,7 @@ export default function PremiumScanner({ rows, onRowClick }) {
             onClick={() => setDteFilter(opt)}
           >{opt}</button>
         ))}
-        <span className="dte-filter-count">{sorted.length} tickers</span>
+        <span className="dte-filter-count">{sorted.length} rows · {uniqueTickers} tickers</span>
       </div>
       <div className="prem-scanner-wrap">
         {sorted.length === 0 ? (
@@ -165,18 +214,18 @@ export default function PremiumScanner({ rows, onRowClick }) {
               </tr>
             </thead>
             <tbody>
-              {sorted.map(row => (
+              {sorted.map(item => (
                 <tr
-                  key={row.ticker}
+                  key={item._key}
                   className="prem-scanner-row"
-                  onClick={() => onRowClick && onRowClick(row)}
+                  onClick={() => onRowClick && onRowClick(item)}
                 >
                   {COLS.map(col => (
                     <td
                       key={col.key}
                       className={`prem-scanner-td${col.align === "right" ? " right" : ""}${col.key === "ticker" ? " ticker-col" : ""}${col.key === "premium" ? " prem-col" : ""}`}
                     >
-                      {cellValue(row, col.key)}
+                      {cellValue(item, col.key)}
                     </td>
                   ))}
                 </tr>

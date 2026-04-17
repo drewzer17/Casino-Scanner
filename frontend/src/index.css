@@ -1300,3 +1300,12 @@ body {
   font-weight: 600;
   color: var(--green);
 }
+
+.prem-type-badge {
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.prem-type-cc  { color: var(--green); }
+.prem-type-csp { color: var(--red); }
