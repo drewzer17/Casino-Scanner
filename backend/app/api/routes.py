@@ -677,6 +677,299 @@ def debug_ticker(ticker: str) -> dict:
     }
 
 
+@router.get("/debug/errors", response_model=None)
+def debug_errors(db: Session = Depends(get_db)) -> dict:
+    """Which tickers from the universe didn't make it into the latest scan?
+
+    We don't store per-ticker error messages, so "missing" = universe - scan_results.
+    These tickers either timed out, had no options chain, had no price, or raised
+    an unhandled exception during scan_ticker().
+    """
+    from ..universe import load_universe
+
+    run = _latest_run(db)
+    if run is None:
+        raise HTTPException(status_code=404, detail="No completed scan runs yet")
+
+    universe = load_universe()
+    universe_set = set(universe)
+
+    scanned_tickers: set[str] = set(
+        db.execute(
+            select(models.ScanResult.ticker).where(models.ScanResult.run_id == run.id)
+        ).scalars().all()
+    )
+
+    missing = sorted(universe_set - scanned_tickers)
+    extra = sorted(scanned_tickers - universe_set)  # in scan but not universe (manual adds, etc.)
+
+    return {
+        "run_id": run.id,
+        "finished_at": run.finished_at,
+        "universe_total": len(universe),
+        "scanned_total": len(scanned_tickers),
+        "missing_count": len(missing),
+        "note": (
+            "Missing tickers are in the universe but absent from scan results. "
+            "Causes: timeout (most common with multi-expiry fetching), no options chain, "
+            "no price from Tradier sandbox, or unhandled exception in scan_ticker(). "
+            "Use GET /api/debug/scoring/{ticker} to diagnose a specific ticker live."
+        ),
+        "missing_tickers": missing,
+        "extra_tickers": extra,  # scanned but not in universe (informational)
+    }
+
+
+@router.get("/debug/scoring/{ticker}", response_model=None)
+def debug_scoring(ticker: str) -> dict:
+    """Live scoring breakdown for any ticker — re-runs the full scan pipeline.
+
+    Returns every intermediate value: raw price, IV, HV, per-expiry premiums,
+    chain OI/spread, earnings days, each factor score, SMA regime, and bucket.
+    Takes ~10-30s for tickers with many expirations.
+    """
+    import math as _math
+    from ..scanner.engine import (
+        fetch_quotes, fetch_bars, fetch_expirations, fetch_chain,
+        _nearest_expiry, _expirations_for_premium, _pick_call_strikes,
+        _collect_otm_calls, _collect_otm_puts, _contract_mid, _is_valid,
+        _log_returns, _annualized_vol, _iv_rank_from_history, _calc_sma,
+        _sma_regime, _calc_safety_score, HV_WINDOW,
+    )
+    from ..scanner.scoring import (
+        score_iv_rank, score_premium, score_iv_vs_hv, score_catalyst, score_chain,
+    )
+    from ..scanner.buckets import assign_bucket
+    from ..scanner.engine import build_earnings_lookup
+    from datetime import date as _date, datetime as _dt
+
+    ticker = ticker.strip().upper()
+    out: dict = {"ticker": ticker, "steps": {}}
+    steps = out["steps"]
+
+    def _san_val(v):
+        if v is None:
+            return None
+        try:
+            if _math.isnan(v) or _math.isinf(v):
+                return None
+        except Exception:
+            return None
+        return round(v, 6) if isinstance(v, float) else v
+
+    # 1. Price
+    try:
+        quotes = fetch_quotes([ticker])
+        q = quotes.get(ticker) or {}
+        raw = q.get("last")
+        price = float(raw) if _is_valid(raw) else None
+        steps["price"] = {"value": price, "raw_quote": {k: q.get(k) for k in ["last", "bid", "ask", "volume", "average_volume"]}}
+        if price is None:
+            out["error"] = "No price from Tradier — ticker may be delisted or sandbox doesn't carry it"
+            return out
+    except Exception as exc:
+        out["error"] = f"fetch_quotes failed: {exc}"
+        return out
+
+    # 2. Historical bars → HV + SMA
+    try:
+        bars = fetch_bars(ticker)
+        closes = [b.close for b in bars]
+        log_ret = _log_returns(closes)
+        hv = _annualized_vol(log_ret, HV_WINDOW)
+        sma_200 = _calc_sma(closes, 200)
+        sma_50 = _calc_sma(closes, 50)
+        regime = _sma_regime(price, sma_50, sma_200)
+        golden_cross = (sma_50 > sma_200) if (sma_50 and sma_200) else None
+        steps["history"] = {
+            "bars_fetched": len(bars),
+            "hv_30d_annualized": _san_val(hv),
+            "sma_200": _san_val(sma_200),
+            "sma_50": _san_val(sma_50),
+            "price_vs_sma200_pct": _san_val((price - sma_200) / sma_200 * 100) if sma_200 else None,
+            "price_vs_sma50_pct": _san_val((price - sma_50) / sma_50 * 100) if sma_50 else None,
+            "sma_regime": regime,
+            "golden_cross": golden_cross,
+        }
+    except Exception as exc:
+        steps["history"] = {"error": str(exc)}
+        hv = None; closes = []; bars = []
+        sma_200 = sma_50 = regime = golden_cross = None
+
+    # 3. Expirations
+    try:
+        exps = fetch_expirations(ticker)
+        iv_exp = _nearest_expiry(exps)
+        prem_exps = _expirations_for_premium(exps)[:5]
+        steps["expirations"] = {
+            "all": exps,
+            "iv_expiry": iv_exp,
+            "premium_expirations": [{"dte": d, "expiry": e} for d, e in prem_exps],
+        }
+        if not exps:
+            out["error"] = "No options expirations — not optionable on Tradier sandbox"
+            return out
+    except Exception as exc:
+        out["error"] = f"fetch_expirations failed: {exc}"
+        return out
+
+    # 4. IV chain
+    atm_iv = None
+    atm_oi = None
+    spread_pct = None
+    chain_cache: dict = {}
+    if iv_exp:
+        try:
+            chain_cache[iv_exp] = fetch_chain(ticker, iv_exp)
+            iv_chain = chain_cache[iv_exp]
+            atm_c, _, _ = _pick_call_strikes(iv_chain, price)
+            if atm_c:
+                greeks = atm_c.get("greeks") or {}
+                iv_raw = greeks.get("smv_vol") or greeks.get("mid_iv") or greeks.get("iv")
+                if _is_valid(iv_raw):
+                    atm_iv = float(iv_raw)
+                mid = _contract_mid(atm_c)
+                if mid and mid > 0:
+                    bid = float(atm_c.get("bid") or 0)
+                    ask = float(atm_c.get("ask") or 0)
+                    if bid > 0 and ask > 0:
+                        spread_pct = (ask - bid) / mid
+                oi_raw = atm_c.get("open_interest")
+                if _is_valid(oi_raw):
+                    atm_oi = int(float(oi_raw))
+            steps["iv_chain"] = {
+                "expiry": iv_exp,
+                "atm_strike": float(atm_c["strike"]) if atm_c else None,
+                "atm_iv": _san_val(atm_iv),
+                "atm_oi": atm_oi,
+                "atm_bid": float(atm_c.get("bid") or 0) if atm_c else None,
+                "atm_ask": float(atm_c.get("ask") or 0) if atm_c else None,
+                "atm_mid": _san_val(_contract_mid(atm_c)) if atm_c else None,
+                "spread_pct": _san_val(spread_pct),
+                "greeks": atm_c.get("greeks") if atm_c else None,
+            }
+        except Exception as exc:
+            steps["iv_chain"] = {"error": str(exc)}
+
+    # 5. IV rank
+    iv_rank = _iv_rank_from_history(closes, atm_iv)
+    if iv_rank is None and atm_iv is not None:
+        iv_rank = 50.0
+    steps["iv_rank"] = {
+        "value": _san_val(iv_rank),
+        "note": "50.0 = placeholder (need 30+ days of IV history); real value once history accumulates",
+    }
+
+    # 6. Premium expirations
+    best_atm_premium = None
+    best_otm2 = None
+    expiry_details = []
+    for dte, exp in (prem_exps or []):
+        try:
+            if exp not in chain_cache:
+                chain_cache[exp] = fetch_chain(ticker, exp)
+            chain = chain_cache[exp]
+            atm_c, _, _ = _pick_call_strikes(chain, price)
+            atm_mid = _contract_mid(atm_c)
+            atm_strike = float(atm_c["strike"]) if atm_c else None
+            otm_calls = _collect_otm_calls(chain, price)
+            otm_puts = _collect_otm_puts(chain, price)
+            otm2_mid = otm_calls[1]["prem"] if len(otm_calls) > 1 else None
+            detail = {
+                "expiry": exp,
+                "dte": dte,
+                "atm_strike": atm_strike,
+                "atm_call_mid": _san_val(atm_mid),
+                "atm_call_pct": _san_val(atm_mid / price) if atm_mid and price else None,
+                "otm_calls": [{"strike": c["strike"], "prem": _san_val(c["prem"])} for c in otm_calls],
+                "otm_puts": [{"strike": c["strike"], "prem": _san_val(c["prem"])} for c in otm_puts],
+            }
+            expiry_details.append(detail)
+            if (atm_mid or 0) > (best_atm_premium or 0):
+                best_atm_premium = atm_mid
+                best_otm2 = otm2_mid
+        except Exception as exc:
+            expiry_details.append({"expiry": exp, "dte": dte, "error": str(exc)})
+
+    steps["premium_expirations"] = expiry_details
+
+    # 7. Earnings
+    try:
+        earnings_lookup = build_earnings_lookup()
+        earn_days = earnings_lookup.get(ticker)
+    except Exception:
+        earn_days = None
+    steps["earnings"] = {"days_until_earnings": earn_days}
+
+    # 8. Factor scores
+    premium_pct = (best_atm_premium / price) if (best_atm_premium and price) else None
+    iv_ramp = (iv_rank is not None and iv_rank >= 70 and earn_days is not None and 0 < earn_days <= 21)
+
+    s_ivr = score_iv_rank(iv_rank)
+    s_prem = score_premium(premium_pct, best_otm2)
+    s_ivhv = score_iv_vs_hv(atm_iv, hv)
+    s_cat = score_catalyst(earn_days, False, iv_ramp, False)
+    s_chain = score_chain(atm_oi, spread_pct)
+    subtotal = s_ivr + s_prem + s_ivhv + s_cat + s_chain
+
+    steps["factor_scores"] = {
+        "iv_rank": {
+            "raw": _san_val(iv_rank),
+            "score": s_ivr,
+            "max": 20,
+        },
+        "premium": {
+            "atm_pct": _san_val(premium_pct * 100) if premium_pct else None,
+            "otm2_dollar": _san_val(best_otm2 * 100) if best_otm2 else None,
+            "score": s_prem,
+            "max": 20,
+        },
+        "iv_vs_hv": {
+            "iv": _san_val(atm_iv),
+            "hv": _san_val(hv),
+            "ratio": _san_val(atm_iv / hv) if (atm_iv and hv and hv > 0) else None,
+            "score": s_ivhv,
+            "max": 20,
+        },
+        "catalyst": {
+            "earnings_days": earn_days,
+            "iv_ramp": iv_ramp,
+            "score": s_cat,
+            "max": 20,
+        },
+        "chain": {
+            "open_interest": atm_oi,
+            "spread_pct": _san_val(spread_pct * 100) if spread_pct else None,
+            "score": s_chain,
+            "max": 20,
+        },
+        "subtotal": subtotal,
+    }
+
+    # 9. SMA modifier + final score
+    try:
+        from ..scanner.engine import _sma_score_modifier
+        sma_adj = _sma_score_modifier(price, sma_50, sma_200, regime, golden_cross)
+    except Exception:
+        sma_adj = 0.0
+
+    final_score = round(max(0.0, min(100.0, subtotal + sma_adj)), 2)
+    bucket = assign_bucket(final_score, iv_rank, premium_pct, earn_days)
+
+    out["summary"] = {
+        "price": price,
+        "final_score": final_score,
+        "sma_modifier": sma_adj,
+        "bucket": bucket,
+        "bucket_thresholds": "sell_now: score>=45 AND iv_rank>=45 AND premium_pct>=1.5%",
+    }
+    out["sell_now_eligible"] = (
+        final_score >= 45 and (iv_rank or 0) >= 45 and (premium_pct or 0) * 100 >= 1.5
+    )
+
+    return out
+
+
 @router.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
