@@ -970,6 +970,80 @@ def debug_scoring(ticker: str) -> dict:
     return out
 
 
+@router.get("/ticker/{ticker}/chains", response_model=None)
+def ticker_chains(ticker: str) -> dict:
+    """Live multi-expiry premium table for a ticker (fetched on demand, not during scan).
+
+    Returns all expirations within 7-45 days with ATM + 4 OTM calls + puts.
+    Typically takes 5-20s for weekly-options tickers (MSFT, TSLA etc).
+    """
+    from ..scanner.engine import (
+        fetch_expirations, fetch_chain, _expirations_for_premium,
+        _pick_call_strikes, _collect_otm_calls, _collect_otm_puts,
+        _contract_mid, _is_valid,
+    )
+    from datetime import date as _date
+
+    ticker = ticker.strip().upper()
+
+    try:
+        exps = fetch_expirations(ticker)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"fetch_expirations failed: {exc}")
+
+    # All expirations 7-45d (wider window than scan to give full picture)
+    prem_exps = _expirations_for_premium(exps, min_days=7, max_days=45)
+    if not prem_exps:
+        return {"ticker": ticker, "expirations": [], "note": "No expirations in 7-45d window"}
+
+    expiry_rows = []
+    for dte, exp in prem_exps:
+        try:
+            chain = fetch_chain(ticker, exp)
+            # Need a price — get ATM from the chain itself (lowest spread ATM call)
+            calls = sorted(
+                [o for o in chain if o.get("option_type") == "call" and _is_valid(o.get("strike"))],
+                key=lambda o: float(o["strike"]),
+            )
+            if not calls:
+                continue
+            # Use mid-chain strike as approximate price (good enough for OTM selection)
+            mid_idx = len(calls) // 2
+            approx_price = float(calls[mid_idx]["strike"])
+
+            atm_c, _, _ = _pick_call_strikes(chain, approx_price)
+            atm_strike = float(atm_c["strike"]) if atm_c else None
+            atm_call_mid = _contract_mid(atm_c)
+
+            # ATM put
+            all_puts = sorted(
+                [o for o in chain if o.get("option_type") == "put" and _is_valid(o.get("strike"))],
+                key=lambda o: float(o["strike"]),
+            )
+            atm_put_mid = None
+            if all_puts and atm_strike:
+                pi = min(range(len(all_puts)), key=lambda i: abs(float(all_puts[i]["strike"]) - atm_strike))
+                atm_put_mid = _contract_mid(all_puts[pi])
+
+            otm_calls = _collect_otm_calls(chain, approx_price)
+            otm_puts = _collect_otm_puts(chain, approx_price)
+
+            expiry_rows.append({
+                "expiry": exp,
+                "dte": dte,
+                "atm_strike": atm_strike,
+                "atm_call_prem": round(atm_call_mid, 4) if atm_call_mid else None,
+                "atm_put_prem": round(atm_put_mid, 4) if atm_put_mid else None,
+                "calls": [{"strike": c["strike"], "prem": c["prem"]} for c in otm_calls],
+                "puts": [{"strike": c["strike"], "prem": c["prem"]} for c in otm_puts],
+            })
+        except Exception as exc:
+            logger.debug("chains: expiry %s failed for %s: %s", exp, ticker, exc)
+            expiry_rows.append({"expiry": exp, "dte": dte, "error": str(exc)})
+
+    return {"ticker": ticker, "expirations": expiry_rows}
+
+
 @router.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}

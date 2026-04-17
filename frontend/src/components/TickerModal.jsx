@@ -103,10 +103,88 @@ function WheelLeg({ label, suggestion, effectiveBasis, profitIfCalled }) {
   );
 }
 
+const OTM_LABELS = ["1 OTM", "2 OTM", "3 OTM", "4 OTM"];
+
+function ChainsTable({ expirations }) {
+  if (!expirations || expirations.length === 0) return null;
+
+  const fmtP = (v) => (v == null ? "—" : `$${Number(v).toFixed(2)}`);
+  const fmtExp = (exp) => {
+    if (!exp) return "—";
+    const [y, m, d] = exp.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
+
+  const firstValid = expirations.find(e => !e.error && e.calls?.length > 0);
+  const callStrikes = firstValid?.calls?.map(c => c.strike) ?? [];
+  const putStrikes = firstValid?.puts?.map(c => c.strike) ?? [];
+
+  const tableSection = (title, dataKey, strikesArr, atmPremKey) => (
+    <div className="prem-exp-section" style={{ marginBottom: 12 }}>
+      <div className="prem-exp-title">{title}</div>
+      <table className="prem-exp-table">
+        <thead>
+          <tr>
+            <th>Exp</th>
+            <th>DTE</th>
+            <th className="prem-exp-atm-col">
+              <div>ATM</div>
+              {expirations[0]?.atm_strike != null && (
+                <div className="prem-exp-strike">${Number(expirations[0].atm_strike).toFixed(0)}</div>
+              )}
+            </th>
+            {OTM_LABELS.map((l, i) => (
+              <th key={i}>
+                <div>{l}</div>
+                {strikesArr[i] != null && <div className="prem-exp-strike">${Number(strikesArr[i]).toFixed(0)}</div>}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {expirations.map(e => (
+            <tr key={e.expiry}>
+              {e.error ? (
+                <td colSpan={7} className="prem-exp-empty">{fmtExp(e.expiry)} ({e.dte}d) — {e.error}</td>
+              ) : (
+                <>
+                  <td>{fmtExp(e.expiry)}</td>
+                  <td className="prem-exp-dte">{e.dte}d</td>
+                  <td className={`prem-exp-atm-col${e[atmPremKey] ? "" : " prem-exp-empty"}`}>
+                    {fmtP(e[atmPremKey])}
+                  </td>
+                  {Array.from({ length: 4 }, (_, i) => {
+                    const s = e[dataKey]?.[i];
+                    return (
+                      <td key={i} className={s?.prem ? "" : "prem-exp-empty"}>
+                        {fmtP(s?.prem)}
+                      </td>
+                    );
+                  })}
+                </>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  return (
+    <div>
+      {tableSection("Covered Calls ▲", "calls", callStrikes, "atm_call_prem")}
+      {tableSection("Cash-Secured Puts ▼", "puts", putStrikes, "atm_put_prem")}
+    </div>
+  );
+}
+
 export default function TickerModal({ row, onClose }) {
   const [wheel, setWheel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [chains, setChains] = useState(null);
+  const [chainsLoading, setChainsLoading] = useState(true);
+  const [chainsError, setChainsError] = useState(null);
 
   // Editable level overrides (null = use DB value)
   const [overrides, setOverrides] = useState({
@@ -140,6 +218,20 @@ export default function TickerModal({ row, onClose }) {
       fetchWheel(next.support_1, next.resistance_1);
     }, 600);
   };
+
+  // Fetch live multi-expiry chain data
+  useEffect(() => {
+    setChainsLoading(true);
+    api.chains(row.ticker)
+      .then((data) => {
+        setChains(data.expirations || []);
+        setChainsLoading(false);
+      })
+      .catch((e) => {
+        setChainsError(e.message);
+        setChainsLoading(false);
+      });
+  }, [row.ticker]);
 
   // Close on Escape
   useEffect(() => {
@@ -311,38 +403,25 @@ export default function TickerModal({ row, onClose }) {
           </div>
         </div>
 
-        {/* ── Expiry table (full width) ── */}
-        {row.expiry_data && row.expiry_data.length > 0 && (
-          <div className="expiry-section">
-            <div className="modal-section-title">Options Premiums by Expiry</div>
-            <table className="expiry-table">
-              <thead>
-                <tr>
-                  <th>Expiry</th>
-                  <th>DTE</th>
-                  <th>ATM Strike</th>
-                  <th>ATM Prem</th>
-                  <th>1 OTM</th>
-                  <th>2 OTM</th>
-                </tr>
-              </thead>
-              <tbody>
-                {row.expiry_data.map((e) => (
-                  <tr key={e.expiry} className={e.expiry === row.best_expiry ? "expiry-best" : ""}>
-                    <td>{fmtExpiry(e.expiry)}</td>
-                    <td>{e.dte}d</td>
-                    <td>{e.atm_strike != null ? `$${e.atm_strike.toFixed(0)}` : "—"}</td>
-                    <td>{e.atm_prem != null ? `$${(e.atm_prem * 100).toFixed(2)}` : "—"}</td>
-                    <td>{e.otm1_prem != null ? `$${(e.otm1_prem * 100).toFixed(2)}` : "—"}</td>
-                    <td className={e.expiry === row.best_expiry ? "expiry-best-val" : ""}>
-                      {e.otm2_prem != null ? `$${(e.otm2_prem * 100).toFixed(2)}` : "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* ── Live multi-expiry table (full width, fetched on demand) ── */}
+        <div className="expiry-section">
+          <div className="modal-section-title">
+            Options Premiums by Expiry
+            {chainsLoading && <span className="modal-hint"> · loading…</span>}
           </div>
-        )}
+          {chainsError && <div className="modal-error">{chainsError}</div>}
+          {!chainsLoading && !chainsError && (!chains || chains.length === 0) && (
+            <div className="modal-hint" style={{ padding: "8px 0" }}>No expirations in 7-45d window</div>
+          )}
+          {chainsLoading && (
+            <div className="chains-spinner">
+              <span className="spinner-dot" /><span className="spinner-dot" /><span className="spinner-dot" />
+            </div>
+          )}
+          {chains && chains.length > 0 && (
+            <ChainsTable expirations={chains} />
+          )}
+        </div>
       </div>
     </div>
   );

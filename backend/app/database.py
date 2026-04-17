@@ -60,6 +60,17 @@ def init_db() -> None:
         "ALTER TABLE scan_results ADD COLUMN expiry_data TEXT",
     ]:
         _add_column_if_missing(_ddl)
+    # iv_history table for real IV rank calculation (one row per ticker per day)
+    _add_column_if_missing(
+        "CREATE TABLE IF NOT EXISTS iv_history ("
+        "id SERIAL PRIMARY KEY, "
+        "ticker VARCHAR(16) NOT NULL, "
+        "iv FLOAT NOT NULL, "
+        "recorded_date DATE NOT NULL, "
+        "CONSTRAINT uq_iv_history_ticker_date UNIQUE (ticker, recorded_date)"
+        ")"
+    )
+
     # SMA + S/R columns added in v2
     for _ddl in [
         "ALTER TABLE scan_results ADD COLUMN sma_200 FLOAT",

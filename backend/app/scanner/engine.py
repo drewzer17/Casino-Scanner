@@ -619,6 +619,7 @@ class ScanRowResult:
     breakdown_chain: float
     notes: str | None = None
     safety_score: float | None = None
+    iv: float | None = None
     # Multi-expiry premium data
     best_expiry: str | None = None
     best_dte: int | None = None
@@ -699,14 +700,6 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
         # IV expiry: 21-45d window, used for IV rank + chain quality metrics
         iv_exp = _nearest_expiry(exps)
 
-        # Premium expirations: 7-30d, cap at 5 to limit API calls
-        prem_exps = _expirations_for_premium(exps)[:5]
-        if not prem_exps:
-            # No short-term expirations; fall back to whatever we have
-            if iv_exp:
-                iv_dte = (datetime.strptime(iv_exp, "%Y-%m-%d").date() - date.today()).days
-                prem_exps = [(iv_dte, iv_exp)]
-
         atm_iv: float | None = None
         atm_oi: int | None = None
         spread_pct: float | None = None
@@ -737,67 +730,38 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
             except Exception as exc:
                 logger.debug("%s: IV chain fetch failed (%s): %s", ticker, iv_exp, exc)
 
-        # 4b. Fetch each premium expiry and find the best (highest otm2 premium)
+        # Premium expiry: nearest single expiry in 7-30d window (avoids multi-fetch timeout).
+        # Full multi-expiry table is fetched on demand when user opens the detail modal.
+        prem_exps = _expirations_for_premium(exps)
+        prem_exp_tuple = prem_exps[0] if prem_exps else None
+        if prem_exp_tuple is None and iv_exp:
+            iv_dte = (datetime.strptime(iv_exp, "%Y-%m-%d").date() - date.today()).days
+            prem_exp_tuple = (iv_dte, iv_exp)
+
         best_atm_premium: float | None = None
-        best_premium_pct: float | None = None
         best_otm1: float | None = None
         best_otm2: float | None = None
         best_expiry: str | None = None
         best_dte: int | None = None
         best_strike: float | None = None
-        expiry_rows: list[dict] = []
 
-        for dte, exp in prem_exps:
+        if prem_exp_tuple:
+            dte, exp = prem_exp_tuple
             try:
                 if exp not in chain_cache:
                     chain_cache[exp] = fetch_chain(ticker, exp)
                 chain = chain_cache[exp]
-
-                # ATM call
-                atm_c, _, _ = _pick_call_strikes(chain, price)
-                atm_mid_p = _contract_mid(atm_c)
-                atm_strike_p = round(float(atm_c["strike"]), 2) if atm_c else None
-
-                # ATM put (closest put strike to current price)
-                all_puts = sorted(
-                    [o for o in chain if o.get("option_type") == "put" and _is_valid(o.get("strike"))],
-                    key=lambda o: float(o["strike"]),
-                )
-                atm_put_mid = None
-                if all_puts:
-                    api = min(range(len(all_puts)), key=lambda i: abs(float(all_puts[i]["strike"]) - price))
-                    atm_put_mid = _contract_mid(all_puts[api])
-
-                # OTM calls (1-4 above ATM) and OTM puts (1-4 below ATM)
-                otm_calls = _collect_otm_calls(chain, price)
-                otm_puts = _collect_otm_puts(chain, price)
-
-                # otm1/otm2 from calls for scoring compat
-                otm1_mid_p = otm_calls[0]["prem"] if otm_calls else None
-                otm2_mid_p = otm_calls[1]["prem"] if len(otm_calls) > 1 else None
-
-                expiry_rows.append({
-                    "expiry": exp,
-                    "dte": dte,
-                    "atm_strike": atm_strike_p,
-                    "atm_call_prem": round(atm_mid_p, 4) if atm_mid_p else None,
-                    "atm_put_prem": round(atm_put_mid, 4) if atm_put_mid else None,
-                    "calls": otm_calls,
-                    "puts": otm_puts,
-                })
-
-                # Pick best expiry = highest ATM call premium
-                if (atm_mid_p or 0) > (best_atm_premium or 0):
-                    best_atm_premium = atm_mid_p
-                    best_otm1 = otm1_mid_p
-                    best_otm2 = otm2_mid_p
-                    best_expiry = exp
-                    best_dte = dte
-                    best_strike = atm_strike_p
+                atm_c, otm1_c, otm2_c = _pick_call_strikes(chain, price)
+                best_atm_premium = _contract_mid(atm_c)
+                best_otm1 = _contract_mid(otm1_c)
+                best_otm2 = _contract_mid(otm2_c)
+                best_expiry = exp
+                best_dte = dte
+                best_strike = round(float(atm_c["strike"]), 2) if atm_c else None
             except Exception as exc:
                 logger.debug("%s: premium chain fetch failed (%s): %s", ticker, exp, exc)
 
-        # If no premium expirations succeeded, fall back to IV expiry data
+        # Fall back to IV expiry data if premium fetch failed
         if best_atm_premium is None and iv_exp and iv_exp in chain_cache:
             iv_chain = chain_cache[iv_exp]
             atm_c, otm1_c, otm2_c = _pick_call_strikes(iv_chain, price)
@@ -807,7 +771,7 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
             best_expiry = iv_exp
             if iv_exp:
                 best_dte = (datetime.strptime(iv_exp, "%Y-%m-%d").date() - date.today()).days
-            best_strike = float(atm_c["strike"]) if atm_c else None
+            best_strike = round(float(atm_c["strike"]), 2) if atm_c else None
 
         atm_premium = best_atm_premium
         premium_otm1 = best_otm1
@@ -870,11 +834,12 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
             breakdown_catalyst=breakdown.catalyst,
             breakdown_chain=breakdown.chain,
             safety_score=safety_score,
+            iv=atm_iv,
             # Multi-expiry
             best_expiry=best_expiry,
             best_dte=best_dte,
-            best_strike=round(best_strike, 2) if best_strike else None,
-            expiry_data=json.dumps(expiry_rows) if expiry_rows else None,
+            best_strike=best_strike,
+            expiry_data=None,
             # SMA
             sma_200=round(sma_200, 4) if sma_200 else None,
             sma_50=round(sma_50, 4) if sma_50 else None,
@@ -960,6 +925,22 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
         best_strike=result.best_strike,
         expiry_data=result.expiry_data,
     ))
+
+    # Record IV snapshot for IV rank history (one row per ticker per day)
+    if result.metrics.iv is not None:
+        try:
+            from sqlalchemy import text as _text
+            today_str = str(date.today())
+            db.execute(
+                _text(
+                    "INSERT INTO iv_history (ticker, iv, recorded_date) "
+                    "VALUES (:ticker, :iv, :date) "
+                    "ON CONFLICT (ticker, recorded_date) DO UPDATE SET iv = EXCLUDED.iv"
+                ),
+                {"ticker": result.ticker, "iv": result.metrics.iv, "date": today_str},
+            )
+        except Exception as _exc:
+            logger.debug("iv_history insert failed for %s: %s", result.ticker, _exc)
 
 
 # ── Main scan orchestrator ────────────────────────────────────────────────────

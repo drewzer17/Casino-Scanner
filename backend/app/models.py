@@ -1,9 +1,9 @@
 """Database models."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import Boolean, DateTime, Float, Index, Integer, String, Text
+from sqlalchemy import Boolean, Date, DateTime, Float, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .database import Base
@@ -83,3 +83,14 @@ class ScanResult(Base):
 
 Index("ix_scan_results_run_bucket", ScanResult.run_id, ScanResult.bucket)
 Index("ix_scan_results_ticker_created", ScanResult.ticker, ScanResult.created_at)
+
+
+class IvHistory(Base):
+    __tablename__ = "iv_history"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    ticker: Mapped[str] = mapped_column(String(16), index=True)
+    iv: Mapped[float] = mapped_column(Float)
+    recorded_date: Mapped[date] = mapped_column(Date, index=True)
+
+    __table_args__ = (UniqueConstraint("ticker", "recorded_date", name="uq_iv_history_ticker_date"),)

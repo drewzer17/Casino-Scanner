@@ -22,4 +22,5 @@ export const api = {
     const qs = params.toString();
     return get(`/api/ticker/${encodeURIComponent(ticker)}/wheel${qs ? "?" + qs : ""}`);
   },
+  chains: (ticker) => get(`/api/ticker/${encodeURIComponent(ticker)}/chains`),
 };
