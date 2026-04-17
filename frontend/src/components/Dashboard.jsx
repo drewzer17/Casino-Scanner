@@ -30,6 +30,7 @@ function sortRows(arr, key, premTimeframe = 30) {
 }
 import { api } from "../api/client.js";
 import BucketTabs from "./BucketTabs.jsx";
+import PremiumScanner from "./PremiumScanner.jsx";
 import ScoreCard from "./ScoreCard.jsx";
 import TickerModal from "./TickerModal.jsx";
 
@@ -243,6 +244,10 @@ export default function Dashboard() {
     ...data.buy_sell_later,
     ...data.watchlist,
   ];
+
+  const isPremiumTab = active === "premium_scanner";
+  const premiumRows = allRows.filter(priceFilter);
+
   const rows = showAll
     ? sortRows(allRows, "score", premTimeframe)
     : sortRows((data[active] || []).filter(priceFilter), sort, premTimeframe);
@@ -292,43 +297,49 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="sort-bar">
-        <span className="sort-label">Sort</span>
-        {SORT_OPTIONS.map(opt => (
-          <button
-            key={opt.key}
-            className={`sort-btn${sort === opt.key ? " active" : ""}`}
-            onClick={() => setSort(opt.key)}
-          >{opt.label}</button>
-        ))}
-        {sort === "premium" && (
-          <span className="sort-timeframe">
-            <span className="sort-label" style={{ marginLeft: 10 }}>within</span>
-            {PREM_TIMEFRAMES.map(d => (
-              <button
-                key={d}
-                className={`sort-btn${premTimeframe === d ? " active" : ""}`}
-                onClick={() => setPremTimeframe(d)}
-              >{d}d</button>
-            ))}
-          </span>
-        )}
-      </div>
+      {!isPremiumTab && (
+        <div className="sort-bar">
+          <span className="sort-label">Sort</span>
+          {SORT_OPTIONS.map(opt => (
+            <button
+              key={opt.key}
+              className={`sort-btn${sort === opt.key ? " active" : ""}`}
+              onClick={() => setSort(opt.key)}
+            >{opt.label}</button>
+          ))}
+          {sort === "premium" && (
+            <span className="sort-timeframe">
+              <span className="sort-label" style={{ marginLeft: 10 }}>within</span>
+              {PREM_TIMEFRAMES.map(d => (
+                <button
+                  key={d}
+                  className={`sort-btn${premTimeframe === d ? " active" : ""}`}
+                  onClick={() => setPremTimeframe(d)}
+                >{d}d</button>
+              ))}
+            </span>
+          )}
+        </div>
+      )}
 
       <TopMovers movers={movers} />
 
       <div className="tabs-row">
-        {!showAll && <BucketTabs active={active} counts={counts} onChange={setActive} />}
+        {!showAll && <BucketTabs active={active} counts={counts} onChange={(k) => { setActive(k); setShowAll(false); }} />}
         {showAll && <div className="tabs-spacer" />}
-        <button
-          className={`show-all-btn${showAll ? " active" : ""}`}
-          onClick={() => setShowAll(v => !v)}
-        >
-          {showAll ? `Show Buckets` : `Show All (${allRows.length})`}
-        </button>
+        {!isPremiumTab && (
+          <button
+            className={`show-all-btn${showAll ? " active" : ""}`}
+            onClick={() => setShowAll(v => !v)}
+          >
+            {showAll ? `Show Buckets` : `Show All (${allRows.length})`}
+          </button>
+        )}
       </div>
 
-      {rows.length === 0 ? (
+      {isPremiumTab ? (
+        <PremiumScanner rows={premiumRows} onRowClick={setSelectedRow} />
+      ) : rows.length === 0 ? (
         <div className="empty">No tickers in this bucket.</div>
       ) : (
         <div className="grid">

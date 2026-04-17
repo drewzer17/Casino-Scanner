@@ -1074,3 +1074,62 @@ body {
   0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
   40% { opacity: 1; transform: scale(1); }
 }
+
+/* ── Premium Scanner table ─────────────────────────────────────── */
+.prem-scanner-wrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.prem-scanner-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.prem-scanner-th {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.prem-scanner-th:hover { color: var(--text); }
+.prem-scanner-th.sorted { color: var(--accent); }
+.prem-scanner-th.right { text-align: right; }
+
+.sort-arrow { font-size: 10px; }
+
+.prem-scanner-row {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.prem-scanner-row:hover { background: rgba(255,255,255,0.04); }
+
+.prem-scanner-td {
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.prem-scanner-td.right { text-align: right; }
+
+.prem-scanner-td.ticker-col {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 14px;
+}
+
+.prem-scanner-td.prem-col {
+  font-weight: 600;
+  color: var(--green);
+}
