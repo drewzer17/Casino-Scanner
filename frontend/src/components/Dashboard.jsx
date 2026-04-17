@@ -127,6 +127,8 @@ export default function Dashboard() {
   const [sort, setSort] = useState("score");
   const [premTimeframe, setPremTimeframe] = useState(30);
   const [showAll, setShowAll] = useState(false);
+  const [showPremium, setShowPremium] = useState(false);
+  const [scanMode, setScanMode] = useState(null); // "normal" | "extensive" | null
 
   // Ticker detail modal
   const [selectedRow, setSelectedRow] = useState(null);
@@ -207,18 +209,34 @@ export default function Dashboard() {
   const handleRunScan = async () => {
     if (scanning) return;
     setScanning(true);
+    setScanMode("normal");
     setScanProgress(null);
     try {
       await api.triggerScan();
       startPolling();
     } catch (e) {
       setScanning(false);
+      setScanMode(null);
       setScanProgress(null);
     }
   };
 
-  const scanBtnLabel = () => {
-    if (!scanning) return "Run Scan";
+  const handleRunExtensiveScan = async () => {
+    if (scanning) return;
+    setScanning(true);
+    setScanMode("extensive");
+    setScanProgress(null);
+    try {
+      await api.triggerScanExtensive();
+      startPolling();
+    } catch (e) {
+      setScanning(false);
+      setScanMode(null);
+      setScanProgress(null);
+    }
+  };
+
+  const scanProgressLabel = () => {
     if (scanProgress) {
       const done = scanProgress.tickers_scanned ?? 0;
       const total = scanProgress.tickers_total ?? 500;
@@ -244,8 +262,6 @@ export default function Dashboard() {
     ...data.buy_sell_later,
     ...data.watchlist,
   ];
-
-  const isPremiumTab = active === "premium_scanner";
   const premiumRows = allRows.filter(priceFilter);
 
   const rows = showAll
@@ -265,11 +281,24 @@ export default function Dashboard() {
         </div>
         <div className="header-right">
           <button
+            className={`prem-view-btn${showPremium ? " active" : ""}`}
+            onClick={() => setShowPremium(v => !v)}
+          >
+            {showPremium ? "← Cards" : "Premium Scanner"}
+          </button>
+          <button
+            className={`scan-btn scan-btn-extensive${scanning ? " scanning" : ""}`}
+            onClick={handleRunExtensiveScan}
+            disabled={scanning}
+          >
+            {scanning && scanMode === "extensive" ? scanProgressLabel() : "Extensive Scan"}
+          </button>
+          <button
             className={`scan-btn${scanning ? " scanning" : ""}`}
             onClick={handleRunScan}
             disabled={scanning}
           >
-            {scanBtnLabel()}
+            {scanning && scanMode === "normal" ? scanProgressLabel() : "Run Scan"}
           </button>
           <div className="price-filter">
             <label className="price-filter-label">Price</label>
@@ -297,7 +326,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {!isPremiumTab && (
+      {!showPremium && (
         <div className="sort-bar">
           <span className="sort-label">Sort</span>
           {SORT_OPTIONS.map(opt => (
@@ -324,29 +353,30 @@ export default function Dashboard() {
 
       <TopMovers movers={movers} />
 
-      <div className="tabs-row">
-        {!showAll && <BucketTabs active={active} counts={counts} onChange={(k) => { setActive(k); setShowAll(false); }} />}
-        {showAll && <div className="tabs-spacer" />}
-        {!isPremiumTab && (
-          <button
-            className={`show-all-btn${showAll ? " active" : ""}`}
-            onClick={() => setShowAll(v => !v)}
-          >
-            {showAll ? `Show Buckets` : `Show All (${allRows.length})`}
-          </button>
-        )}
-      </div>
-
-      {isPremiumTab ? (
+      {showPremium ? (
         <PremiumScanner rows={premiumRows} onRowClick={setSelectedRow} />
-      ) : rows.length === 0 ? (
-        <div className="empty">No tickers in this bucket.</div>
       ) : (
-        <div className="grid">
-          {rows.map((r) => (
-            <ScoreCard key={r.ticker} row={r} showBucket={showAll} onClick={() => setSelectedRow(r)} />
-          ))}
-        </div>
+        <>
+          <div className="tabs-row">
+            {!showAll && <BucketTabs active={active} counts={counts} onChange={(k) => { setActive(k); setShowAll(false); }} />}
+            {showAll && <div className="tabs-spacer" />}
+            <button
+              className={`show-all-btn${showAll ? " active" : ""}`}
+              onClick={() => setShowAll(v => !v)}
+            >
+              {showAll ? `Show Buckets` : `Show All (${allRows.length})`}
+            </button>
+          </div>
+          {rows.length === 0 ? (
+            <div className="empty">No tickers in this bucket.</div>
+          ) : (
+            <div className="grid">
+              {rows.map((r) => (
+                <ScoreCard key={r.ticker} row={r} showBucket={showAll} onClick={() => setSelectedRow(r)} />
+              ))}
+            </div>
+          )}
+        </>
       )}
       {selectedRow && (
         <TickerModal row={selectedRow} onClose={() => setSelectedRow(null)} />

@@ -945,8 +945,106 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
 
 # ── Main scan orchestrator ────────────────────────────────────────────────────
 
-def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = None) -> int:
-    """Crash-resilient, resumable scan. Returns ScanRun id."""
+def scan_ticker_extensive(ticker: str, price: float | None = None, earn_days: int | None = None) -> ScanRowResult | None:
+    """Extensive scan: runs normal scan_ticker then also fetches nearest weekly expiry.
+
+    Weekly = earliest available expiry that is NOT the one already used by the base scan.
+    Both entries are stored in expiry_data JSON so the Premium Scanner DTE filter can use them.
+    """
+    result = scan_ticker(ticker, price, earn_days)
+    if result is None:
+        return None
+
+    try:
+        exps = fetch_expirations(ticker)
+        today = date.today()
+
+        # Find weekly = earliest expiry that differs from the one used by the base scan
+        used_expiry = result.best_expiry
+        weekly_exp: str | None = None
+        for exp in exps:
+            try:
+                d = datetime.strptime(exp, "%Y-%m-%d").date()
+            except ValueError:
+                continue
+            if (d - today).days < 1:
+                continue
+            if exp != used_expiry:
+                weekly_exp = exp
+                break
+
+        expiry_rows: list[dict] = []
+
+        if weekly_exp:
+            try:
+                w_dte = (datetime.strptime(weekly_exp, "%Y-%m-%d").date() - today).days
+                w_chain = fetch_chain(ticker, weekly_exp)
+                w_price = result.price or 100.0
+                w_atm, _, _ = _pick_call_strikes(w_chain, w_price)
+                w_atm_prem = _contract_mid(w_atm)
+                w_atm_strike = round(float(w_atm["strike"]), 2) if w_atm else None
+                w_puts = sorted(
+                    [o for o in w_chain if o.get("option_type") == "put" and _is_valid(o.get("strike"))],
+                    key=lambda o: float(o["strike"]),
+                )
+                w_atm_put_mid: float | None = None
+                if w_puts and w_atm_strike:
+                    pi = min(range(len(w_puts)), key=lambda i: abs(float(w_puts[i]["strike"]) - w_atm_strike))
+                    w_atm_put_mid = _contract_mid(w_puts[pi])
+                expiry_rows.append({
+                    "expiry": weekly_exp,
+                    "dte": w_dte,
+                    "atm_strike": w_atm_strike,
+                    "atm_call_prem": round(w_atm_prem, 4) if w_atm_prem else None,
+                    "atm_put_prem": round(w_atm_put_mid, 4) if w_atm_put_mid else None,
+                    "calls": [],
+                    "puts": [],
+                })
+            except Exception as exc:
+                logger.debug("%s: weekly chain fetch failed (%s): %s", ticker, weekly_exp, exc)
+
+        # Add the base (monthly) expiry entry so both are queryable in Premium Scanner
+        if result.best_expiry:
+            expiry_rows.append({
+                "expiry": result.best_expiry,
+                "dte": result.best_dte,
+                "atm_strike": result.best_strike,
+                "atm_call_prem": round(result.atm_call_premium, 4) if result.atm_call_premium else None,
+                "atm_put_prem": None,
+                "calls": [],
+                "puts": [],
+            })
+
+        if expiry_rows:
+            result.expiry_data = json.dumps(expiry_rows)
+
+    except Exception as exc:
+        logger.debug("%s: extensive extra fetch failed: %s", ticker, exc)
+
+    return result
+
+
+def _scan_extensive_with_timeout(ticker: str, price: float | None = None, earn_days: int | None = None) -> ScanRowResult | None:
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(scan_ticker_extensive, ticker, price, earn_days)
+        try:
+            return future.result(timeout=TICKER_TIMEOUT)
+        except FuturesTimeout:
+            logger.warning("ticker %s (extensive) timed out after %ds", ticker, TICKER_TIMEOUT)
+            return None
+        except Exception as exc:
+            logger.warning("ticker %s (extensive) raised unexpectedly: %s", ticker, exc)
+            return None
+
+
+def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = None, scanner_fn=None) -> int:
+    """Crash-resilient, resumable scan. Returns ScanRun id.
+
+    scanner_fn: optional override for per-ticker scan function (defaults to _scan_with_timeout).
+    Pass _scan_extensive_with_timeout for extensive mode.
+    """
+    if scanner_fn is None:
+        scanner_fn = _scan_with_timeout
     universe = tickers if tickers is not None else load_universe()
     if limit is not None:
         universe = universe[:limit]
@@ -1028,7 +1126,7 @@ def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = 
                     cat_debug_logged + 1, ticker, earn_days_val, ticker in earnings_lookup,
                 )
                 cat_debug_logged += 1
-            result = _scan_with_timeout(ticker, price=prices.get(ticker), earn_days=earn_days_val)
+            result = scanner_fn(ticker, price=prices.get(ticker), earn_days=earn_days_val)
             if result is None:
                 errored += 1
             else:
@@ -1045,6 +1143,11 @@ def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = 
     db.commit()
     logger.info("run_id=%s complete — scanned=%d errored=%d", run.id, scanned, errored)
     return run.id
+
+
+def run_scan_extensive(db: Session, tickers: list[str] | None = None, limit: int | None = None) -> int:
+    """Extensive scan: normal scan + nearest weekly expiry chain per ticker."""
+    return run_scan(db, tickers=tickers, limit=limit, scanner_fn=_scan_extensive_with_timeout)
 
 
 def run_scan_cli() -> None:

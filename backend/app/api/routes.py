@@ -374,6 +374,56 @@ def trigger_scan(
     }
 
 
+@router.get("/scan/extensive")
+def trigger_scan_extensive(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    limit: int | None = None,
+) -> dict:
+    """Kick off an extensive scan (normal scan + nearest weekly expiry chain per ticker).
+
+    Returns 409 if a scan is already in progress.
+    """
+    in_progress = db.execute(
+        select(models.ScanRun).where(models.ScanRun.status == "running").limit(1)
+    ).scalar_one_or_none()
+    if in_progress:
+        scanned = db.execute(
+            select(func.count()).select_from(models.ScanResult)
+            .where(models.ScanResult.run_id == in_progress.id)
+        ).scalar() or 0
+        return {
+            "status": "already_running",
+            "run_id": in_progress.id,
+            "tickers_scanned_so_far": scanned,
+            "message": f"Scan already in progress. {scanned} tickers done so far. Poll /api/scan/status for live progress.",
+        }
+
+    def _background() -> None:
+        if not _scan_lock.acquire(blocking=False):
+            logger.warning("trigger_scan_extensive: lock already held, skipping duplicate run")
+            return
+        bg_db = SessionLocal()
+        try:
+            from ..scanner.engine import run_scan_extensive
+            run_id = run_scan_extensive(bg_db, limit=limit)
+            logger.info("background extensive scan finished run_id=%s", run_id)
+        except Exception as exc:
+            logger.exception("background extensive scan failed: %s", exc)
+        finally:
+            bg_db.close()
+            _scan_lock.release()
+
+    background_tasks.add_task(_background)
+    ticker_count = f"first {limit}" if limit else "~500"
+    return {
+        "status": "extensive_scan_started",
+        "message": f"Extensive scan: scanning {ticker_count} tickers with weekly+monthly expiries. Results commit every 25 tickers.",
+        "poll_progress": "/api/scan/status",
+        "poll_results": "/api/scan/latest",
+    }
+
+
 @router.get("/scan/status")
 def scan_status(db: Session = Depends(get_db)) -> dict:
     """Live progress for the most recent scan run (running or finished)."""

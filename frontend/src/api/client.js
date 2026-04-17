@@ -14,6 +14,7 @@ export const api = {
   ticker: (symbol) => get(`/api/ticker/${encodeURIComponent(symbol)}`),
   movers: (days = 7, limit = 5) => get(`/api/movers?days=${days}&limit=${limit}`),
   triggerScan: () => get("/api/scan/run"),
+  triggerScanExtensive: () => get("/api/scan/extensive"),
   scanStatus: () => get("/api/scan/status"),
   wheel: (ticker, support_1 = null, resistance_1 = null) => {
     const params = new URLSearchParams();
