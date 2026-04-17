@@ -16,6 +16,39 @@ function fmt(v, digits = 2) {
   return Number(v).toFixed(digits);
 }
 
+// arrow character + color for each arrow type
+const ARROW_STYLE = {
+  up_green:    { char: "▲", color: "var(--green)" },
+  down_yellow: { char: "▼", color: "var(--yellow)" },
+  down_red:    { char: "▼", color: "var(--red)" },
+};
+
+function ArrowStrip({ history }) {
+  if (!history || history.length === 0) return null;
+  return (
+    <div className="arrows">
+      {history.map((h) => {
+        const style = h.arrow ? ARROW_STYLE[h.arrow] : null;
+        const color = style ? style.color : "var(--text-muted)";
+        const char  = style ? style.char  : "–";
+        const tip   = h.delta != null
+          ? `${h.days}d ago: ${h.delta > 0 ? "+" : ""}${h.delta.toFixed(1)} pts`
+          : `${h.days}d: no data`;
+        return (
+          <span
+            key={h.days}
+            className="arrow-tf"
+            style={{ color }}
+            title={tip}
+          >
+            {h.days}d{char}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function ScoreCard({ row }) {
   const b = row.breakdown || {};
   return (
@@ -29,6 +62,8 @@ export default function ScoreCard({ row }) {
         </div>
         <div className={pillClass(row.score)}>{fmt(row.score, 0)}</div>
       </div>
+
+      <ArrowStrip history={row.history} />
 
       <div className="breakdown">
         <div className="factor">

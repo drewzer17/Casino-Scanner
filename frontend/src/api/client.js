@@ -12,5 +12,5 @@ async function get(path) {
 export const api = {
   scanLatest: () => get("/api/scan/latest"),
   ticker: (symbol) => get(`/api/ticker/${encodeURIComponent(symbol)}`),
-  movers: () => get("/api/movers"),
+  movers: (days = 7, limit = 5) => get(`/api/movers?days=${days}&limit=${limit}`),
 };

@@ -14,6 +14,15 @@ class ScoreBreakdown(BaseModel):
     chain: float
 
 
+class TimeframeDelta(BaseModel):
+    """Score change vs a historical timeframe (1d, 2d, … 7d)."""
+    days: int
+    prev_score: float | None
+    delta: float | None          # positive = improved, negative = declined
+    prev_bucket: str | None
+    arrow: str | None            # "up_green" | "down_yellow" | "down_red" | None
+
+
 class ScanResultOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -31,6 +40,7 @@ class ScanResultOut(BaseModel):
     score: float
     bucket: str
     breakdown: ScoreBreakdown
+    history: list[TimeframeDelta] = []   # score deltas vs 1d/2d/3d/4d/5d/7d ago
     notes: str | None = None
     created_at: datetime
 
@@ -51,6 +61,7 @@ class MoverOut(BaseModel):
     prev_score: float | None
     delta: float
     bucket: str
+    prev_bucket: str | None = None
 
 
 class MoversOut(BaseModel):

@@ -43,24 +43,66 @@ function timeAgo(isoString) {
   return `${days} day${days === 1 ? "" : "s"} ago`;
 }
 
+const BUCKET_LABEL = {
+  sell_now: "Sell Now",
+  buy_sell_later: "Buy Later",
+  watchlist: "Watchlist",
+};
+
+function TopMovers({ movers }) {
+  if (!movers || (movers.gainers.length === 0 && movers.losers.length === 0)) return null;
+
+  const renderList = (list, isGain) =>
+    list.map((m) => (
+      <div key={m.ticker} className="mover-row">
+        <span className="mover-ticker">{m.ticker}</span>
+        <span className="mover-scores">
+          {m.prev_score != null ? m.prev_score.toFixed(0) : "—"} → {m.score.toFixed(0)}
+          {m.prev_bucket && m.prev_bucket !== m.bucket && (
+            <> · <span style={{ color: isGain ? "var(--green)" : "var(--red)" }}>
+              {BUCKET_LABEL[m.prev_bucket] ?? m.prev_bucket} → {BUCKET_LABEL[m.bucket] ?? m.bucket}
+            </span></>
+          )}
+        </span>
+        <span className={`mover-delta ${isGain ? "gain" : "loss"}`}>
+          {isGain ? "+" : ""}{m.delta.toFixed(1)}
+        </span>
+      </div>
+    ));
+
+  return (
+    <div className="movers-panel">
+      <div className="movers-col">
+        <div className="movers-col-title up">▲ Top Gainers (7d)</div>
+        {movers.gainers.length > 0
+          ? renderList(movers.gainers, true)
+          : <div style={{ color: "var(--text-muted)", fontSize: 12 }}>Not enough history yet</div>}
+      </div>
+      <div className="movers-col">
+        <div className="movers-col-title dn">▼ Top Losers (7d)</div>
+        {movers.losers.length > 0
+          ? renderList(movers.losers, false)
+          : <div style={{ color: "var(--text-muted)", fontSize: 12 }}>Not enough history yet</div>}
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [data, setData] = useState(null);
+  const [movers, setMovers] = useState(null);
   const [error, setError] = useState(null);
   const [active, setActive] = useState("sell_now");
 
   useEffect(() => {
     let cancelled = false;
-    api
-      .scanLatest()
-      .then((d) => {
-        if (!cancelled) setData(d);
-      })
-      .catch((e) => {
-        if (!cancelled) setError(e.message);
-      });
-    return () => {
-      cancelled = true;
-    };
+    api.scanLatest()
+      .then((d) => { if (!cancelled) setData(d); })
+      .catch((e) => { if (!cancelled) setError(e.message); });
+    api.movers()
+      .then((m) => { if (!cancelled) setMovers(m); })
+      .catch(() => {}); // movers failure is non-fatal
+    return () => { cancelled = true; };
   }, []);
 
   if (error) return <div className="error">Error loading scan: {error}</div>;
@@ -85,6 +127,8 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      <TopMovers movers={movers} />
 
       <BucketTabs active={active} counts={counts} onChange={setActive} />
 

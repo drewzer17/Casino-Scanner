@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import threading
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import func, select
@@ -16,6 +17,7 @@ from ..schemas import (
     ScanLatestOut,
     ScanResultOut,
     ScoreBreakdown,
+    TimeframeDelta,
 )
 
 logger = logging.getLogger(__name__)
@@ -23,10 +25,83 @@ logger = logging.getLogger(__name__)
 # Simple lock so two HTTP requests can't kick off concurrent scans
 _scan_lock = threading.Lock()
 
+# ── Score history helpers ──────────────────────────────────────────────────────
+
+HISTORY_DAYS = [1, 2, 3, 4, 5, 7]
+_BUCKET_RANK = {"sell_now": 2, "buy_sell_later": 1, "watchlist": 0}
+
+
+def _history_lookup(
+    db: Session, current_run_id: int
+) -> dict[int, dict[str, tuple[float, str]]]:
+    """For each N in HISTORY_DAYS return {ticker: (score, bucket)} from the most
+    recent completed run that finished at least N-0.5 days ago.
+
+    Cost: 2 queries per timeframe = 12 queries total, all indexed.
+    """
+    now = datetime.utcnow()
+    result: dict[int, dict[str, tuple[float, str]]] = {}
+    for n in HISTORY_DAYS:
+        cutoff = now - timedelta(days=n - 0.5)
+        hist_run = db.execute(
+            select(models.ScanRun)
+            .where(
+                models.ScanRun.status == "completed",
+                models.ScanRun.id != current_run_id,
+                models.ScanRun.finished_at <= cutoff,
+            )
+            .order_by(models.ScanRun.finished_at.desc())
+            .limit(1)
+        ).scalar_one_or_none()
+
+        if hist_run is None:
+            result[n] = {}
+            continue
+
+        rows = db.execute(
+            select(models.ScanResult.ticker, models.ScanResult.score, models.ScanResult.bucket)
+            .where(models.ScanResult.run_id == hist_run.id)
+        ).all()
+        result[n] = {r.ticker: (r.score, r.bucket) for r in rows}
+    return result
+
+
+def _compute_deltas(
+    ticker: str,
+    current_score: float,
+    current_bucket: str,
+    lookup: dict[int, dict[str, tuple[float, str]]],
+) -> list[TimeframeDelta]:
+    deltas: list[TimeframeDelta] = []
+    for n in HISTORY_DAYS:
+        entry = lookup.get(n, {}).get(ticker)
+        if entry is None:
+            deltas.append(TimeframeDelta(days=n, prev_score=None, delta=None, prev_bucket=None, arrow=None))
+            continue
+        prev_score, prev_bucket = entry
+        delta = current_score - prev_score
+        if delta >= 0:
+            arrow = "up_green"
+        elif _BUCKET_RANK.get(current_bucket, 0) < _BUCKET_RANK.get(prev_bucket, 0):
+            arrow = "down_red"    # dropped to a lower bucket — opportunity gone
+        else:
+            arrow = "down_yellow"  # cooling but still in same or higher bucket
+        deltas.append(TimeframeDelta(
+            days=n,
+            prev_score=round(prev_score, 2),
+            delta=round(delta, 2),
+            prev_bucket=prev_bucket,
+            arrow=arrow,
+        ))
+    return deltas
+
 router = APIRouter(prefix="/api", tags=["scanner"])
 
 
-def _to_out(row: models.ScanResult) -> ScanResultOut:
+def _to_out(
+    row: models.ScanResult,
+    history: list[TimeframeDelta] | None = None,
+) -> ScanResultOut:
     return ScanResultOut(
         ticker=row.ticker,
         price=row.price,
@@ -48,6 +123,7 @@ def _to_out(row: models.ScanResult) -> ScanResultOut:
             catalyst=row.score_catalyst,
             chain=row.score_chain,
         ),
+        history=history or [],
         notes=row.notes,
         created_at=row.created_at,
     )
@@ -79,11 +155,15 @@ def scan_latest(db: Session = Depends(get_db)) -> ScanLatestOut:
         .all()
     )
 
+    # Compute score history for all timeframes (12 queries total, all indexed)
+    lookup = _history_lookup(db, run.id)
+
     sell_now: list[ScanResultOut] = []
     buy_sell_later: list[ScanResultOut] = []
     watchlist: list[ScanResultOut] = []
     for row in rows:
-        out = _to_out(row)
+        hist = _compute_deltas(row.ticker, row.score, row.bucket, lookup)
+        out = _to_out(row, history=hist)
         if row.bucket == "sell_now":
             sell_now.append(out)
         elif row.bucket == "buy_sell_later":
@@ -118,63 +198,73 @@ def ticker_detail(ticker: str, db: Session = Depends(get_db)) -> ScanResultOut:
 
 
 @router.get("/movers", response_model=MoversOut)
-def movers(db: Session = Depends(get_db), limit: int = 10) -> MoversOut:
+def movers(db: Session = Depends(get_db), limit: int = 5, days: int = 7) -> MoversOut:
+    """Return top gainers and losers over the last `days` days (default 7)."""
     latest = _latest_run(db)
     if latest is None:
         raise HTTPException(status_code=404, detail="No completed scan runs yet")
 
+    # Find the comparison run: most recent completed run at least (days-0.5) days ago
+    cutoff = datetime.utcnow() - timedelta(days=days - 0.5)
     prev_stmt = (
         select(models.ScanRun)
         .where(
             models.ScanRun.status == "completed",
             models.ScanRun.id != latest.id,
+            models.ScanRun.finished_at <= cutoff,
         )
         .order_by(models.ScanRun.finished_at.desc())
         .limit(1)
     )
     previous = db.execute(prev_stmt).scalar_one_or_none()
 
-    latest_rows = (
-        db.execute(
-            select(models.ScanResult).where(models.ScanResult.run_id == latest.id)
-        )
-        .scalars()
-        .all()
-    )
+    # Fall back to the immediately previous run if nothing is old enough
     if previous is None:
-        # no prior run — every current score is its own delta
+        previous = db.execute(
+            select(models.ScanRun)
+            .where(models.ScanRun.status == "completed", models.ScanRun.id != latest.id)
+            .order_by(models.ScanRun.finished_at.desc())
+            .limit(1)
+        ).scalar_one_or_none()
+
+    latest_rows = (
+        db.execute(select(models.ScanResult).where(models.ScanResult.run_id == latest.id))
+        .scalars().all()
+    )
+
+    if previous is None:
         top = sorted(latest_rows, key=lambda r: r.score, reverse=True)[:limit]
         gainers = [
-            MoverOut(ticker=r.ticker, score=r.score, prev_score=None, delta=r.score, bucket=r.bucket)
+            MoverOut(ticker=r.ticker, score=r.score, prev_score=None, delta=r.score,
+                     bucket=r.bucket, prev_bucket=None)
             for r in top
         ]
         return MoversOut(gainers=gainers, losers=[])
 
     prev_rows = (
-        db.execute(
-            select(models.ScanResult).where(models.ScanResult.run_id == previous.id)
-        )
-        .scalars()
-        .all()
+        db.execute(select(models.ScanResult).where(models.ScanResult.run_id == previous.id))
+        .scalars().all()
     )
-    prev_by_ticker = {r.ticker: r.score for r in prev_rows}
+    prev_by_ticker = {r.ticker: (r.score, r.bucket) for r in prev_rows}
 
     deltas: list[MoverOut] = []
     for r in latest_rows:
         prev = prev_by_ticker.get(r.ticker)
-        delta = r.score - prev if prev is not None else r.score
-        deltas.append(
-            MoverOut(
-                ticker=r.ticker,
-                score=r.score,
-                prev_score=prev,
-                delta=round(delta, 2),
-                bucket=r.bucket,
-            )
-        )
+        prev_score = prev[0] if prev else None
+        prev_bucket = prev[1] if prev else None
+        delta = r.score - prev_score if prev_score is not None else r.score
+        deltas.append(MoverOut(
+            ticker=r.ticker,
+            score=r.score,
+            prev_score=prev_score,
+            delta=round(delta, 2),
+            bucket=r.bucket,
+            prev_bucket=prev_bucket,
+        ))
+
     deltas.sort(key=lambda m: m.delta, reverse=True)
-    gainers = deltas[:limit]
-    losers = sorted(deltas, key=lambda m: m.delta)[:limit]
+    gainers = [m for m in deltas[:limit] if m.delta > 0]
+    losers = [m for m in sorted(deltas, key=lambda m: m.delta)[:limit] if m.delta < 0]
     return MoversOut(gainers=gainers, losers=losers)
 
 

@@ -189,3 +189,84 @@ body {
   border-radius: 10px;
   border: 1px solid rgba(248, 113, 113, 0.3);
 }
+
+/* ── Timeframe arrows ──────────────────────────────────────────────────────── */
+.arrows {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.arrow-tf {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  opacity: 0.9;
+}
+
+/* ── Top Movers panel ──────────────────────────────────────────────────────── */
+.movers-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.movers-col {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.movers-col-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 10px;
+}
+
+.movers-col-title.up { color: var(--green); }
+.movers-col-title.dn { color: var(--red); }
+
+.mover-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.mover-row:last-child { border-bottom: none; }
+
+.mover-ticker {
+  font-weight: 700;
+  flex: 0 0 52px;
+}
+
+.mover-scores {
+  color: var(--text-muted);
+  font-size: 11px;
+  flex: 1;
+}
+
+.mover-delta {
+  font-weight: 700;
+  font-size: 13px;
+  flex: 0 0 44px;
+  text-align: right;
+}
+
+.mover-delta.gain { color: var(--green); }
+.mover-delta.loss { color: var(--red); }
+
+.mover-bucket-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text-muted);
+}
