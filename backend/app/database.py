@@ -82,6 +82,15 @@ def init_db() -> None:
         ")"
     )
 
+    # ATM put premium columns added in v5
+    for _ddl in [
+        "ALTER TABLE scan_results ADD COLUMN atm_put_premium FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN best_put_strike FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN best_put_expiry TEXT",
+        "ALTER TABLE scan_results ADD COLUMN best_put_dte INTEGER",
+    ]:
+        _add_column_if_missing(_ddl)
+
     # SMA + S/R columns added in v2
     for _ddl in [
         "ALTER TABLE scan_results ADD COLUMN sma_200 FLOAT",

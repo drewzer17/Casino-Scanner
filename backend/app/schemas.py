@@ -77,6 +77,12 @@ class ScanResultOut(BaseModel):
     best_strike: float | None = None
     expiry_data: list[ExpiryRow] = []
 
+    # ATM put premium from normal scan
+    atm_put_premium: float | None = None
+    best_put_strike: float | None = None
+    best_put_expiry: str | None = None
+    best_put_dte: int | None = None
+
     # Universe source tags (e.g. ["sp500", "ai_sector"]) — populated from ticker_universe table
     sources: list[str] = []
 

@@ -78,6 +78,12 @@ class ScanResult(Base):
     best_strike: Mapped[float | None] = mapped_column(Float, nullable=True)  # ATM strike for best expiry
     expiry_data: Mapped[str | None] = mapped_column(Text, nullable=True)    # JSON list of ExpiryRow
 
+    # ATM put premium (stored from normal scan — same expiry as best_expiry)
+    atm_put_premium: Mapped[float | None] = mapped_column(Float, nullable=True)
+    best_put_strike: Mapped[float | None] = mapped_column(Float, nullable=True)
+    best_put_expiry: Mapped[str | None] = mapped_column(Text, nullable=True)
+    best_put_dte: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 

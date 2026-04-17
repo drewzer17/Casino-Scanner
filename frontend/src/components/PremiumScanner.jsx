@@ -69,21 +69,56 @@ function getCallData(row, dteFilter) {
 }
 
 function getPutData(row, dteFilter) {
-  // Put premium only comes from expiry_data (populated by extensive scans)
+  if (dteFilter === "ALL") {
+    // Prefer stored atm_put_premium (from normal scan)
+    if (row.atm_put_premium != null) {
+      return {
+        premium: row.atm_put_premium,
+        premiumPct: (row.atm_put_premium && row.price) ? row.atm_put_premium / row.price : null,
+        strike: row.best_put_strike,
+        expiry: row.best_put_expiry,
+        dte: row.best_put_dte,
+      };
+    }
+    // Fall back to best entry in expiry_data
+    const entries = (row.expiry_data || []).filter(e => e.atm_put_prem != null);
+    if (!entries.length) return null;
+    entries.sort((a, b) => (b.atm_put_prem ?? 0) - (a.atm_put_prem ?? 0));
+    const e = entries[0];
+    return {
+      premium: e.atm_put_prem,
+      premiumPct: (e.atm_put_prem && row.price) ? e.atm_put_prem / row.price : null,
+      strike: e.atm_strike,
+      expiry: e.expiry,
+      dte: e.dte,
+    };
+  }
+  // DTE-filtered: prefer expiry_data entries within window
   const entries = (row.expiry_data || []).filter(
-    e => e.atm_put_prem != null &&
-      (dteFilter === "ALL" || (e.dte != null && e.dte <= dteFilter))
+    e => e.atm_put_prem != null && e.dte != null && e.dte <= dteFilter
   );
-  if (!entries.length) return null;
-  entries.sort((a, b) => (b.atm_put_prem ?? 0) - (a.atm_put_prem ?? 0));
-  const e = entries[0];
-  return {
-    premium: e.atm_put_prem,
-    premiumPct: (e.atm_put_prem && row.price) ? e.atm_put_prem / row.price : null,
-    strike: e.atm_strike,
-    expiry: e.expiry,
-    dte: e.dte,
-  };
+  if (entries.length) {
+    entries.sort((a, b) => (b.atm_put_prem ?? 0) - (a.atm_put_prem ?? 0));
+    const e = entries[0];
+    return {
+      premium: e.atm_put_prem,
+      premiumPct: (e.atm_put_prem && row.price) ? e.atm_put_prem / row.price : null,
+      strike: e.atm_strike,
+      expiry: e.expiry,
+      dte: e.dte,
+    };
+  }
+  // Fall back to stored put if it fits the DTE filter
+  if (row.best_put_dte != null && row.best_put_dte <= dteFilter && row.atm_put_premium != null) {
+    return {
+      premium: row.atm_put_premium,
+      premiumPct: (row.atm_put_premium && row.price) ? row.atm_put_premium / row.price : null,
+      strike: row.best_put_strike,
+      expiry: row.best_put_expiry,
+      dte: row.best_put_dte,
+    };
+  }
+  return null;
 }
 
 // ── Columns ───────────────────────────────────────────────────────
@@ -143,6 +178,7 @@ function sortValue(item, key) {
 
 export default function PremiumScanner({ rows, onRowClick }) {
   const [dteFilter, setDteFilter] = useState("ALL");
+  const [typeFilter, setTypeFilter] = useState("ALL");
   const [sortCol, setSortCol] = useState("premium");
   const [sortAsc, setSortAsc] = useState(false);
 
@@ -160,8 +196,8 @@ export default function PremiumScanner({ rows, onRowClick }) {
   for (const row of rows) {
     const callD = getCallData(row, dteFilter);
     const putD  = getPutData(row, dteFilter);
-    if (callD) items.push({ ...row, _d: callD, _type: "CC",  _key: `${row.ticker}-CC` });
-    if (putD)  items.push({ ...row, _d: putD,  _type: "CSP", _key: `${row.ticker}-CSP` });
+    if (callD && typeFilter !== "CSP") items.push({ ...row, _d: callD, _type: "CC",  _key: `${row.ticker}-CC` });
+    if (putD  && typeFilter !== "CC")  items.push({ ...row, _d: putD,  _type: "CSP", _key: `${row.ticker}-CSP` });
   }
 
   const sorted = [...items].sort((a, b) => {
@@ -176,6 +212,16 @@ export default function PremiumScanner({ rows, onRowClick }) {
 
   return (
     <div>
+      <div className="dte-filter-row">
+        <span className="dte-filter-label">Type</span>
+        {["ALL", "CC", "CSP"].map(opt => (
+          <button
+            key={opt}
+            className={`dte-filter-btn type-filter-btn-${opt.toLowerCase()}${typeFilter === opt ? " active" : ""}`}
+            onClick={() => setTypeFilter(opt)}
+          >{opt}</button>
+        ))}
+      </div>
       <div className="dte-filter-row">
         <span className="dte-filter-label">DTE ≤</span>
         {DTE_OPTS.map(opt => (

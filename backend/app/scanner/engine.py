@@ -625,6 +625,11 @@ class ScanRowResult:
     best_dte: int | None = None
     best_strike: float | None = None
     expiry_data: str | None = None  # JSON string
+    # ATM put premium (same expiry as best_expiry)
+    atm_put_premium: float | None = None
+    best_put_strike: float | None = None
+    best_put_expiry: str | None = None
+    best_put_dte: int | None = None
     # SMA
     sma_200: float | None = None
     sma_50: float | None = None
@@ -744,6 +749,10 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
         best_expiry: str | None = None
         best_dte: int | None = None
         best_strike: float | None = None
+        best_put_premium: float | None = None
+        best_put_strike: float | None = None
+        best_put_expiry: str | None = None
+        best_put_dte: int | None = None
 
         if prem_exp_tuple:
             dte, exp = prem_exp_tuple
@@ -758,6 +767,18 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
                 best_expiry = exp
                 best_dte = dte
                 best_strike = round(float(atm_c["strike"]), 2) if atm_c else None
+                # ATM put from same chain
+                _puts = sorted(
+                    [o for o in chain if o.get("option_type") == "put" and _is_valid(o.get("strike"))],
+                    key=lambda o: float(o["strike"]),
+                )
+                if _puts:
+                    _pi = min(range(len(_puts)), key=lambda i: abs(float(_puts[i]["strike"]) - price))
+                    _p = _puts[_pi]
+                    best_put_premium = _contract_mid(_p)
+                    best_put_strike = round(float(_p["strike"]), 2)
+                    best_put_expiry = exp
+                    best_put_dte = dte
             except Exception as exc:
                 logger.debug("%s: premium chain fetch failed (%s): %s", ticker, exp, exc)
 
@@ -772,6 +793,18 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
             if iv_exp:
                 best_dte = (datetime.strptime(iv_exp, "%Y-%m-%d").date() - date.today()).days
             best_strike = round(float(atm_c["strike"]), 2) if atm_c else None
+            # ATM put from fallback IV chain
+            _puts = sorted(
+                [o for o in iv_chain if o.get("option_type") == "put" and _is_valid(o.get("strike"))],
+                key=lambda o: float(o["strike"]),
+            )
+            if _puts:
+                _pi = min(range(len(_puts)), key=lambda i: abs(float(_puts[i]["strike"]) - price))
+                _p = _puts[_pi]
+                best_put_premium = _contract_mid(_p)
+                best_put_strike = round(float(_p["strike"]), 2)
+                best_put_expiry = iv_exp
+                best_put_dte = best_dte
 
         atm_premium = best_atm_premium
         premium_otm1 = best_otm1
@@ -840,6 +873,11 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
             best_dte=best_dte,
             best_strike=best_strike,
             expiry_data=None,
+            # ATM put
+            atm_put_premium=round(best_put_premium, 4) if best_put_premium else None,
+            best_put_strike=best_put_strike,
+            best_put_expiry=best_put_expiry,
+            best_put_dte=best_put_dte,
             # SMA
             sma_200=round(sma_200, 4) if sma_200 else None,
             sma_50=round(sma_50, 4) if sma_50 else None,
@@ -924,6 +962,11 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
         best_dte=result.best_dte,
         best_strike=result.best_strike,
         expiry_data=result.expiry_data,
+        # ATM put
+        atm_put_premium=result.atm_put_premium,
+        best_put_strike=result.best_put_strike,
+        best_put_expiry=result.best_put_expiry,
+        best_put_dte=result.best_put_dte,
     ))
 
     # Record IV snapshot for IV rank history (one row per ticker per day)

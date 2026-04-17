@@ -1309,3 +1309,6 @@ body {
 
 .prem-type-cc  { color: var(--green); }
 .prem-type-csp { color: var(--red); }
+
+.type-filter-btn-cc.active  { color: var(--green); border-color: var(--green); }
+.type-filter-btn-csp.active { color: var(--red);   border-color: var(--red); }
