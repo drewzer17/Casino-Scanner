@@ -1093,24 +1093,26 @@ body {
 
 /* ── Premium Scanner view button ───────────────────────────────── */
 .prem-view-btn {
-  padding: 6px 14px;
+  display: inline-block;
+  margin-top: 8px;
+  padding: 5px 14px;
   border-radius: 6px;
-  border: 1px solid var(--accent);
-  background: transparent;
-  color: var(--accent);
+  border: none;
+  background: #16a34a;
+  color: #fff;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s;
   white-space: nowrap;
 }
 
 .prem-view-btn:hover {
-  background: rgba(88, 166, 255, 0.1);
+  background: #15803d;
 }
 
 .prem-view-btn.active {
-  background: rgba(88, 166, 255, 0.15);
+  background: #166534;
 }
 
 /* ── DTE filter row ────────────────────────────────────────────── */

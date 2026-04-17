@@ -278,14 +278,14 @@ export default function Dashboard() {
             {formatCentral(data.finished_at)}
             {data.finished_at && ` · ${timeAgo(data.finished_at)}`}
           </div>
-        </div>
-        <div className="header-right">
           <button
             className={`prem-view-btn${showPremium ? " active" : ""}`}
             onClick={() => setShowPremium(v => !v)}
           >
             {showPremium ? "← Cards" : "Premium Scanner"}
           </button>
+        </div>
+        <div className="header-right">
           <button
             className={`scan-btn scan-btn-extensive${scanning ? " scanning" : ""}`}
             onClick={handleRunExtensiveScan}
