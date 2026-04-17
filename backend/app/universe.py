@@ -21,7 +21,7 @@ _CSV_PATH = _DATA_DIR / "ticker_universe.csv"
 _JSON_PATH = _DATA_DIR / "universe.json"
 
 
-# ── CSV → DB sync ─────────────────────────────────────────────────────────────
+# ── CSV → DB sync ──────────────────────────────────────────────────────────────
 
 def sync_universe_from_csv(db: Session) -> int:
     """Read ticker_universe.csv and insert any rows not already in the DB.
