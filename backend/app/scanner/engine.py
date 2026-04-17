@@ -308,8 +308,11 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
         log_ret = _log_returns(closes)
         hv = _annualized_vol(log_ret, HV_WINDOW)
 
-        # 3. Options expirations → pick nearest ~30d expiry
+        # 3. Options expirations → Phase A filter 2: must be optionable
         exps = fetch_expirations(ticker)
+        if not exps:
+            logger.debug("%s: no options chain — skipping", ticker)
+            return None
         exp = _nearest_expiry(exps)
 
         atm_iv: float | None = None
@@ -496,7 +499,15 @@ def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = 
             except Exception as exc:
                 logger.warning("quote batch failed (%s): %s", q_symbols, exc)
 
-        for ticker in batch:
+        # Phase A filter 1: price must be $10–$300 (no volume filter)
+        filtered_batch = [t for t in batch if 10.0 <= prices.get(t, 0.0) <= 300.0]
+        skipped_price = len(batch) - len(filtered_batch)
+        if skipped_price:
+            logger.info("run_id=%s price filter: skipped %d tickers outside $10-$300",
+                        run.id, skipped_price)
+            errored += skipped_price
+
+        for ticker in filtered_batch:
             result = _scan_with_timeout(ticker, price=prices.get(ticker), earn_days=earnings_lookup.get(ticker))
             if result is None:
                 errored += 1
