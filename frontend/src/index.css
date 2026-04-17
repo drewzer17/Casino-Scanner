@@ -1566,6 +1566,10 @@ body {
 .score-cc  { color: var(--green); font-weight: 700; }
 .score-csp { color: var(--red);   font-weight: 700; }
 
+.spread-tight { color: var(--green); font-weight: 600; }
+.spread-ok    { color: var(--yellow); font-weight: 600; }
+.spread-wide  { color: var(--red);   font-weight: 600; }
+
 /* ── Mode Selector ── */
 .mode-selector {
   display: flex;

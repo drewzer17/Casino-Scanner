@@ -128,6 +128,7 @@ const COLS = [
   { key: "type",       label: "Type",      align: "left" },
   { key: "price",      label: "Price",     align: "right" },
   { key: "premium",    label: "Premium $", align: "right" },
+  { key: "spread",     label: "Spread",    align: "right" },
   { key: "premiumPct", label: "Premium %", align: "right" },
   { key: "strike",     label: "Strike",    align: "right" },
   { key: "expiry",     label: "Expiry",    align: "right" },
@@ -154,6 +155,13 @@ function cellValue(item, key) {
     );
     case "price":      return item.price != null ? `$${fmt(item.price)}` : "—";
     case "premium":    return item._d.premium != null ? `$${fmt(item._d.premium)}` : "—";
+    case "spread": {
+      const pct = item.bid_ask_spread_pct;
+      if (pct == null) return "—";
+      const val = pct * 100;
+      const cls = val <= 5 ? "spread-tight" : val <= 15 ? "spread-ok" : "spread-wide";
+      return <span className={cls}>{val.toFixed(1)}%</span>;
+    }
     case "premiumPct": return item._d.premiumPct != null ? `${fmt(item._d.premiumPct * 100)}%` : "—";
     case "strike":     return item._d.strike != null ? `$${fmt(item._d.strike, 0)}` : "—";
     case "expiry":     return fmtExpiry(item._d.expiry);
@@ -178,6 +186,7 @@ function sortValue(item, key) {
     case "type":       return item._type;
     case "price":      return item.price ?? -1;
     case "premium":    return item._d.premium ?? -1;
+    case "spread":     return item.bid_ask_spread_pct ?? Infinity;
     case "premiumPct": return item._d.premiumPct ?? -1;
     case "strike":     return item._d.strike ?? -1;
     case "expiry":     return item._d.expiry ?? "";
