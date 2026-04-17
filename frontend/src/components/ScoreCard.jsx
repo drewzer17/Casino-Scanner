@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 function pillClass(score) {
   if (score >= 55) return "score-pill hi";
@@ -160,7 +160,65 @@ function SmaPanel({ row }) {
   );
 }
 
+function fmtP(v) {
+  if (v == null) return "—";
+  return `$${v.toFixed(2)}`;
+}
+
+function PremExpansion({ expiryData, price }) {
+  if (!expiryData || expiryData.length === 0) return null;
+  const OTM_LABELS = ["1 OTM", "2 OTM", "3 OTM", "4 OTM"];
+
+  const tableSection = (title, dataKey) => {
+    // Build strike header from first expiry that has data
+    const firstWithData = expiryData.find(e => e[dataKey]?.length > 0);
+    const strikeHeaders = firstWithData?.[dataKey]?.map(s => s.strike) ?? [];
+
+    return (
+      <div className="prem-exp-section">
+        <div className="prem-exp-title">{title}</div>
+        <table className="prem-exp-table">
+          <thead>
+            <tr>
+              <th>Exp</th>
+              <th>DTE</th>
+              {OTM_LABELS.map((l, i) => (
+                <th key={i}>
+                  <div>{l}</div>
+                  {strikeHeaders[i] != null && (
+                    <div className="prem-exp-strike">${strikeHeaders[i].toFixed(0)}</div>
+                  )}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {expiryData.map(e => (
+              <tr key={e.expiry}>
+                <td>{fmtExpiry(e.expiry)}</td>
+                <td className="prem-exp-dte">{e.dte}d</td>
+                {Array.from({ length: 4 }, (_, i) => {
+                  const s = e[dataKey]?.[i];
+                  return <td key={i} className={s?.prem ? "" : "prem-exp-empty"}>{fmtP(s?.prem)}</td>;
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  return (
+    <div className="prem-expansion" onClick={e => e.stopPropagation()}>
+      {tableSection("Covered Calls ▲", "calls")}
+      {tableSection("Cash-Secured Puts ▼", "puts")}
+    </div>
+  );
+}
+
 export default function ScoreCard({ row, onClick }) {
+  const [premExpanded, setPremExpanded] = useState(false);
   const b = row.breakdown || {};
   return (
     <div className="card" onClick={onClick} style={{ cursor: onClick ? "pointer" : "default" }}>
@@ -205,35 +263,24 @@ export default function ScoreCard({ row, onClick }) {
       <SmaPanel row={row} />
 
       <div className="meta">
-        <span className="chip">
+        <span
+          className={`chip chip-prem${premExpanded ? " expanded" : ""}${row.expiry_data?.length ? " clickable" : ""}`}
+          onClick={row.expiry_data?.length ? (e) => { e.stopPropagation(); setPremExpanded(p => !p); } : undefined}
+        >
           {(() => {
-            const bestPrem = row.premium_otm2 != null
-              ? row.premium_otm2 * 100
-              : row.atm_call_premium != null
-              ? row.atm_call_premium * 100
-              : null;
             const expLabel = fmtExpiry(row.best_expiry);
-            if (bestPrem != null && expLabel && row.best_dte != null && row.best_strike != null) {
+            if (row.atm_call_premium != null && expLabel && row.best_dte != null && row.best_strike != null) {
               return (
                 <>
-                  best: ${bestPrem.toFixed(2)}{" "}
-                  <span style={{ color: "var(--text-muted)" }}>
-                    ({expLabel}, {row.best_dte}d, ${row.best_strike} strike)
-                  </span>
+                  ${row.atm_call_premium.toFixed(2)}
+                  {row.premium_pct != null && ` (${(row.premium_pct * 100).toFixed(2)}%)`}
+                  {" · "}{expLabel}
+                  {" · "}{row.best_dte}d
+                  {" · "}${row.best_strike?.toFixed(0)} strike
                 </>
               );
             }
-            // Fallback: old-style display
-            return (
-              <>
-                prem {fmtPct(row.premium_pct, 2)}
-                {row.premium_otm2 != null && (
-                  <span style={{ color: "var(--text-muted)" }}>
-                    {" "}(${(row.premium_otm2 * 100).toFixed(2)} 2OTM)
-                  </span>
-                )}
-              </>
-            );
+            return fmtPct(row.premium_pct, 2);
           })()}
         </span>
         <span className="chip">OI {row.open_interest ?? "—"}</span>
@@ -245,6 +292,9 @@ export default function ScoreCard({ row, onClick }) {
         )}
         {row.unusual_volume && <span className="chip">unusual vol</span>}
       </div>
+      {premExpanded && row.expiry_data?.length > 0 && (
+        <PremExpansion expiryData={row.expiry_data} price={row.price} />
+      )}
     </div>
   );
 }

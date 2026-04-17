@@ -6,13 +6,19 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
+class StrikeData(BaseModel):
+    strike: float | None = None
+    prem: float | None = None
+
+
 class ExpiryRow(BaseModel):
     expiry: str
     dte: int
     atm_strike: float | None = None
-    atm_prem: float | None = None
-    otm1_prem: float | None = None
-    otm2_prem: float | None = None
+    atm_call_prem: float | None = None
+    atm_put_prem: float | None = None
+    calls: list[StrikeData] = []   # 1 OTM through 4 OTM above price (covered calls)
+    puts: list[StrikeData] = []    # 1 OTM through 4 OTM below price (cash-secured puts)
 
 
 class ScoreBreakdown(BaseModel):

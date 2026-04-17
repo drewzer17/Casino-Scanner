@@ -484,6 +484,52 @@ def _pick_call_strikes(
     return atm, otm1, otm2
 
 
+def _collect_otm_calls(options: list[dict], price: float, n: int = 4) -> list[dict]:
+    """Return up to n OTM call dicts (1 OTM → n OTM above ATM).
+    Each: {"strike": float|None, "prem": float|None}
+    """
+    calls = sorted(
+        [o for o in options if o.get("option_type") == "call" and _is_valid(o.get("strike"))],
+        key=lambda o: float(o["strike"]),
+    )
+    if not calls:
+        return []
+    atm_idx = min(range(len(calls)), key=lambda i: abs(float(calls[i]["strike"]) - price))
+    result = []
+    for i in range(1, n + 1):
+        idx = atm_idx + i
+        c = calls[idx] if idx < len(calls) else None
+        mid = _contract_mid(c)
+        result.append({
+            "strike": round(float(c["strike"]), 2) if c else None,
+            "prem": round(mid, 4) if mid else None,
+        })
+    return result
+
+
+def _collect_otm_puts(options: list[dict], price: float, n: int = 4) -> list[dict]:
+    """Return up to n OTM put dicts (1 OTM → n OTM below ATM).
+    Each: {"strike": float|None, "prem": float|None}
+    """
+    puts = sorted(
+        [o for o in options if o.get("option_type") == "put" and _is_valid(o.get("strike"))],
+        key=lambda o: float(o["strike"]),
+    )
+    if not puts:
+        return []
+    atm_idx = min(range(len(puts)), key=lambda i: abs(float(puts[i]["strike"]) - price))
+    result = []
+    for i in range(1, n + 1):
+        idx = atm_idx - i
+        c = puts[idx] if idx >= 0 else None
+        mid = _contract_mid(c)
+        result.append({
+            "strike": round(float(c["strike"]), 2) if c else None,
+            "prem": round(mid, 4) if mid else None,
+        })
+    return result
+
+
 def _contract_mid(contract: dict | None) -> float | None:
     """Mid price per share from a Tradier option contract dict."""
     if contract is None:
@@ -646,25 +692,42 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
                 if exp not in chain_cache:
                     chain_cache[exp] = fetch_chain(ticker, exp)
                 chain = chain_cache[exp]
-                atm_c, otm1_c, otm2_c = _pick_call_strikes(chain, price)
+
+                # ATM call
+                atm_c, _, _ = _pick_call_strikes(chain, price)
                 atm_mid_p = _contract_mid(atm_c)
-                otm1_mid_p = _contract_mid(otm1_c)
-                otm2_mid_p = _contract_mid(otm2_c)
-                atm_strike_p = float(atm_c["strike"]) if atm_c else None
+                atm_strike_p = round(float(atm_c["strike"]), 2) if atm_c else None
+
+                # ATM put (closest put strike to current price)
+                all_puts = sorted(
+                    [o for o in chain if o.get("option_type") == "put" and _is_valid(o.get("strike"))],
+                    key=lambda o: float(o["strike"]),
+                )
+                atm_put_mid = None
+                if all_puts:
+                    api = min(range(len(all_puts)), key=lambda i: abs(float(all_puts[i]["strike"]) - price))
+                    atm_put_mid = _contract_mid(all_puts[api])
+
+                # OTM calls (1-4 above ATM) and OTM puts (1-4 below ATM)
+                otm_calls = _collect_otm_calls(chain, price)
+                otm_puts = _collect_otm_puts(chain, price)
+
+                # otm1/otm2 from calls for scoring compat
+                otm1_mid_p = otm_calls[0]["prem"] if otm_calls else None
+                otm2_mid_p = otm_calls[1]["prem"] if len(otm_calls) > 1 else None
 
                 expiry_rows.append({
                     "expiry": exp,
                     "dte": dte,
                     "atm_strike": atm_strike_p,
-                    "atm_prem": round(atm_mid_p, 4) if atm_mid_p else None,
-                    "otm1_prem": round(otm1_mid_p, 4) if otm1_mid_p else None,
-                    "otm2_prem": round(otm2_mid_p, 4) if otm2_mid_p else None,
+                    "atm_call_prem": round(atm_mid_p, 4) if atm_mid_p else None,
+                    "atm_put_prem": round(atm_put_mid, 4) if atm_put_mid else None,
+                    "calls": otm_calls,
+                    "puts": otm_puts,
                 })
 
-                # Pick best expiry = highest otm2 premium (fall back to atm if no otm2)
-                compare_prem = otm2_mid_p if otm2_mid_p else (atm_mid_p or 0)
-                current_best = best_otm2 if best_otm2 else (best_atm_premium or 0)
-                if compare_prem > current_best:
+                # Pick best expiry = highest ATM call premium
+                if (atm_mid_p or 0) > (best_atm_premium or 0):
                     best_atm_premium = atm_mid_p
                     best_otm1 = otm1_mid_p
                     best_otm2 = otm2_mid_p

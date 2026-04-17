@@ -102,6 +102,16 @@ def _compute_deltas(
 router = APIRouter(prefix="/api", tags=["scanner"])
 
 
+def _parse_expiry_data(raw: str | None) -> list[ExpiryRow]:
+    """Deserialize expiry_data JSON, returning [] on any error (handles old format gracefully)."""
+    if not raw:
+        return []
+    try:
+        return [ExpiryRow(**e) for e in json.loads(raw)]
+    except Exception:
+        return []  # old format or corrupt — caller needs a new scan
+
+
 def _to_out(
     row: models.ScanResult,
     history: list[TimeframeDelta] | None = None,
@@ -152,7 +162,7 @@ def _to_out(
         best_expiry=row.best_expiry,
         best_dte=row.best_dte,
         best_strike=row.best_strike,
-        expiry_data=[ExpiryRow(**e) for e in json.loads(row.expiry_data)] if row.expiry_data else [],
+        expiry_data=_parse_expiry_data(row.expiry_data),
     )
 
 

@@ -1,4 +1,22 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+
+const SORT_OPTIONS = [
+  { key: "score",   label: "Score" },
+  { key: "iv_rank", label: "IV Rank" },
+  { key: "premium", label: "Premium $" },
+  { key: "iv_hv",   label: "IV/HV" },
+  { key: "chain",   label: "Chain" },
+];
+
+function sortRows(arr, key) {
+  const s = [...arr];
+  if (key === "score")   return s.sort((a, b) => b.score - a.score);
+  if (key === "iv_rank") return s.sort((a, b) => (b.iv_rank ?? 0) - (a.iv_rank ?? 0));
+  if (key === "premium") return s.sort((a, b) => (b.atm_call_premium ?? 0) - (a.atm_call_premium ?? 0));
+  if (key === "iv_hv")   return s.sort((a, b) => (b.breakdown?.iv_hv ?? 0) - (a.breakdown?.iv_hv ?? 0));
+  if (key === "chain")   return s.sort((a, b) => (b.breakdown?.chain ?? 0) - (a.breakdown?.chain ?? 0));
+  return s;
+}
 import { api } from "../api/client.js";
 import BucketTabs from "./BucketTabs.jsx";
 import ScoreCard from "./ScoreCard.jsx";
@@ -94,6 +112,7 @@ export default function Dashboard() {
   const [movers, setMovers] = useState(null);
   const [error, setError] = useState(null);
   const [active, setActive] = useState("sell_now");
+  const [sort, setSort] = useState("score");
 
   // Ticker detail modal
   const [selectedRow, setSelectedRow] = useState(null);
@@ -205,7 +224,7 @@ export default function Dashboard() {
     buy_sell_later: data.buy_sell_later.filter(priceFilter).length,
     watchlist: data.watchlist.filter(priceFilter).length,
   };
-  const rows = (data[active] || []).filter(priceFilter);
+  const rows = sortRows((data[active] || []).filter(priceFilter), sort);
 
   return (
     <>
@@ -250,6 +269,17 @@ export default function Dashboard() {
             />
           </div>
         </div>
+      </div>
+
+      <div className="sort-bar">
+        <span className="sort-label">Sort</span>
+        {SORT_OPTIONS.map(opt => (
+          <button
+            key={opt.key}
+            className={`sort-btn${sort === opt.key ? " active" : ""}`}
+            onClick={() => setSort(opt.key)}
+          >{opt.label}</button>
+        ))}
       </div>
 
       <TopMovers movers={movers} />
