@@ -142,7 +142,7 @@ class WheelOut(BaseModel):
     sma_50: float | None = None
     price_vs_sma200_pct: float | None = None
     price_vs_sma50_pct: float | None = None
-    sma_regime: float | None = None
+    sma_regime: str | None = None
     sma_golden_cross: bool | None = None
 
     # Suggested option legs (nearest standard strikes in live chain)
