@@ -179,6 +179,11 @@ def _to_out(
         best_strike=_san(row.best_strike),
         expiry_data=_parse_expiry_data(row.expiry_data),
         sources=sources or [],
+        # ATM put premium (stored from scan)
+        atm_put_premium=_san(row.atm_put_premium),
+        best_put_strike=_san(row.best_put_strike),
+        best_put_expiry=row.best_put_expiry,
+        best_put_dte=row.best_put_dte,
     )
 
 
