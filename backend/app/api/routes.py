@@ -266,6 +266,59 @@ def scan_status(db: Session = Depends(get_db)) -> dict:
     }
 
 
+@router.get("/scan/test", response_model=None)
+def scan_test() -> dict:
+    """Scan 5 known-good tickers synchronously and return raw results.
+
+    Runs inline (no background task) so you see results immediately.
+    Use this to verify yfinance connectivity and scoring before running
+    the full universe.
+    """
+    from ..scanner.engine import scan_ticker
+
+    TEST_TICKERS = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"]
+    results = []
+    for ticker in TEST_TICKERS:
+        try:
+            row = scan_ticker(ticker)
+            if row is None:
+                results.append({"ticker": ticker, "status": "no_data", "result": None})
+            else:
+                results.append({
+                    "ticker": ticker,
+                    "status": "ok",
+                    "result": {
+                        "price": row.price,
+                        "score": row.score,
+                        "bucket": row.bucket,
+                        "iv_rank": row.metrics.iv_rank,
+                        "iv": row.metrics.iv,
+                        "hv": row.metrics.hv,
+                        "premium_pct": row.metrics.premium_pct,
+                        "open_interest": row.metrics.open_interest,
+                        "bid_ask_spread_pct": row.metrics.bid_ask_spread_pct,
+                        "earnings_days": row.metrics.earnings_days,
+                        "unusual_volume": row.metrics.unusual_volume,
+                        "breakdown": {
+                            "iv_rank": row.breakdown_iv_rank,
+                            "premium": row.breakdown_premium,
+                            "iv_hv": row.breakdown_iv_hv,
+                            "catalyst": row.breakdown_catalyst,
+                            "chain": row.breakdown_chain,
+                        },
+                    },
+                })
+        except Exception as exc:
+            results.append({"ticker": ticker, "status": "error", "error": str(exc)})
+
+    ok_count = sum(1 for r in results if r["status"] == "ok")
+    return {
+        "summary": f"{ok_count}/{len(TEST_TICKERS)} tickers scanned successfully",
+        "tickers": TEST_TICKERS,
+        "results": results,
+    }
+
+
 @router.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
