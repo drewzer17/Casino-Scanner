@@ -6,11 +6,12 @@ const OTM_LEVELS = ["ATM", "1", "2", "3", "4", "5"];
 
 function guessStrikeIncrement(price) {
   if (!price) return 5;
-  if (price < 5)   return 0.5;
-  if (price < 25)  return 1;
-  if (price < 50)  return 2.5;
-  if (price < 200) return 5;
-  return 10;
+  if (price < 5)    return 0.5;
+  if (price < 25)   return 1;
+  if (price < 50)   return 2.5;
+  if (price < 500)  return 5;
+  if (price < 1000) return 10;
+  return 25;
 }
 
 function calcOtmLevel(strike, price, isCSP) {
@@ -22,7 +23,35 @@ function calcOtmLevel(strike, price, isCSP) {
 
 function otmLevelKey(level) {
   if (level == null || level <= 0) return "ATM";
-  return String(Math.min(level, 5)); // cap display at "5" for anything ≥5 OTM
+  return String(Math.min(level, 5));
+}
+
+function getOtmCallsFromExpiry(row, dteFilter) {
+  const allExp = row.expiry_data || [];
+  if (!allExp.length) return [];
+  const expiries = dteFilter === "ALL" ? allExp : allExp.filter(e => e.dte != null && e.dte <= dteFilter);
+  if (!expiries.length) return [];
+  const best = [...expiries].sort((a, b) => (b.atm_call_prem ?? 0) - (a.atm_call_prem ?? 0))[0];
+  const result = [];
+  (best.calls || []).forEach((s, idx) => {
+    if (s.prem != null)
+      result.push({ level: idx + 1, premium: s.prem, premiumPct: row.price ? s.prem / row.price : null, strike: s.strike, expiry: best.expiry, dte: best.dte });
+  });
+  return result;
+}
+
+function getOtmPutsFromExpiry(row, dteFilter) {
+  const allExp = row.expiry_data || [];
+  if (!allExp.length) return [];
+  const expiries = dteFilter === "ALL" ? allExp : allExp.filter(e => e.dte != null && e.dte <= dteFilter);
+  if (!expiries.length) return [];
+  const best = [...expiries].sort((a, b) => (b.atm_put_prem ?? 0) - (a.atm_put_prem ?? 0))[0];
+  const result = [];
+  (best.puts || []).forEach((s, idx) => {
+    if (s.prem != null)
+      result.push({ level: idx + 1, premium: s.prem, premiumPct: row.price ? s.prem / row.price : null, strike: s.strike, expiry: best.expiry, dte: best.dte });
+  });
+  return result;
 }
 
 function fmt(v, digits = 2) {
@@ -149,11 +178,11 @@ function getPutData(row, dteFilter) {
 const COLS = [
   { key: "ticker",     label: "Ticker",    align: "left" },
   { key: "type",       label: "Type",      align: "left" },
+  { key: "otm",        label: "OTM",       align: "center" },
   { key: "price",      label: "Price",     align: "right" },
   { key: "premium",    label: "Premium $", align: "right" },
   { key: "spread",     label: "Spread",    align: "right" },
-  { key: "bid",        label: "Bid",       align: "right" },
-  { key: "ask",        label: "Ask",       align: "right" },
+  { key: "bid_ask",    label: "Bid/Ask",   align: "right" },
   { key: "premiumPct", label: "Premium %", align: "right" },
   { key: "strike",     label: "Strike",    align: "right" },
   { key: "expiry",     label: "Expiry",    align: "right" },
@@ -200,17 +229,18 @@ function cellValue(item, key) {
         </span>
       );
     }
-    case "bid": {
-      const mid = item._d.premium;
-      const spr = item.bid_ask_spread_pct;
-      if (mid == null || spr == null) return "—";
-      return `$${fmt(mid * (1 - spr / 2))}`;
+    case "otm": {
+      const lvl = item._otmLevel;
+      if (lvl == null) return "—";
+      if (lvl <= 0) return <span className="otm-atm">ATM</span>;
+      if (lvl === 1) return <span className="otm-1">1</span>;
+      return <span className="otm-2plus">{Math.min(lvl, 5)}{lvl >= 5 ? "+" : ""}</span>;
     }
-    case "ask": {
+    case "bid_ask": {
       const mid = item._d.premium;
       const spr = item.bid_ask_spread_pct;
       if (mid == null || spr == null) return "—";
-      return `$${fmt(mid * (1 + spr / 2))}`;
+      return `$${fmt(mid * (1 - spr / 2))} / $${fmt(mid * (1 + spr / 2))}`;
     }
     case "premiumPct": return item._d.premiumPct != null ? `${fmt(item._d.premiumPct * 100)}%` : "—";
     case "strike":     return item._d.strike != null ? `$${fmt(item._d.strike, 0)}` : "—";
@@ -268,8 +298,8 @@ function sortValue(item, key) {
     case "price":      return item.price ?? -1;
     case "premium":    return item._d.premium ?? -1;
     case "spread":     return item.bid_ask_spread_pct != null ? item.bid_ask_spread_pct : Infinity;
-    case "bid":        return (item._d.premium != null && item.bid_ask_spread_pct != null) ? item._d.premium * (1 - item.bid_ask_spread_pct / 2) : -1;
-    case "ask":        return (item._d.premium != null && item.bid_ask_spread_pct != null) ? item._d.premium * (1 + item.bid_ask_spread_pct / 2) : -1;
+    case "otm":        return item._otmLevel ?? -1;
+    case "bid_ask":    return (item._d.premium != null && item.bid_ask_spread_pct != null) ? item._d.premium * (1 - item.bid_ask_spread_pct / 2) : -1;
     case "premiumPct": return item._d.premiumPct ?? -1;
     case "strike":     return item._d.strike ?? -1;
     case "expiry":     return item._d.expiry ?? "";
@@ -386,23 +416,31 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
 
   const baseRows = showAll ? allScanRows : rows;
 
-  // Expand each ticker into up to 2 items: one CC, one CSP
+  // Expand each ticker into rows: ATM + each OTM level available in expiry_data
   const items = [];
   for (const row of baseRows) {
-    const callD = getCallData(row, dteFilter);
-    const putD  = getPutData(row, dteFilter);
-    if (callD && typeFilter !== "CSP") {
-      const level = calcOtmLevel(callD.strike, row.price, false);
-      const key   = otmLevelKey(level);
-      if (otmSelected.size === 0 || otmSelected.has(key)) {
-        items.push({ ...row, _d: callD, _type: "CC",  _key: `${row.ticker}-CC`,  _otmLevel: level });
+    if (typeFilter !== "CSP") {
+      const callD = getCallData(row, dteFilter);
+      if (callD) {
+        if (otmSelected.size === 0 || otmSelected.has("ATM"))
+          items.push({ ...row, _d: callD, _type: "CC", _key: `${row.ticker}-CC-ATM`, _otmLevel: 0 });
+      }
+      for (const oc of getOtmCallsFromExpiry(row, dteFilter)) {
+        const key = otmLevelKey(oc.level);
+        if (otmSelected.size === 0 || otmSelected.has(key))
+          items.push({ ...row, _d: oc, _type: "CC", _key: `${row.ticker}-CC-${oc.level}`, _otmLevel: oc.level });
       }
     }
-    if (putD && typeFilter !== "CC") {
-      const level = calcOtmLevel(putD.strike, row.price, true);
-      const key   = otmLevelKey(level);
-      if (otmSelected.size === 0 || otmSelected.has(key)) {
-        items.push({ ...row, _d: putD,  _type: "CSP", _key: `${row.ticker}-CSP`, _otmLevel: level });
+    if (typeFilter !== "CC") {
+      const putD = getPutData(row, dteFilter);
+      if (putD) {
+        if (otmSelected.size === 0 || otmSelected.has("ATM"))
+          items.push({ ...row, _d: putD, _type: "CSP", _key: `${row.ticker}-CSP-ATM`, _otmLevel: 0 });
+      }
+      for (const op of getOtmPutsFromExpiry(row, dteFilter)) {
+        const key = otmLevelKey(op.level);
+        if (otmSelected.size === 0 || otmSelected.has(key))
+          items.push({ ...row, _d: op, _type: "CSP", _key: `${row.ticker}-CSP-${op.level}`, _otmLevel: op.level });
       }
     }
   }
