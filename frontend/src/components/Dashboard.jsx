@@ -535,12 +535,44 @@ export default function Dashboard() {
       return `Premium slider ($${r.atm_call_premium.toFixed(2)} outside $${premRange[0]}–$${premRange[1]})`;
     if (r.open_interest != null && (r.open_interest < oiRange[0] || r.open_interest > oiRange[1]))
       return `OI slider (${r.open_interest} outside ${oiRange[0]}–${oiRange[1]})`;
+    if (mode === "all" && r.safety_score != null &&
+        (r.safety_score < safetyRange[0] || r.safety_score > safetyRange[1]))
+      return `Safety Score (${r.safety_score.toFixed(0)} outside ${safetyRange[0]}–${safetyRange[1]})`;
+    if (mode !== "csp" && r.cc_score != null &&
+        (r.cc_score < ccScoreRange[0] || r.cc_score > ccScoreRange[1]))
+      return `CC Score (${r.cc_score} outside ${ccScoreRange[0]}–${ccScoreRange[1]})`;
+    if (mode !== "cc" && r.csp_score != null &&
+        (r.csp_score < cspScoreRange[0] || r.csp_score > cspScoreRange[1]))
+      return `CSP Score (${r.csp_score} outside ${cspScoreRange[0]}–${cspScoreRange[1]})`;
+    if (r.resistance_2 != null && r.price != null && r.price > 0) {
+      const dist = ((r.resistance_2 - r.price) / r.price) * 100;
+      if (dist < r2DistRange[0] || dist > r2DistRange[1])
+        return `R2 Distance (${dist.toFixed(1)}% outside ${r2DistRange[0]}–${r2DistRange[1]}%)`;
+    }
+    if (r.resistance_1 != null && r.price != null && r.price > 0) {
+      const dist = ((r.resistance_1 - r.price) / r.price) * 100;
+      if (dist < r1DistRange[0] || dist > r1DistRange[1])
+        return `R1 Distance (${dist.toFixed(1)}% outside ${r1DistRange[0]}–${r1DistRange[1]}%)`;
+    }
+    if (r.support_1 != null && r.price != null && r.price > 0) {
+      const dist = ((r.price - r.support_1) / r.price) * 100;
+      if (dist < s1DistRange[0] || dist > s1DistRange[1])
+        return `S1 Distance (${dist.toFixed(1)}% outside ${s1DistRange[0]}–${s1DistRange[1]}%)`;
+    }
+    if (r.support_2 != null && r.price != null && r.price > 0) {
+      const dist = ((r.price - r.support_2) / r.price) * 100;
+      if (dist < s2DistRange[0] || dist > s2DistRange[1])
+        return `S2 Distance (${dist.toFixed(1)}% outside ${s2DistRange[0]}–${s2DistRange[1]}%)`;
+    }
     if (r.bid_ask_spread_pct != null) {
       const spr = r.bid_ask_spread_pct * 100;
       if (spr < spreadRange[0] || spr > spreadRange[1])
         return `Spread slider (${spr.toFixed(1)}% outside ${spreadRange[0]}–${spreadRange[1]}%)`;
     }
-    return "Slider filter";
+    if (r.iv_ramp_score != null &&
+        (r.iv_ramp_score < ivRampScoreRange[0] || r.iv_ramp_score > ivRampScoreRange[1]))
+      return `IV Ramp Score (${r.iv_ramp_score} outside ${ivRampScoreRange[0]}–${ivRampScoreRange[1]})`;
+    return "Unknown exclusion (bug — please report)";
   };
 
   const excludedRows = isSearching ? [] : allRows
