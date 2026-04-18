@@ -441,6 +441,7 @@ export default function Dashboard() {
     nasdaq100: allRows.filter(r => (r.sources||[]).includes("nasdaq100")).length,
     ai_sector: allRows.filter(r => (r.sources||[]).includes("ai_sector")).length,
     ai_nuclear:allRows.filter(r => (r.sources||[]).includes("ai_nuclear")).length,
+    etf:       allRows.filter(r => (r.sources||[]).includes("etf")).length,
     custom:    allRows.filter(r => (r.sources||[]).includes("custom")).length,
   };
 
@@ -713,6 +714,7 @@ export default function Dashboard() {
               { key: "nasdaq100",  label: "Nasdaq 100", count: sourceCounts.nasdaq100 },
               { key: "ai_sector",  label: "AI Sector",  count: sourceCounts.ai_sector },
               { key: "ai_nuclear", label: "Nuclear",    count: sourceCounts.ai_nuclear },
+              { key: "etf",        label: "ETF",        count: sourceCounts.etf },
               { key: "custom",     label: "Custom",     count: sourceCounts.custom },
             ].map(({ key, label, count }) => count > 0 || key === "all" ? (
               <button
