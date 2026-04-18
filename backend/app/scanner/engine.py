@@ -455,7 +455,7 @@ def _nearest_expiry(exp_dates: Iterable[str], min_days: int = 21, max_days: int 
 
 
 def _expirations_for_premium(
-    exp_dates: Iterable[str], min_days: int = 7, max_days: int = 30
+    exp_dates: Iterable[str], min_days: int = 1, max_days: int = 30
 ) -> list[tuple[int, str]]:
     """Return [(dte, expiry_str)] for all expirations within [min_days, max_days], sorted by DTE."""
     today = date.today()
