@@ -210,7 +210,7 @@ export default function Dashboard() {
 
   // Price display filter
   const [minPrice, setMinPrice] = useState(10);
-  const [maxPrice, setMaxPrice] = useState(9999);
+  const [maxPrice, setMaxPrice] = useState(300);
 
   // Mode selector
   const [mode, setMode] = useState("all"); // "all" | "cc" | "csp"
@@ -460,7 +460,7 @@ export default function Dashboard() {
 
   const resetFilters = () => {
     setMinPrice(10);
-    setMaxPrice(9999);
+    setMaxPrice(300);
     setMode("all");
     setCcScoreRange([0, 100]);
     setCspScoreRange([0, 100]);
