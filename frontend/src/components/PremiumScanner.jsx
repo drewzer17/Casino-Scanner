@@ -179,14 +179,14 @@ const COLS = [
   { key: "ticker",     label: "Ticker",    align: "left" },
   { key: "type",       label: "Type",      align: "left" },
   { key: "otm",        label: "OTM",       align: "center" },
-  { key: "price",      label: "Price",     align: "right" },
-  { key: "strike",     label: "Strike",    align: "right" },
+  { key: "price",      label: "Price",     align: "right", compact: true },
+  { key: "strike",     label: "Strike",    align: "right", compact: true },
   { key: "premium",    label: "Premium $", align: "right" },
   { key: "spread",     label: "Spread",    align: "right" },
   { key: "bid_ask",    label: "Bid/Mark",  align: "right" },
   { key: "premiumPct", label: "Prem %",    align: "right", compact: true },
-  { key: "dte",        label: "DTE",       align: "right" },
-  { key: "oi",         label: "OI",        align: "right" },
+  { key: "dte",        label: "DTE",       align: "right", compact: true },
+  { key: "oi",         label: "OI",        align: "right", compact: true },
   { key: "r2_dist",    label: "R2 Dist",   align: "right" },
   { key: "r1_dist",    label: "R1 Dist",   align: "right" },
   { key: "s1_dist",    label: "S1 Dist",   align: "right" },
@@ -560,7 +560,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                 {COLS.map(col => (
                   <th
                     key={col.key}
-                    className={`prem-scanner-th${col.align === "right" ? " right" : ""}${sortCol === col.key ? " sorted" : ""}`}
+                    className={`prem-scanner-th${col.align === "right" ? " right" : ""}${sortCol === col.key ? " sorted" : ""}${col.compact ? " compact-col" : ""}`}
                     onClick={() => handleSort(col.key)}
                   >
                     {col.label}

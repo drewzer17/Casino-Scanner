@@ -1257,7 +1257,7 @@ body {
 }
 
 .prem-scanner-th {
-  padding: 8px 12px;
+  padding: 6px 8px;
   text-align: left;
   font-size: 11px;
   font-weight: 600;
@@ -1284,7 +1284,7 @@ body {
 .prem-scanner-row:hover { background: rgba(255,255,255,0.04); }
 
 .prem-scanner-td {
-  padding: 9px 12px;
+  padding: 6px 8px;
   border-bottom: 1px solid rgba(255,255,255,0.04);
   color: var(--text);
   white-space: nowrap;
