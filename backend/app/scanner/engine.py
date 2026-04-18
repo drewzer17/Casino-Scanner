@@ -1347,22 +1347,29 @@ def scan_ticker_extensive(ticker: str, price: float | None = None, earn_days: in
                     "atm_strike": w_atm_strike,
                     "atm_call_prem": round(w_atm_prem, 4) if w_atm_prem else None,
                     "atm_put_prem": round(w_atm_put_mid, 4) if w_atm_put_mid else None,
-                    "calls": [],
-                    "puts": [],
+                    "calls": _collect_otm_calls(w_chain, w_price),
+                    "puts": _collect_otm_puts(w_chain, w_price),
                 })
             except Exception as exc:
                 logger.debug("%s: weekly chain fetch failed (%s): %s", ticker, weekly_exp, exc)
 
         # Add the base (monthly) expiry entry so both are queryable in Premium Scanner
         if result.best_expiry:
+            try:
+                base_chain = fetch_chain(ticker, result.best_expiry)
+                base_price = result.price or 100.0
+                base_calls = _collect_otm_calls(base_chain, base_price)
+                base_puts  = _collect_otm_puts(base_chain, base_price)
+            except Exception:
+                base_calls, base_puts = [], []
             expiry_rows.append({
                 "expiry": result.best_expiry,
                 "dte": result.best_dte,
                 "atm_strike": result.best_strike,
                 "atm_call_prem": round(result.atm_call_premium, 4) if result.atm_call_premium else None,
                 "atm_put_prem": None,
-                "calls": [],
-                "puts": [],
+                "calls": base_calls,
+                "puts": base_puts,
             })
 
         if expiry_rows:
