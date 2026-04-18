@@ -223,7 +223,7 @@ export default function Dashboard() {
   const [ivRankRange, setIvRankRange] = useState([0, 100]);
   const [premRange, setPremRange] = useState([0, 999]);
   const [oiRange, setOiRange] = useState([0, 999999]);
-  const [safetyRange, setSafetyRange] = useState([0, 5000]);
+  const [safetyRange, setSafetyRange] = useState([0, 99999]);
   const [ccScoreRange, setCcScoreRange] = useState([0, 100]);
   const [cspScoreRange, setCspScoreRange] = useState([0, 100]);
   const [r2DistRange, setR2DistRange] = useState([0, 50]);
@@ -882,7 +882,7 @@ export default function Dashboard() {
             {mode === "all" && (
               <div className="filter-slider-item">
                 <span className="filter-slider-label">SAFETY SCORE</span>
-                <DualSlider min={0} max={5000} step={10} value={safetyRange} onChange={setSafetyRange}
+                <DualSlider min={0} max={99999} step={10} value={safetyRange} onChange={setSafetyRange}
                   fmt={v => `${v}`} />
               </div>
             )}
