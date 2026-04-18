@@ -64,6 +64,7 @@ def _on_shutdown() -> None:
 
 # ── Static asset bundles produced by `vite build` ──────────────────────────────
 # Mount only if the dist folder exists (skipped in bare dev without a build).
+# Hashed filenames (e.g. index-abc123.js) are immutable — cache forever.
 _assets_dir = DIST / "assets"
 if _assets_dir.exists():
     app.mount("/assets", StaticFiles(directory=str(_assets_dir)), name="assets")
@@ -72,10 +73,19 @@ if _assets_dir.exists():
 # ── SPA catch-all ──────────────────────────────────────────────────────────────
 # Any path that didn't match /api/* or /assets/* returns index.html so that
 # React Router can handle client-side navigation.
+# index.html must never be cached — it references hashed asset filenames that
+# change on every deploy, so browsers must always fetch a fresh copy.
 @app.get("/{full_path:path}", include_in_schema=False, response_model=None)
 async def serve_spa(full_path: str) -> FileResponse | dict:
     index = DIST / "index.html"
     if index.exists():
-        return FileResponse(str(index))
+        return FileResponse(
+            str(index),
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
+            },
+        )
     # Fallback when running backend without a frontend build (local dev / CI)
     return {"app": "Casino Scanner", "status": "frontend not built", "env": settings.environment}
