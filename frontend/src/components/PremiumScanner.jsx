@@ -182,7 +182,7 @@ const COLS = [
   { key: "price",      label: "Price",     align: "right" },
   { key: "premium",    label: "Premium $", align: "right" },
   { key: "spread",     label: "Spread",    align: "right" },
-  { key: "bid_ask",    label: "Bid / Mark", align: "right" },
+  { key: "bid_ask",    label: "Bid/Mark",   align: "right" },
   { key: "premiumPct", label: "Premium %", align: "right" },
   { key: "strike",     label: "Strike",    align: "right" },
   { key: "expiry",     label: "Expiry",    align: "right" },
@@ -241,7 +241,7 @@ function cellValue(item, key) {
       const spr = item.bid_ask_spread_pct;
       if (mid == null) return "—";
       const bid = spr != null ? mid * (1 - spr / 2) : null;
-      return bid != null ? `$${fmt(bid)} / $${fmt(mid)}` : `— / $${fmt(mid)}`;
+      return <span className="text-muted-sm">{bid != null ? `$${fmt(bid)}/$${fmt(mid)}` : `—/$${fmt(mid)}`}</span>;
     }
     case "premiumPct": return item._d.premiumPct != null ? `${fmt(item._d.premiumPct * 100)}%` : "—";
     case "strike":     return item._d.strike != null ? `$${fmt(item._d.strike, 0)}` : "—";
