@@ -29,12 +29,27 @@ function fmtExpiry(exp) {
   return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-// CSP-only rows use put expiry/dte; everything else uses call
 function getRelevantDte(row) {
   return row.asymmetric_type === "CSP" ? row.best_put_dte : row.best_dte;
 }
 function getRelevantExpiry(row) {
   return row.asymmetric_type === "CSP" ? row.best_put_expiry : row.best_expiry;
+}
+
+function guessStrikeIncrement(price) {
+  if (!price) return 5;
+  if (price < 5)   return 0.5;
+  if (price < 25)  return 1;
+  if (price < 50)  return 2.5;
+  if (price < 200) return 5;
+  return 10;
+}
+
+function calcOtmLevel(strike, price, isCSP) {
+  if (strike == null || !price) return null;
+  const inc = guessStrikeIncrement(price);
+  const diff = isCSP ? (price - strike) : (strike - price);
+  return Math.round(diff / inc);
 }
 
 function generateWhy(row) {
@@ -90,11 +105,85 @@ function generateWhy(row) {
   return "Multiple convergent setups";
 }
 
+// ── Mini OTM expansion ───────────────────────────────────────────────────────
+
+function AsymExpansion({ row, onFullDetail }) {
+  const isCSP = row.asymmetric_type === "CSP";
+  const inc   = guessStrikeIncrement(row.price);
+
+  const callRows = [
+    { label: "ATM",   cls: "otm-atm",   strike: row.best_strike,
+      prem: row.atm_call_premium },
+    { label: "1 OTM", cls: "otm-1",     strike: row.best_strike != null ? row.best_strike + inc : null,
+      prem: row.premium_otm1 },
+    { label: "2 OTM", cls: "otm-2plus", strike: row.best_strike != null ? row.best_strike + 2 * inc : null,
+      prem: row.premium_otm2 },
+  ];
+
+  const putRows = [
+    { label: "ATM",   cls: "otm-atm",   strike: row.best_put_strike,
+      prem: row.atm_put_premium },
+  ];
+
+  const tableRows = isCSP ? putRows : callRows;
+  const title = isCSP ? "Put Premiums" : "Call Premiums";
+  const expLabel = fmtExpiry(getRelevantExpiry(row));
+  const dte      = getRelevantDte(row);
+
+  return (
+    <div className="asym-expansion" onClick={e => e.stopPropagation()}>
+      <div className="asym-mini-wrap">
+        <div className="asym-mini-title">
+          {title}
+          {expLabel && ` · ${expLabel}`}
+          {dte != null && ` · ${dte}d`}
+        </div>
+        <table className="asym-mini-table">
+          <thead>
+            <tr>
+              <th>Level</th>
+              <th>Strike</th>
+              <th>Premium/sh</th>
+              <th>Per Contract</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tableRows.map(r => (
+              <tr key={r.label}>
+                <td><span className={r.cls}>{r.label}</span></td>
+                <td>{r.strike != null ? `$${r.strike.toFixed(2)}` : "—"}</td>
+                <td>{r.prem != null ? `$${r.prem.toFixed(2)}` : "—"}</td>
+                <td>{r.prem != null ? `$${(r.prem * 100).toFixed(0)}` : "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!isCSP && (
+          <div className="asym-mini-note">3–4 OTM: open full detail</div>
+        )}
+        {isCSP && (
+          <div className="asym-mini-note">OTM puts: open full detail</div>
+        )}
+      </div>
+      <button
+        className="asym-full-btn"
+        onClick={e => { e.stopPropagation(); onFullDetail(); }}
+      >
+        Full Detail →
+      </button>
+    </div>
+  );
+}
+
+// ── Table columns ────────────────────────────────────────────────────────────
+
 const COLS = [
   { key: "ticker",        label: "TICKER",      align: "left" },
   { key: "type",          label: "SETUP TYPE",  align: "left" },
   { key: "price",         label: "PRICE",       align: "right" },
   { key: "premium",       label: "PREMIUM $",   align: "right" },
+  { key: "strike",        label: "STRIKE",      align: "right" },
+  { key: "otm",           label: "OTM",         align: "center" },
   { key: "dte",           label: "DTE",         align: "right" },
   { key: "expiry",        label: "EXPIRY",      align: "right" },
   { key: "spread",        label: "SPREAD",      align: "right" },
@@ -111,6 +200,8 @@ const COLS = [
 
 function cellValue(row, key) {
   const price = row.price;
+  const isCSP = row.asymmetric_type === "CSP";
+
   switch (key) {
     case "ticker": return (
       <span>
@@ -124,10 +215,21 @@ function cellValue(row, key) {
     case "type": return <TypeBadge type={row.asymmetric_type} />;
     case "price": return price != null ? `$${Number(price).toFixed(2)}` : "—";
     case "premium": {
-      const prem = row.asymmetric_type === "CSP"
-        ? row.atm_put_premium
-        : row.atm_call_premium;
+      const prem = isCSP ? row.atm_put_premium : row.atm_call_premium;
       return prem != null ? `$${Number(prem).toFixed(2)}` : "—";
+    }
+    case "strike": {
+      const s = isCSP ? row.best_put_strike : row.best_strike;
+      return s != null ? `$${s.toFixed(2)}` : "—";
+    }
+    case "otm": {
+      const s = isCSP ? row.best_put_strike : row.best_strike;
+      if (s == null || !price) return "—";
+      const level = calcOtmLevel(s, price, isCSP);
+      if (level == null) return "—";
+      const label = level <= 0 ? "ATM" : `${level} OTM`;
+      const cls   = level <= 0 ? "otm-atm" : level === 1 ? "otm-1" : "otm-2plus";
+      return <span className={cls}>{label}</span>;
     }
     case "dte": {
       const dte = getRelevantDte(row);
@@ -137,9 +239,9 @@ function cellValue(row, key) {
     case "spread": {
       const pct = row.bid_ask_spread_pct;
       if (pct == null || row.atm_call_premium == null) return <span className="text-muted-sm">N/A</span>;
-      const val = pct * 100;
+      const val    = pct * 100;
       const dollar = (pct * row.atm_call_premium).toFixed(2);
-      const cls = val <= 5 ? "spread-tight" : val <= 15 ? "spread-ok" : "spread-wide";
+      const cls    = val <= 5 ? "spread-tight" : val <= 15 ? "spread-ok" : "spread-wide";
       return (
         <span>
           <span className="spread-dollar">${dollar}</span>
@@ -152,18 +254,18 @@ function cellValue(row, key) {
     case "s1_dist": {
       if (!row.support_1 || !price || price <= 0) return "—";
       const dist = ((price - row.support_1) / price) * 100;
-      const cls = dist <= 5 ? "s1dist-tight" : dist <= 15 ? "s1dist-ok" : "s1dist-wide";
+      const cls  = dist <= 5 ? "s1dist-tight" : dist <= 15 ? "s1dist-ok" : "s1dist-wide";
       return <span className={cls}>{dist.toFixed(1)}%</span>;
     }
     case "r1_dist": {
       if (!row.resistance_1) return <span className="text-muted-sm">PD</span>;
       if (!price || price <= 0) return "—";
       const dist = ((row.resistance_1 - price) / price) * 100;
-      const cls = dist <= 5 ? "s1dist-tight" : dist <= 15 ? "s1dist-ok" : "s1dist-wide";
+      const cls  = dist <= 5 ? "s1dist-tight" : dist <= 15 ? "s1dist-ok" : "s1dist-wide";
       return <span className={cls}>{dist.toFixed(1)}%</span>;
     }
     case "cross": {
-      if (row.sma_golden_cross === true) return <span className="rs-cross rs-golden">Golden</span>;
+      if (row.sma_golden_cross === true)  return <span className="rs-cross rs-golden">Golden</span>;
       if (row.sma_golden_cross === false) return <span className="rs-cross rs-death">Death</span>;
       return "—";
     }
@@ -189,13 +291,23 @@ function cellValue(row, key) {
 
 function sortValue(row, key) {
   const price = row.price;
+  const isCSP = row.asymmetric_type === "CSP";
+
   switch (key) {
     case "ticker":        return row.ticker;
     case "type":          return row.asymmetric_type || "";
     case "price":         return price ?? -1;
     case "premium": {
-      const prem = row.asymmetric_type === "CSP" ? row.atm_put_premium : row.atm_call_premium;
+      const prem = isCSP ? row.atm_put_premium : row.atm_call_premium;
       return prem ?? -1;
+    }
+    case "strike": {
+      const s = isCSP ? row.best_put_strike : row.best_strike;
+      return s ?? -1;
+    }
+    case "otm": {
+      const s = isCSP ? row.best_put_strike : row.best_strike;
+      return calcOtmLevel(s, price, isCSP) ?? 99;
     }
     case "dte":    return getRelevantDte(row) ?? 9999;
     case "expiry": return getRelevantExpiry(row) ?? "";
@@ -228,6 +340,7 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
   const [dteFilter, setDteFilter] = useState("ALL");
   const [sortCol, setSortCol]     = useState("premium");
   const [sortAsc, setSortAsc]     = useState(false);
+  const [expandedRow, setExpandedRow] = useState(null);
 
   const flagged = rows.filter(r => r.asymmetric_any_flag);
 
@@ -317,22 +430,36 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
               </tr>
             </thead>
             <tbody>
-              {sorted.map(row => (
-                <tr
-                  key={row.ticker}
-                  className="prem-scanner-row"
-                  onClick={() => onRowClick && onRowClick(row)}
-                >
-                  {COLS.map(col => (
-                    <td
-                      key={col.key}
-                      className={`prem-scanner-td${col.align === "right" ? " right" : col.align === "center" ? " center" : ""}${col.key === "ticker" ? " ticker-col" : ""}${col.key === "why" ? " asym-why-col" : ""}`}
+              {sorted.map(row => {
+                const isExpanded = expandedRow === row.ticker;
+                return (
+                  <React.Fragment key={row.ticker}>
+                    <tr
+                      className={`prem-scanner-row${isExpanded ? " asym-row-expanded" : ""}`}
+                      onClick={() => setExpandedRow(isExpanded ? null : row.ticker)}
                     >
-                      {cellValue(row, col.key)}
-                    </td>
-                  ))}
-                </tr>
-              ))}
+                      {COLS.map(col => (
+                        <td
+                          key={col.key}
+                          className={`prem-scanner-td${col.align === "right" ? " right" : col.align === "center" ? " center" : ""}${col.key === "ticker" ? " ticker-col" : ""}${col.key === "why" ? " asym-why-col" : ""}`}
+                        >
+                          {cellValue(row, col.key)}
+                        </td>
+                      ))}
+                    </tr>
+                    {isExpanded && (
+                      <tr className="asym-expansion-row">
+                        <td colSpan={COLS.length} className="asym-expansion-cell">
+                          <AsymExpansion
+                            row={row}
+                            onFullDetail={() => onRowClick && onRowClick(row)}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         )}

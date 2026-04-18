@@ -1808,6 +1808,73 @@ body {
 .asym-why     { color: var(--text-muted); font-size: 11px; line-height: 1.4; }
 .asym-why-col { min-width: 200px; max-width: 300px; }
 
+/* OTM level badges */
+.otm-atm    { color: #f8fafc; font-weight: 600; }
+.otm-1      { color: #86efac; font-weight: 600; }
+.otm-2plus  { color: #22c55e; font-weight: 700; }
+
+/* Asymmetric Scanner row expansion */
+.asym-row-expanded { background: rgba(250, 204, 21, 0.06); }
+.asym-expansion-row td { padding: 0; border-top: none; }
+.asym-expansion-cell { padding: 0 !important; }
+.asym-expansion {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 10px 16px 12px 32px;
+  background: rgba(15, 23, 42, 0.7);
+  border-bottom: 1px solid rgba(250, 204, 21, 0.15);
+}
+.asym-mini-wrap { flex: 1; }
+.asym-mini-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.asym-mini-table {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.asym-mini-table th {
+  color: var(--text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 12px 4px 0;
+  text-align: left;
+  font-weight: 500;
+}
+.asym-mini-table td {
+  padding: 3px 12px 3px 0;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.asym-mini-note {
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+.asym-full-btn {
+  align-self: center;
+  background: none;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 6px 12px;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+.asym-full-btn:hover {
+  border-color: rgba(250, 204, 21, 0.5);
+  color: #facc15;
+}
+
 /* PremiumScanner ASYMMETRIC badge */
 .prem-asym-badge {
   font-size: 9px;
