@@ -11,9 +11,15 @@ WORKDIR /app
 
 # ── Frontend: install deps first (layer-cached until package.json changes) ──
 COPY frontend/package*.json frontend/
-RUN cd frontend && npm install
+RUN cd frontend && npm ci
 
-COPY frontend/ frontend/
+# Copy all frontend source — any change here invalidates the build layer
+COPY frontend/src frontend/src
+COPY frontend/index.html frontend/index.html
+COPY frontend/vite.config.js frontend/vite.config.js
+
+# ARG busts the build cache when passed at deploy time (e.g. --build-arg CACHEBUST=$(date +%s))
+ARG CACHEBUST=1
 RUN cd frontend && npm run build
 # Produces /app/frontend/dist — served by FastAPI at runtime
 
