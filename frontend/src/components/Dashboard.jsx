@@ -221,8 +221,8 @@ export default function Dashboard() {
   const [trendFilter, setTrendFilter] = useState("all");
   const [signalFilter, setSignalFilter] = useState("all");
   const [ivRankRange, setIvRankRange] = useState([0, 100]);
-  const [premRange, setPremRange] = useState([0, 50]);
-  const [oiRange, setOiRange] = useState([0, 20000]);
+  const [premRange, setPremRange] = useState([0, 999]);
+  const [oiRange, setOiRange] = useState([0, 999999]);
   const [safetyRange, setSafetyRange] = useState([0, 5000]);
   const [ccScoreRange, setCcScoreRange] = useState([0, 100]);
   const [cspScoreRange, setCspScoreRange] = useState([0, 100]);
@@ -309,8 +309,8 @@ export default function Dashboard() {
     setTrendFilter("all");
     setSignalFilter("all");
     setIvRankRange([0, 100]);
-    setPremRange([0, 50]);
-    setOiRange([0, 20000]);
+    setPremRange([0, 999]);
+    setOiRange([0, 999999]);
     setSafetyRange([0, 5000]);
     setCcScoreRange([0, 100]);
     setCspScoreRange([0, 100]);
@@ -791,12 +791,12 @@ export default function Dashboard() {
             </div>
             <div className="filter-slider-item">
               <span className="filter-slider-label">PREMIUM $</span>
-              <DualSlider min={0} max={50} step={0.5} value={premRange} onChange={setPremRange}
+              <DualSlider min={0} max={999} step={0.5} value={premRange} onChange={setPremRange}
                 fmt={v => `$${Number(v).toFixed(1)}`} />
             </div>
             <div className="filter-slider-item">
               <span className="filter-slider-label">CHAIN OI</span>
-              <DualSlider min={0} max={20000} step={50} value={oiRange} onChange={setOiRange}
+              <DualSlider min={0} max={999999} step={100} value={oiRange} onChange={setOiRange}
                 fmt={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`} />
             </div>
             <div className="filter-slider-item">
