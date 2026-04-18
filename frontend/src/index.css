@@ -1820,3 +1820,11 @@ body {
   letter-spacing: 0.3px;
   white-space: nowrap;
 }
+
+/* ── Cross/trend conflict warning ───────────────────────────────── */
+.cross-conflict-warn {
+  margin-left: 4px;
+  cursor: help;
+  font-size: 12px;
+  vertical-align: middle;
+}

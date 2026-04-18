@@ -137,10 +137,18 @@ function cellValue(row, key) {
       const cls = dist <= 5 ? "s1dist-tight" : dist <= 15 ? "s1dist-ok" : "s1dist-wide";
       return <span className={cls}>{dist.toFixed(1)}%</span>;
     }
-    case "cross":
-      if (row.sma_golden_cross === true)  return <span className="rs-cross rs-golden">Golden</span>;
+    case "cross": {
+      if (row.sma_golden_cross === true) return (
+        <span>
+          <span className="rs-cross rs-golden">Golden</span>
+          {row.sma_regime === "DOWNTREND" && (
+            <span className="cross-conflict-warn" title="Golden cross with downtrend — cross is fresh but price hasn't confirmed. Higher risk setup.">⚠️</span>
+          )}
+        </span>
+      );
       if (row.sma_golden_cross === false) return <span className="rs-cross rs-death">Death</span>;
       return "—";
+    }
     case "trend": {
       if (!row.sma_regime) return "—";
       const cls = row.sma_regime === "UPTREND" ? "regime-up"
