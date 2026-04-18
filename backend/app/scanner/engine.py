@@ -495,6 +495,8 @@ def _pick_call_strikes(
 def _collect_otm_calls(options: list[dict], price: float, n: int = 4) -> list[dict]:
     """Return up to n OTM call dicts (1 OTM → n OTM above ATM).
     Each: {"strike": float|None, "prem": float|None}
+    Skips adjusted/phantom contracts: strike must be strictly above ATM strike,
+    and premium must not exceed ATM premium (OTM can't be worth more than ATM).
     """
     calls = sorted(
         [o for o in options if o.get("option_type") == "call" and _is_valid(o.get("strike"))],
@@ -503,21 +505,34 @@ def _collect_otm_calls(options: list[dict], price: float, n: int = 4) -> list[di
     if not calls:
         return []
     atm_idx = min(range(len(calls)), key=lambda i: abs(float(calls[i]["strike"]) - price))
+    atm_strike = float(calls[atm_idx]["strike"])
+    atm_mid = _contract_mid(calls[atm_idx])
     result = []
-    for i in range(1, n + 1):
-        idx = atm_idx + i
-        c = calls[idx] if idx < len(calls) else None
-        mid = _contract_mid(c)
-        result.append({
-            "strike": round(float(c["strike"]), 2) if c else None,
-            "prem": round(mid, 4) if mid else None,
-        })
+    scan_idx = atm_idx + 1
+    while len(result) < n:
+        if scan_idx >= len(calls):
+            result.append({"strike": None, "prem": None})
+        else:
+            c = calls[scan_idx]
+            c_strike = float(c["strike"])
+            mid = _contract_mid(c)
+            if c_strike <= atm_strike or (atm_mid is not None and mid is not None and mid > atm_mid):
+                # adjusted/phantom contract — skip to next index
+                scan_idx += 1
+                continue
+            result.append({
+                "strike": round(c_strike, 2),
+                "prem": round(mid, 4) if mid else None,
+            })
+        scan_idx += 1
     return result
 
 
 def _collect_otm_puts(options: list[dict], price: float, n: int = 4) -> list[dict]:
     """Return up to n OTM put dicts (1 OTM → n OTM below ATM).
     Each: {"strike": float|None, "prem": float|None}
+    Skips adjusted/phantom contracts: strike must be strictly below ATM strike,
+    and premium must not exceed ATM premium.
     """
     puts = sorted(
         [o for o in options if o.get("option_type") == "put" and _is_valid(o.get("strike"))],
@@ -526,15 +541,26 @@ def _collect_otm_puts(options: list[dict], price: float, n: int = 4) -> list[dic
     if not puts:
         return []
     atm_idx = min(range(len(puts)), key=lambda i: abs(float(puts[i]["strike"]) - price))
+    atm_strike = float(puts[atm_idx]["strike"])
+    atm_mid = _contract_mid(puts[atm_idx])
     result = []
-    for i in range(1, n + 1):
-        idx = atm_idx - i
-        c = puts[idx] if idx >= 0 else None
-        mid = _contract_mid(c)
-        result.append({
-            "strike": round(float(c["strike"]), 2) if c else None,
-            "prem": round(mid, 4) if mid else None,
-        })
+    scan_idx = atm_idx - 1
+    while len(result) < n:
+        if scan_idx < 0:
+            result.append({"strike": None, "prem": None})
+        else:
+            c = puts[scan_idx]
+            c_strike = float(c["strike"])
+            mid = _contract_mid(c)
+            if c_strike >= atm_strike or (atm_mid is not None and mid is not None and mid > atm_mid):
+                # adjusted/phantom contract — skip to next index
+                scan_idx -= 1
+                continue
+            result.append({
+                "strike": round(c_strike, 2),
+                "prem": round(mid, 4) if mid else None,
+            })
+        scan_idx -= 1
     return result
 
 

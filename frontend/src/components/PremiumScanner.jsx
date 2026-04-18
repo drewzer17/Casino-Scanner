@@ -230,9 +230,9 @@ function cellValue(item, key) {
     case "premium":    return item._d.premium != null ? `$${fmt(item._d.premium)}` : "—";
     case "spread": {
       const pct = item.bid_ask_spread_pct;
-      if (pct == null || item.atm_call_premium == null) return <span className="text-muted-sm">N/A</span>;
+      if (pct == null || item._d.premium == null) return <span className="text-muted-sm">N/A</span>;
       const val = pct * 100;
-      const dollarSpread = pct * item.atm_call_premium;
+      const dollarSpread = pct * item._d.premium;
       const cls = val <= 5 ? "spread-tight" : val <= 15 ? "spread-ok" : "spread-wide";
       return (
         <span>
