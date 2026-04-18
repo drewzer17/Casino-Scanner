@@ -280,14 +280,74 @@ function sortValue(item, key) {
   }
 }
 
+// ── Exclusion diagnostic ──────────────────────────────────────────
+
+function groupByReason(rows) {
+  const groups = {};
+  for (const r of rows) {
+    // Bucket by leading phrase (before first parenthesis or colon detail)
+    const cat = r._reason.replace(/\s*[\(\(].*$/, "").trim();
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(r);
+  }
+  return groups;
+}
+
+function ExclusionTable({ allExcluded }) {
+  const [expandedGroup, setExpandedGroup] = useState(null);
+  const groups = groupByReason(allExcluded);
+  const cats = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length);
+
+  return (
+    <div className="excl-wrap">
+      <div className="excl-summary">
+        {cats.map(cat => (
+          <button
+            key={cat}
+            className={`excl-group-btn${expandedGroup === cat ? " active" : ""}`}
+            onClick={() => setExpandedGroup(expandedGroup === cat ? null : cat)}
+          >
+            {cat} <span className="excl-count">{groups[cat].length}</span>
+          </button>
+        ))}
+      </div>
+      {expandedGroup && groups[expandedGroup] && (
+        <table className="excl-table">
+          <thead>
+            <tr>
+              <th>Ticker</th>
+              <th>Price</th>
+              <th>Company</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            {groups[expandedGroup]
+              .sort((a, b) => (a.ticker < b.ticker ? -1 : 1))
+              .map(r => (
+                <tr key={r.ticker}>
+                  <td className="excl-ticker">{r.ticker}</td>
+                  <td className="excl-price">{r.price != null ? `$${r.price.toFixed(0)}` : "—"}</td>
+                  <td className="excl-company">{r.company_name || ""}</td>
+                  <td className="excl-reason">{r._reason}</td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
 // ── Component ─────────────────────────────────────────────────────
 
-export default function PremiumScanner({ rows, onRowClick }) {
+export default function PremiumScanner({ rows, onRowClick, allScanRows = [], excludedRows = [] }) {
   const [dteFilter, setDteFilter] = useState("ALL");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [otmSelected, setOtmSelected] = useState(new Set()); // empty = ALL
   const [sortCol, setSortCol] = useState("premium");
   const [sortAsc, setSortAsc] = useState(false);
+  const [showExcl, setShowExcl] = useState(false);
 
   const toggleOtm = (level) => {
     setOtmSelected(prev => {
@@ -328,6 +388,33 @@ export default function PremiumScanner({ rows, onRowClick }) {
     }
   }
 
+  // ── Internal exclusions (rows that passed Dashboard but have no items) ──
+  const passedTickerSet = new Set(items.map(i => i.ticker));
+  const internalExcluded = rows
+    .filter(r => !passedTickerSet.has(r.ticker))
+    .map(r => {
+      const callAny = getCallData(r, "ALL");
+      const putAny  = getPutData(r, "ALL");
+      if (!callAny && !putAny)
+        return { ticker: r.ticker, price: r.price, company_name: r.company_name,
+                 _reason: "No premium data (options chain not fetched or null)" };
+      const callInDte = getCallData(r, dteFilter);
+      const putInDte  = getPutData(r, dteFilter);
+      if (!callInDte && !putInDte && dteFilter !== "ALL")
+        return { ticker: r.ticker, price: r.price, company_name: r.company_name,
+                 _reason: `DTE filter (≤${dteFilter}d — no expiry fits)` };
+      if (otmSelected.size > 0)
+        return { ticker: r.ticker, price: r.price, company_name: r.company_name,
+                 _reason: `OTM filter (only ${[...otmSelected].join(", ")} OTM selected)` };
+      if (typeFilter !== "ALL")
+        return { ticker: r.ticker, price: r.price, company_name: r.company_name,
+                 _reason: `Type filter (${typeFilter} only)` };
+      return { ticker: r.ticker, price: r.price, company_name: r.company_name,
+               _reason: "Unknown internal filter" };
+    });
+
+  const allExcluded = [...excludedRows, ...internalExcluded];
+
   const sorted = [...items].sort((a, b) => {
     const av = sortValue(a, sortCol);
     const bv = sortValue(b, sortCol);
@@ -338,8 +425,30 @@ export default function PremiumScanner({ rows, onRowClick }) {
 
   const uniqueTickers = new Set(sorted.map(i => i.ticker)).size;
 
+  const totalInScan    = allScanRows.length;
+  const inTable        = passedTickerSet.size;
+  const hiddenCount    = totalInScan - inTable;
+
   return (
     <div>
+      {/* ── Diagnostic banner ── */}
+      <div className="excl-banner">
+        <span className="excl-stat">Scanned: <strong>{totalInScan}</strong></span>
+        <span className="excl-sep">·</span>
+        <span className="excl-stat">In table: <strong>{inTable}</strong></span>
+        <span className="excl-sep">·</span>
+        <span className="excl-stat excl-hidden">Hidden: <strong>{hiddenCount}</strong></span>
+        {allExcluded.length > 0 && (
+          <button
+            className={`excl-toggle-btn${showExcl ? " active" : ""}`}
+            onClick={() => setShowExcl(v => !v)}
+          >
+            {showExcl ? "Hide Exclusions ▲" : "Show Exclusions ▼"}
+          </button>
+        )}
+      </div>
+      {showExcl && <ExclusionTable allExcluded={allExcluded} />}
+
       <div className="dte-filter-row">
         <span className="dte-filter-label">Type</span>
         {["ALL", "CC", "CSP"].map(opt => (

@@ -499,6 +499,43 @@ export default function Dashboard() {
   // Search overrides all filters — shows every ticker/company name match regardless of price, sliders, etc.
   const viewRows = isSearching ? allRows.filter(searchFilter) : allRows.filter(combinedFilter);
 
+  // ── Exclusion diagnostics (passed to Premium Scanner) ─────────────
+  const getPrimaryExclusionReason = (r) => {
+    if (!priceFilter(r)) {
+      const p = r.price != null ? `$${r.price.toFixed(0)}` : "null";
+      return `Price filter (${p} outside $${minPrice}–$${maxPrice})`;
+    }
+    if (crossFilter !== "all" && !crossFn(r))   return `Cross filter (${crossFilter})`;
+    if (trendFilter !== "all" && !trendFn(r))   return `Trend filter (${trendFilter})`;
+    if (signalFilter !== "all" && !signalFn(r)) return `Signal filter (${signalFilter})`;
+    if (sourceFilter !== "all" && !sourceFilterFn(r)) return `Source filter (${sourceFilter})`;
+    if (mode === "cc"  && (r.cc_score ?? 0) < (r.csp_score ?? 0))
+      return `CC Mode (cc_score ${r.cc_score ?? 0} < csp_score ${r.csp_score ?? 0})`;
+    if (mode === "csp" && (r.csp_score ?? 0) < (r.cc_score ?? 0))
+      return `CSP Mode (csp_score ${r.csp_score ?? 0} < cc_score ${r.cc_score ?? 0})`;
+    if (r.iv_rank != null && (r.iv_rank < ivRankRange[0] || r.iv_rank > ivRankRange[1]))
+      return `IV Rank slider (${r.iv_rank.toFixed(0)} outside ${ivRankRange[0]}–${ivRankRange[1]})`;
+    if (r.atm_call_premium != null && (r.atm_call_premium < premRange[0] || r.atm_call_premium > premRange[1]))
+      return `Premium slider ($${r.atm_call_premium.toFixed(2)} outside $${premRange[0]}–$${premRange[1]})`;
+    if (r.open_interest != null && (r.open_interest < oiRange[0] || r.open_interest > oiRange[1]))
+      return `OI slider (${r.open_interest} outside ${oiRange[0]}–${oiRange[1]})`;
+    if (r.bid_ask_spread_pct != null) {
+      const spr = r.bid_ask_spread_pct * 100;
+      if (spr < spreadRange[0] || spr > spreadRange[1])
+        return `Spread slider (${spr.toFixed(1)}% outside ${spreadRange[0]}–${spreadRange[1]}%)`;
+    }
+    return "Slider filter";
+  };
+
+  const excludedRows = isSearching ? [] : allRows
+    .filter(r => !combinedFilter(r))
+    .map(r => ({
+      ticker: r.ticker,
+      price: r.price,
+      company_name: r.company_name,
+      _reason: getPrimaryExclusionReason(r),
+    }));
+
   // Cascading counts for toggle filters (each group excludes itself)
   const countForCross  = (opt) => allRows.filter(r => baseFn(r) && trendFn(r) && signalFn(r) && crossFn(r, opt)).length;
   const countForTrend  = (opt) => allRows.filter(r => baseFn(r) && crossFn(r) && signalFn(r) && trendFn(r, opt)).length;
@@ -559,6 +596,8 @@ export default function Dashboard() {
               placeholder="Search ticker or company…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              autoComplete="off"
+              spellCheck={false}
             />
             {searchQuery && (
               <button className="search-clear" onClick={() => setSearchQuery("")}>✕</button>
@@ -830,7 +869,8 @@ export default function Dashboard() {
       <TopMovers movers={movers} />
 
       {view === "premium" ? (
-        <PremiumScanner rows={viewRows} onRowClick={setSelectedRow} />
+        <PremiumScanner rows={viewRows} onRowClick={setSelectedRow}
+          allScanRows={allRows} excludedRows={excludedRows} />
       ) : view === "range" ? (
         <RangeScanner rows={viewRows} onRowClick={setSelectedRow} />
       ) : view === "ivramp" ? (
