@@ -348,6 +348,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const [sortCol, setSortCol] = useState("premium");
   const [sortAsc, setSortAsc] = useState(false);
   const [showExcl, setShowExcl] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   const toggleOtm = (level) => {
     setOtmSelected(prev => {
@@ -367,9 +368,11 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
     }
   };
 
+  const baseRows = showAll ? allScanRows : rows;
+
   // Expand each ticker into up to 2 items: one CC, one CSP
   const items = [];
-  for (const row of rows) {
+  for (const row of baseRows) {
     const callD = getCallData(row, dteFilter);
     const putD  = getPutData(row, dteFilter);
     if (callD && typeFilter !== "CSP") {
@@ -390,7 +393,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
 
   // ── Internal exclusions (rows that passed Dashboard but have no items) ──
   const passedTickerSet = new Set(items.map(i => i.ticker));
-  const internalExcluded = rows
+  const internalExcluded = baseRows
     .filter(r => !passedTickerSet.has(r.ticker))
     .map(r => {
       const callAny = getCallData(r, "ALL");
@@ -413,7 +416,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                _reason: "Unknown internal filter" };
     });
 
-  const allExcluded = [...excludedRows, ...internalExcluded];
+  const allExcluded = [...(showAll ? [] : excludedRows), ...internalExcluded];
 
   const sorted = [...items].sort((a, b) => {
     const av = sortValue(a, sortCol);
@@ -446,6 +449,13 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
             {showExcl ? "Hide Exclusions ▲" : "Show Exclusions ▼"}
           </button>
         )}
+        <button
+          className="excl-toggle-btn"
+          style={showAll ? { background: "#c0392b", borderColor: "#c0392b", color: "#fff" } : {}}
+          onClick={() => setShowAll(v => !v)}
+        >
+          {showAll ? "SHOW ALL (on)" : "SHOW ALL"}
+        </button>
       </div>
       {showExcl && <ExclusionTable allExcluded={allExcluded} />}
 
