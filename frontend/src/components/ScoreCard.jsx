@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import CrossConflictWarning from "./CrossConflictWarning.jsx";
 
 function pillClass(score) {
   if (score >= 45) return "score-pill hi";
@@ -250,6 +251,7 @@ export default function ScoreCard({ row, onClick, showBucket = false }) {
       <div className="card-header">
         <div className="card-ticker-info">
           <div className="ticker">
+            {row.sma_golden_cross === true && row.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
             {row.ticker}
             {showBucket && bucketTag && (
               <span className={`bucket-tag ${bucketTag.cls}`}>{bucketTag.label}</span>

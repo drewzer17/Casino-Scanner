@@ -1822,9 +1822,33 @@ body {
 }
 
 /* ── Cross/trend conflict warning ───────────────────────────────── */
-.cross-conflict-warn {
-  margin-left: 4px;
-  cursor: help;
-  font-size: 12px;
+.cross-warn-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-right: 4px;
   vertical-align: middle;
+}
+.cross-warn-icon {
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  user-select: none;
+}
+.cross-warn-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 200;
+  width: 280px;
+  background: #1e1e2e;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #e2e8f0;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  white-space: normal;
+  pointer-events: none;
 }

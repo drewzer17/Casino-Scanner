@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import CrossConflictWarning from "./CrossConflictWarning.jsx";
 
 function fmt(v, digits = 2) {
   if (v == null) return "—";
@@ -31,6 +32,7 @@ function cellValue(row, key) {
     case "ticker":
       return (
         <span>
+          {row.sma_golden_cross === true && row.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
           {row.ticker}
           {row.company_name && (
             <span className="company-name company-name-table">{row.company_name}</span>
@@ -56,14 +58,8 @@ function cellValue(row, key) {
       return <span className="rs-signal rs-neutral">—</span>;
     }
     case "cross":
-      if (row.sma_golden_cross === true) return (
-        <span>
-          <span className="rs-cross rs-golden">Golden Cross</span>
-          {row.sma_regime === "DOWNTREND" && (
-            <span className="cross-conflict-warn" title="Golden cross with downtrend — cross is fresh but price hasn't confirmed. Higher risk setup.">⚠️</span>
-          )}
-        </span>
-      );
+      if (row.sma_golden_cross === true)
+        return <span className="rs-cross rs-golden">Golden Cross</span>;
       if (row.sma_golden_cross === false)
         return <span className="rs-cross rs-death">Death Cross</span>;
       return "—";

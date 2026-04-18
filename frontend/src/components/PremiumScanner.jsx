@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import CrossConflictWarning from "./CrossConflictWarning.jsx";
 
 const DTE_OPTS = [1, 2, 3, 4, 5, 6, 7, 10, 14, 21, 28, "ALL"];
 
@@ -147,6 +148,7 @@ function cellValue(item, key) {
   switch (key) {
     case "ticker":     return (
       <span>
+        {item.sma_golden_cross === true && item.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
         {item.ticker}
         {item.company_name && (
           <span className="company-name company-name-table">{item.company_name}</span>

@@ -302,14 +302,7 @@ export default function TickerModal({ row, onClose }) {
                 </span>
                 <span className="modal-key">Cross</span>
                 <span className="modal-val">
-                  {row.sma_golden_cross === true && (
-                    <span>
-                      <span className="hi">Golden Cross ▲</span>
-                      {row.sma_regime === "DOWNTREND" && (
-                        <span className="cross-conflict-warn" title="Golden cross with downtrend — cross is fresh but price hasn't confirmed. Higher risk setup.">⚠️</span>
-                      )}
-                    </span>
-                  )}
+                  {row.sma_golden_cross === true && <span className="hi">Golden Cross ▲</span>}
                   {row.sma_golden_cross === false && <span className="lo">Death Cross ▼</span>}
                   {row.sma_golden_cross == null && "—"}
                 </span>

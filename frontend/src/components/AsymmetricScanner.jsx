@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import CrossConflictWarning from "./CrossConflictWarning.jsx";
 
 const DTE_OPTS = [1, 2, 3, 4, 5, 6, 7, 10, 14, 21, 28, "ALL"];
 
@@ -113,6 +114,7 @@ function cellValue(row, key) {
   switch (key) {
     case "ticker": return (
       <span>
+        {row.sma_golden_cross === true && row.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
         {row.ticker}
         {row.company_name && (
           <span className="company-name company-name-table">{row.company_name}</span>
@@ -161,14 +163,7 @@ function cellValue(row, key) {
       return <span className={cls}>{dist.toFixed(1)}%</span>;
     }
     case "cross": {
-      if (row.sma_golden_cross === true) return (
-        <span>
-          <span className="rs-cross rs-golden">Golden</span>
-          {row.sma_regime === "DOWNTREND" && (
-            <span className="cross-conflict-warn" title="Golden cross with downtrend — cross is fresh but price hasn't confirmed. Higher risk setup.">⚠️</span>
-          )}
-        </span>
-      );
+      if (row.sma_golden_cross === true) return <span className="rs-cross rs-golden">Golden</span>;
       if (row.sma_golden_cross === false) return <span className="rs-cross rs-death">Death</span>;
       return "—";
     }

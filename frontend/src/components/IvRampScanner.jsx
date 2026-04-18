@@ -46,18 +46,10 @@ function cellValue(row, key) {
     case "iv_velocity_10d": return velCell(row.iv_velocity_10d);
     case "iv_velocity_20d": return velCell(row.iv_velocity_20d);
     case "iv_ramp_score":   return rampScoreCell(row.iv_ramp_score);
-    case "cross": {
-      if (row.sma_golden_cross === true) return (
-        <span>
-          <span className="rs-cross rs-golden">Golden</span>
-          {row.sma_regime === "DOWNTREND" && (
-            <span className="cross-conflict-warn" title="Golden cross with downtrend — cross is fresh but price hasn't confirmed. Higher risk setup.">⚠️</span>
-          )}
-        </span>
-      );
+    case "cross":
+      if (row.sma_golden_cross === true)  return <span className="rs-cross rs-golden">Golden</span>;
       if (row.sma_golden_cross === false) return <span className="rs-cross rs-death">Death</span>;
       return "—";
-    }
     case "trend": {
       if (!row.sma_regime) return "—";
       const cls = row.sma_regime === "UPTREND" ? "regime-up"
