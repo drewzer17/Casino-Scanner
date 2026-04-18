@@ -311,7 +311,7 @@ export default function Dashboard() {
     setIvRankRange([0, 100]);
     setPremRange([0, 999]);
     setOiRange([0, 999999]);
-    setSafetyRange([0, 5000]);
+    setSafetyRange([0, 99999]);
     setCcScoreRange([0, 100]);
     setCspScoreRange([0, 100]);
     setR2DistRange([0, 999]);
