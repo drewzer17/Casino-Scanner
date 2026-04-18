@@ -1693,3 +1693,130 @@ body {
   color: #fb923c;
   font-size: 12px;
 }
+
+/* ── Asymmetric Setup Scanner ───────────────────────────────────── */
+
+/* View button — gold/amber, bolder than siblings */
+.asym-view-btn {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 18px;
+  border-radius: 6px;
+  border: none;
+  background: #d97706;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+.asym-view-btn:hover { background: #b45309; }
+.asym-view-btn.active { background: #92400e; }
+
+/* Card flag row */
+.asym-card-flag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  margin-bottom: 1px;
+}
+.asym-card-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(234,179,8,0.18);
+  color: #eab308;
+  border: 1px solid rgba(234,179,8,0.4);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.asym-card-type {
+  font-size: 10px;
+  color: #eab308;
+  font-weight: 600;
+}
+
+/* Asymmetric Only toggle (card view) */
+.asym-only-btn {
+  margin-bottom: 0;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(234,179,8,0.35);
+  background: var(--bg-elev);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  align-self: center;
+  transition: all 0.15s;
+}
+.asym-only-btn.active {
+  background: rgba(234,179,8,0.15);
+  color: #eab308;
+  border-color: rgba(234,179,8,0.4);
+}
+.asym-only-btn:hover {
+  color: var(--text);
+  border-color: rgba(234,179,8,0.5);
+}
+
+/* Mode buttons bar in AsymmetricScanner */
+.asym-mode-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.asym-mode-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: all 0.15s;
+}
+.asym-mode-btn:hover { border-color: var(--text-muted); color: var(--text); }
+.asym-mode-all.active    { background: rgba(234,179,8,0.15);   color: #eab308;       border-color: rgba(234,179,8,0.4); }
+.asym-mode-cc.active     { background: rgba(74,222,128,0.15);  color: var(--green);  border-color: rgba(74,222,128,0.4); }
+.asym-mode-csp.active    { background: rgba(248,113,113,0.15); color: var(--red);    border-color: rgba(248,113,113,0.4); }
+.asym-mode-ivramp.active { background: rgba(251,146,60,0.15);  color: #fb923c;       border-color: rgba(251,146,60,0.4); }
+
+/* Type badges in AsymmetricScanner table */
+.asym-type-wrap  { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.asym-type-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.asym-cc     { background: rgba(74,222,128,0.15);  color: var(--green); }
+.asym-csp    { background: rgba(248,113,113,0.15); color: var(--red); }
+.asym-ivramp { background: rgba(251,146,60,0.15);  color: #fb923c; }
+
+/* WHY column */
+.asym-why     { color: var(--text-muted); font-size: 11px; line-height: 1.4; }
+.asym-why-col { min-width: 200px; max-width: 300px; }
+
+/* PremiumScanner ASYMMETRIC badge */
+.prem-asym-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(234,179,8,0.15);
+  color: #eab308;
+  border: 1px solid rgba(234,179,8,0.3);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}

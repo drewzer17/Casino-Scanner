@@ -139,7 +139,8 @@ const COLS = [
   { key: "s1_dist",    label: "S1 Dist",   align: "right" },
   { key: "s2_dist",    label: "S2 Dist",   align: "right" },
   { key: "cc_score",   label: "CC Score",  align: "right" },
-  { key: "csp_score",  label: "CSP Score", align: "right" },
+  { key: "csp_score",  label: "CSP Score",   align: "right" },
+  { key: "asymmetric", label: "ASYMMETRIC",  align: "center" },
 ];
 
 function cellValue(item, key) {
@@ -211,6 +212,13 @@ function cellValue(item, key) {
       ? <span className="score-cc">{item.cc_score}</span> : "—";
     case "csp_score": return item.csp_score != null
       ? <span className="score-csp">{item.csp_score}</span> : "—";
+    case "asymmetric": {
+      if (!item.asymmetric_any_flag || !item.asymmetric_type) return "—";
+      const label = item.asymmetric_type === "ALL_THREE"
+        ? "CC+CSP+IV RAMP"
+        : item.asymmetric_type.replace("IV_RAMP", "IV RAMP");
+      return <span className="prem-asym-badge">{label}</span>;
+    }
     default: return "—";
   }
 }
@@ -243,6 +251,7 @@ function sortValue(item, key) {
         : -1;
     case "cc_score":   return item.cc_score ?? -1;
     case "csp_score":  return item.csp_score ?? -1;
+    case "asymmetric": return item.asymmetric_any_flag ? 1 : 0;
     default: return 0;
   }
 }

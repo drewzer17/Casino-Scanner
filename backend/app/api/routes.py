@@ -188,6 +188,12 @@ def _to_out(
         # CC / CSP scores
         cc_score=row.cc_score,
         csp_score=row.csp_score,
+        # Asymmetric setup flags
+        asymmetric_cc_flag=row.asymmetric_cc_flag or False,
+        asymmetric_csp_flag=row.asymmetric_csp_flag or False,
+        asymmetric_ivramp_flag=row.asymmetric_ivramp_flag or False,
+        asymmetric_any_flag=row.asymmetric_any_flag or False,
+        asymmetric_type=row.asymmetric_type,
         # IV ramp detection
         iv_5d_ago=_san(row.iv_5d_ago),
         iv_10d_ago=_san(row.iv_10d_ago),

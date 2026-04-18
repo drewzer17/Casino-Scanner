@@ -255,6 +255,18 @@ export default function ScoreCard({ row, onClick, showBucket = false }) {
               <span className={`bucket-tag ${bucketTag.cls}`}>{bucketTag.label}</span>
             )}
           </div>
+          {row.asymmetric_any_flag && (
+            <div className="asym-card-flag">
+              <span className="asym-card-badge">ASYMMETRIC</span>
+              {row.asymmetric_type && (
+                <span className="asym-card-type">
+                  {row.asymmetric_type === "ALL_THREE"
+                    ? "CC + CSP + IV RAMP"
+                    : row.asymmetric_type.replace("IV_RAMP", "IV RAMP").replace(/\+/g, " + ")}
+                </span>
+              )}
+            </div>
+          )}
           {row.company_name && (
             <div className="company-name">{row.company_name}</div>
           )}

@@ -99,6 +99,7 @@ function DualSlider({ min, max, value, onChange, step = 1, fmt = v => String(v) 
 
 import { api } from "../api/client.js";
 import BucketTabs from "./BucketTabs.jsx";
+import AsymmetricScanner from "./AsymmetricScanner.jsx";
 import IvRampScanner from "./IvRampScanner.jsx";
 import PremiumScanner from "./PremiumScanner.jsx";
 import RangeScanner from "./RangeScanner.jsx";
@@ -194,7 +195,8 @@ export default function Dashboard() {
   const [sort, setSort] = useState("score");
   const [premTimeframe, setPremTimeframe] = useState(30);
   const [showAll, setShowAll] = useState(false);
-  const [view, setView] = useState("cards"); // "cards" | "premium" | "range"
+  const [asymOnly, setAsymOnly] = useState(false);
+  const [view, setView] = useState("cards"); // "cards" | "premium" | "range" | "ivramp" | "asymmetric"
   const [scanMode, setScanMode] = useState(null); // "normal" | "extensive" | null
   const [sourceFilter, setSourceFilter] = useState("all");
   const [reloadMsg, setReloadMsg] = useState(null);
@@ -534,6 +536,12 @@ export default function Dashboard() {
             >
               {view === "ivramp" ? "← Cards" : "IV Ramp ↑"}
             </button>
+            <button
+              className={`asym-view-btn${view === "asymmetric" ? " active" : ""}`}
+              onClick={() => setView(v => v === "asymmetric" ? "cards" : "asymmetric")}
+            >
+              {view === "asymmetric" ? "← Cards" : "⬟ Asymmetric Setups"}
+            </button>
           </div>
           <div className="search-wrap">
             <input
@@ -816,11 +824,19 @@ export default function Dashboard() {
         <RangeScanner rows={viewRows} onRowClick={setSelectedRow} />
       ) : view === "ivramp" ? (
         <IvRampScanner rows={viewRows} onRowClick={setSelectedRow} />
+      ) : view === "asymmetric" ? (
+        <AsymmetricScanner rows={viewRows} onRowClick={setSelectedRow} />
       ) : (
         <>
           <div className="tabs-row">
             {!showAll && <BucketTabs active={active} counts={counts} onChange={(k) => { setActive(k); setShowAll(false); }} />}
             {showAll && <div className="tabs-spacer" />}
+            <button
+              className={`asym-only-btn${asymOnly ? " active" : ""}`}
+              onClick={() => setAsymOnly(v => !v)}
+            >
+              {asymOnly ? "Asymmetric Only ✓" : `Asymmetric Only (${allRows.filter(r => r.asymmetric_any_flag).length})`}
+            </button>
             <button
               className={`show-all-btn${showAll ? " active" : ""}`}
               onClick={() => setShowAll(v => !v)}
@@ -832,7 +848,7 @@ export default function Dashboard() {
             <div className="empty">No tickers in this bucket.</div>
           ) : (
             <div className="grid">
-              {rows.map((r) => (
+              {rows.filter(r => !asymOnly || r.asymmetric_any_flag).map((r) => (
                 <ScoreCard key={r.ticker} row={r} showBucket={showAll} onClick={() => setSelectedRow(r)} />
               ))}
             </div>

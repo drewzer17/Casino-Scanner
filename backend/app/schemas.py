@@ -91,6 +91,13 @@ class ScanResultOut(BaseModel):
     cc_score: int | None = None
     csp_score: int | None = None
 
+    # Asymmetric setup flags
+    asymmetric_cc_flag: bool = False
+    asymmetric_csp_flag: bool = False
+    asymmetric_ivramp_flag: bool = False
+    asymmetric_any_flag: bool = False
+    asymmetric_type: str | None = None
+
     # IV ramp detection
     iv_5d_ago: float | None = None
     iv_10d_ago: float | None = None

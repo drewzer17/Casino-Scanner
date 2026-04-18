@@ -114,6 +114,16 @@ def init_db() -> None:
     ]:
         _add_column_if_missing(_ddl)
 
+    # Asymmetric setup flags added in v9
+    for _ddl in [
+        "ALTER TABLE scan_results ADD COLUMN asymmetric_cc_flag BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE scan_results ADD COLUMN asymmetric_csp_flag BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE scan_results ADD COLUMN asymmetric_ivramp_flag BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE scan_results ADD COLUMN asymmetric_any_flag BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE scan_results ADD COLUMN asymmetric_type VARCHAR(32)",
+    ]:
+        _add_column_if_missing(_ddl)
+
     # SMA + S/R columns added in v2
     for _ddl in [
         "ALTER TABLE scan_results ADD COLUMN sma_200 FLOAT",

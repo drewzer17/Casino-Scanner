@@ -101,6 +101,13 @@ class ScanResult(Base):
     iv_ramp_score: Mapped[int] = mapped_column(Integer, default=0)
     iv_ramp_flag: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    # Asymmetric setup flags (computed during scan from convergence of multiple criteria)
+    asymmetric_cc_flag: Mapped[bool] = mapped_column(Boolean, default=False)
+    asymmetric_csp_flag: Mapped[bool] = mapped_column(Boolean, default=False)
+    asymmetric_ivramp_flag: Mapped[bool] = mapped_column(Boolean, default=False)
+    asymmetric_any_flag: Mapped[bool] = mapped_column(Boolean, default=False)
+    asymmetric_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
