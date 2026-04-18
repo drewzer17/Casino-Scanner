@@ -22,7 +22,6 @@ function dteInAny(dte, dteSelected) {
   return false;
 }
 
-const OTM_FILTER_LEVELS = ["ATM", "1", "2", "3", "4", "5"];
 const EVAL_LEVELS = [
   { key: 0, label: "ATM" },
   { key: 1, label: "1 OTM" },
@@ -261,24 +260,6 @@ function calcOtmLevel(strike, price, isCSP) {
   return Math.round(diff / inc);
 }
 
-function hasOtmLevel(row, levelKey) {
-  if (levelKey === "ATM") return true;
-  const level = parseInt(levelKey);
-  if (isNaN(level)) return false;
-  const ccFlag = row.asymmetric_cc_flag || row.asymmetric_ivramp_flag || row._nearMissInfo?.setupType === "CC" || row._nearMissInfo?.setupType === "IV_RAMP";
-  const cspFlag = row.asymmetric_csp_flag || row._nearMissInfo?.setupType === "CSP";
-  if (ccFlag) {
-    if (level === 1 && row.premium_otm1 != null) return true;
-    const entry = (row.expiry_data || []).find(e => e.expiry === row.best_expiry) || (row.expiry_data || [])[0];
-    if (entry?.calls?.[level - 1]?.prem != null) return true;
-  }
-  if (cspFlag) {
-    const entry = (row.expiry_data || []).find(e => e.expiry === row.best_put_expiry) || (row.expiry_data || [])[0];
-    if (entry?.puts?.[level - 1]?.prem != null) return true;
-  }
-  return false;
-}
-
 // ── Mini OTM expansion ───────────────────────────────────────────────────────
 
 function PremiumSection({ title, expLabel, dte, tableRows }) {
@@ -407,13 +388,9 @@ function cellValue(row, key, evalOtmLevel = 0) {
       return s != null ? `$${s.toFixed(2)}` : "—";
     }
     case "otm": {
-      const s = isCSP ? getPutStrike(row, evalOtmLevel) : getCallStrike(row, evalOtmLevel);
-      if (s == null || !price) return "—";
-      const level = calcOtmLevel(s, price, isCSP);
-      if (level == null) return "—";
-      const label = level <= 0 ? "ATM" : `${level} OTM`;
-      const cls   = level <= 0 ? "otm-atm" : level === 1 ? "otm-1" : "otm-2plus";
-      return <span className={cls}>{label}</span>;
+      if (evalOtmLevel === 0) return <span className="otm-atm">ATM</span>;
+      const cls = evalOtmLevel === 1 ? "otm-1" : "otm-2plus";
+      return <span className={cls}>{evalOtmLevel} OTM</span>;
     }
     case "dte": {
       const dte = getRelevantDte(row);
@@ -489,10 +466,7 @@ function sortValue(row, key, evalOtmLevel = 0) {
     case "price":    return price ?? -1;
     case "premium":  return (isCSP ? getPutPrem(row, evalOtmLevel) : getCallPrem(row, evalOtmLevel)) ?? -1;
     case "strike":   return (isCSP ? getPutStrike(row, evalOtmLevel) : getCallStrike(row, evalOtmLevel)) ?? -1;
-    case "otm": {
-      const s = isCSP ? getPutStrike(row, evalOtmLevel) : getCallStrike(row, evalOtmLevel);
-      return calcOtmLevel(s, price, isCSP) ?? 99;
-    }
+    case "otm": return evalOtmLevel;
     case "dte":    return getRelevantDte(row) ?? 9999;
     case "expiry": return getRelevantExpiry(row) ?? "";
     case "spread":        return row.bid_ask_spread_pct ?? Infinity;
@@ -522,7 +496,6 @@ const SETUP_MODES = [
 export default function AsymmetricScanner({ rows, onRowClick }) {
   const [setupMode, setSetupMode]       = useState("all");
   const [dteSelected, setDteSelected]   = useState(new Set());
-  const [otmSelected, setOtmSelected]   = useState(new Set());
   const [evalOtmLevel, setEvalOtmLevel] = useState(0);
   const [showNearMiss1, setShowNearMiss1] = useState(false);
   const [showNearMiss2, setShowNearMiss2] = useState(false);
@@ -533,12 +506,14 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
   const toggleDte = (label) => setDteSelected(prev => {
     const next = new Set(prev); if (next.has(label)) next.delete(label); else next.add(label); return next;
   });
-  const toggleOtm = (level) => setOtmSelected(prev => {
-    const next = new Set(prev); if (next.has(level)) next.delete(level); else next.add(level); return next;
-  });
+
+  // At OTM level > 0, only evaluate rows that have premium data at that level
+  const eligibleRows = evalOtmLevel === 0 ? rows : rows.filter(row =>
+    getCallPrem(row, evalOtmLevel) != null || getPutPrem(row, evalOtmLevel) != null
+  );
 
   // Evaluate each row with the selected OTM level
-  const evaluated = rows.map(row => {
+  const evaluated = eligibleRows.map(row => {
     const callPrem = getCallPrem(row, evalOtmLevel);
     const putPrem  = getPutPrem(row, evalOtmLevel);
     const ev = evalRow(row, callPrem, putPrem);
@@ -556,7 +531,7 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
 
   // Near miss rows (not full passes, best setup fails 1 or 2 criteria)
   const allNearMiss = evaluated
-    .filter(r => !r._anyPass && (evalOtmLevel === 0 ? true : getCallPrem(r, evalOtmLevel) != null || getPutPrem(r, evalOtmLevel) != null))
+    .filter(r => !r._anyPass)
     .map(r => {
       const nm = getBestNearMiss(r._ev);
       if (!nm) return null;
@@ -580,15 +555,13 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
   // Apply filters to full passes
   const filteredPass = fullPass
     .filter(r => modeMatch(r, setupMode))
-    .filter(r => dteInAny(getRelevantDte(r), dteSelected))
-    .filter(r => otmSelected.size === 0 || [...otmSelected].some(lvl => hasOtmLevel(r, lvl)));
+    .filter(r => dteInAny(getRelevantDte(r), dteSelected));
 
   // Apply filters to near miss rows
   function filterNearMiss(nmRows) {
     return nmRows
       .filter(r => modeMatch(r, setupMode))
-      .filter(r => dteInAny(getRelevantDte(r), dteSelected))
-      .filter(r => otmSelected.size === 0 || [...otmSelected].some(lvl => hasOtmLevel(r, lvl)));
+      .filter(r => dteInAny(getRelevantDte(r), dteSelected));
   }
 
   const filteredNM1 = filterNearMiss(nearMiss1All);
@@ -712,20 +685,6 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
             onClick={() => setEvalOtmLevel(lv.key)}
           >{lv.label}</button>
         ))}
-      </div>
-      <div className="dte-filter-row">
-        <span className="dte-filter-label">OTM</span>
-        {OTM_FILTER_LEVELS.map(lvl => (
-          <button
-            key={lvl}
-            className={`dte-filter-btn${otmSelected.has(lvl) ? " active" : ""}`}
-            onClick={() => toggleOtm(lvl)}
-          >{lvl}</button>
-        ))}
-        <button
-          className={`dte-filter-btn${otmSelected.size === 0 ? " active" : ""}`}
-          onClick={() => setOtmSelected(new Set())}
-        >ALL</button>
       </div>
       <div className="dte-filter-row">
         <span className="dte-filter-label">DTE</span>
