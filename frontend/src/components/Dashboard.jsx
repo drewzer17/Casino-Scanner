@@ -804,7 +804,8 @@ export default function Dashboard() {
               <DualSlider min={0} max={50} step={1} value={spreadRange} onChange={setSpreadRange}
                 fmt={v => `${v}%`} />
             </div>
-            {/* Row 2: price-level distances (top = resistance above price, bottom = support below) */}
+          </div>
+          <div className="filter-sliders">
             <div className="filter-slider-item">
               <span className="filter-slider-label">R1 DISTANCE</span>
               <DualSlider min={0} max={50} step={0.5} value={r1DistRange} onChange={setR1DistRange}
