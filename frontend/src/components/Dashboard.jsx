@@ -42,13 +42,45 @@ export function rangeScore(row) {
 
 function DualSlider({ min, max, value, onChange, step = 1, fmt = v => String(v) }) {
   const [lo, hi] = value;
+  const [editLo, setEditLo] = useState(null);
+  const [editHi, setEditHi] = useState(null);
   const pctLo = ((lo - min) / (max - min)) * 100;
   const pctHi = ((hi - min) / (max - min)) * 100;
+
+  const commitLo = (raw) => {
+    const v = Number(raw);
+    if (!isNaN(v)) onChange([Math.min(Math.max(v, min), hi), hi]);
+    setEditLo(null);
+  };
+  const commitHi = (raw) => {
+    const v = Number(raw);
+    if (!isNaN(v)) onChange([lo, Math.max(Math.min(v, max), lo)]);
+    setEditHi(null);
+  };
+
   return (
     <div className="ds-wrap">
       <div className="ds-vals">
-        <span>{fmt(lo)}</span>
-        <span>{fmt(hi)}</span>
+        {editLo !== null ? (
+          <input className="ds-edit-input" type="number" value={editLo}
+            onChange={e => setEditLo(e.target.value)}
+            onBlur={() => commitLo(editLo)}
+            onKeyDown={e => { if (e.key === "Enter") commitLo(editLo); if (e.key === "Escape") setEditLo(null); }}
+            autoFocus
+          />
+        ) : (
+          <span className="ds-val-clickable" onClick={() => setEditLo(String(lo))}>{fmt(lo)}</span>
+        )}
+        {editHi !== null ? (
+          <input className="ds-edit-input" type="number" value={editHi}
+            onChange={e => setEditHi(e.target.value)}
+            onBlur={() => commitHi(editHi)}
+            onKeyDown={e => { if (e.key === "Enter") commitHi(editHi); if (e.key === "Escape") setEditHi(null); }}
+            autoFocus
+          />
+        ) : (
+          <span className="ds-val-clickable" onClick={() => setEditHi(String(hi))}>{fmt(hi)}</span>
+        )}
       </div>
       <div className="ds-track">
         <div className="ds-fill" style={{ left: `${pctLo}%`, width: `${pctHi - pctLo}%` }} />
@@ -188,7 +220,10 @@ export default function Dashboard() {
   const [safetyRange, setSafetyRange] = useState([0, 5000]);
   const [ccScoreRange, setCcScoreRange] = useState([0, 100]);
   const [cspScoreRange, setCspScoreRange] = useState([0, 100]);
+  const [r2DistRange, setR2DistRange] = useState([0, 50]);
+  const [r1DistRange, setR1DistRange] = useState([0, 50]);
   const [s1DistRange, setS1DistRange] = useState([0, 50]);
+  const [s2DistRange, setS2DistRange] = useState([0, 50]);
   const [spreadRange, setSpreadRange] = useState([0, 50]);
 
   // Scan trigger state
@@ -272,7 +307,10 @@ export default function Dashboard() {
     setSafetyRange([0, 5000]);
     setCcScoreRange([0, 100]);
     setCspScoreRange([0, 100]);
+    setR2DistRange([0, 50]);
+    setR1DistRange([0, 50]);
     setS1DistRange([0, 50]);
+    setS2DistRange([0, 50]);
     setSpreadRange([0, 50]);
   }, [mode]);
 
@@ -378,9 +416,21 @@ export default function Dashboard() {
         (r.cc_score < ccScoreRange[0] || r.cc_score > ccScoreRange[1])) return false;
     if (mode !== "cc" && r.csp_score != null &&
         (r.csp_score < cspScoreRange[0] || r.csp_score > cspScoreRange[1])) return false;
+    if (r.resistance_2 != null && r.price != null && r.price > 0) {
+      const dist = ((r.resistance_2 - r.price) / r.price) * 100;
+      if (dist < r2DistRange[0] || dist > r2DistRange[1]) return false;
+    }
+    if (r.resistance_1 != null && r.price != null && r.price > 0) {
+      const dist = ((r.resistance_1 - r.price) / r.price) * 100;
+      if (dist < r1DistRange[0] || dist > r1DistRange[1]) return false;
+    }
     if (r.support_1 != null && r.price != null && r.price > 0) {
       const dist = ((r.price - r.support_1) / r.price) * 100;
       if (dist < s1DistRange[0] || dist > s1DistRange[1]) return false;
+    }
+    if (r.support_2 != null && r.price != null && r.price > 0) {
+      const dist = ((r.price - r.support_2) / r.price) * 100;
+      if (dist < s2DistRange[0] || dist > s2DistRange[1]) return false;
     }
     if (r.bid_ask_spread_pct != null) {
       const spr = r.bid_ask_spread_pct * 100;
@@ -389,7 +439,8 @@ export default function Dashboard() {
     return true;
   };
 
-  const baseFn = (r) => priceFilter(r) && sourceFilterFn(r) && searchFilter(r) && sliderFn(r);
+  const baseNoSourceFn = (r) => priceFilter(r) && searchFilter(r) && sliderFn(r);
+  const baseFn = (r) => baseNoSourceFn(r) && sourceFilterFn(r);
   const combinedFilter = (r) => baseFn(r) && crossFn(r) && trendFn(r) && signalFn(r);
 
   const resetFilters = () => {
@@ -435,15 +486,11 @@ export default function Dashboard() {
   const countForTrend  = (opt) => allRows.filter(r => baseFn(r) && crossFn(r) && signalFn(r) && trendFn(r, opt)).length;
   const countForSignal = (opt) => allRows.filter(r => baseFn(r) && crossFn(r) && trendFn(r) && signalFn(r, opt)).length;
 
-  // Source counts (unaffected by source filter itself)
-  const sourceCounts = {
-    sp500:     allRows.filter(r => (r.sources||[]).includes("sp500")).length,
-    nasdaq100: allRows.filter(r => (r.sources||[]).includes("nasdaq100")).length,
-    ai_sector: allRows.filter(r => (r.sources||[]).includes("ai_sector")).length,
-    ai_nuclear:allRows.filter(r => (r.sources||[]).includes("ai_nuclear")).length,
-    etf:       allRows.filter(r => (r.sources||[]).includes("etf")).length,
-    custom:    allRows.filter(r => (r.sources||[]).includes("custom")).length,
-  };
+  // Cascading source counts (excludes source filter itself)
+  const countForSource = (key) => allRows.filter(r =>
+    baseNoSourceFn(r) && crossFn(r) && trendFn(r) && signalFn(r) &&
+    (key === "all" || (r.sources||[]).includes(key))
+  ).length;
 
   const rows = showAll
     ? sortRows(filteredAll, sort, premTimeframe)
@@ -621,6 +668,33 @@ export default function Dashboard() {
                 </button>
               ))}
             </div>
+
+            {/* SOURCE */}
+            <div className="filter-group">
+              <span className="filter-group-label">SOURCE</span>
+              {[
+                { key: "all",        label: "All" },
+                { key: "sp500",      label: "S&P 500" },
+                { key: "nasdaq100",  label: "Nasdaq 100" },
+                { key: "russell1000",label: "Russell 1000" },
+                { key: "russell2000",label: "Russell 2000" },
+                { key: "ai_sector",  label: "AI Sector" },
+                { key: "ai_nuclear", label: "Nuclear" },
+                { key: "etf",        label: "ETF" },
+                { key: "custom",     label: "Custom" },
+              ].map(opt => (
+                <button
+                  key={opt.key}
+                  className={`filter-toggle-btn${sourceFilter === opt.key ? " active" : ""}`}
+                  onClick={() => setSourceFilter(opt.key)}
+                >
+                  {opt.label}
+                  {opt.key !== "all" && (
+                    <span className="filter-count">{countForSource(opt.key)}</span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="filter-sliders">
@@ -654,8 +728,23 @@ export default function Dashboard() {
                 fmt={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`} />
             </div>
             <div className="filter-slider-item">
+              <span className="filter-slider-label">R2 DISTANCE</span>
+              <DualSlider min={0} max={50} step={0.5} value={r2DistRange} onChange={setR2DistRange}
+                fmt={v => `${Number(v).toFixed(0)}%`} />
+            </div>
+            <div className="filter-slider-item">
+              <span className="filter-slider-label">R1 DISTANCE</span>
+              <DualSlider min={0} max={50} step={0.5} value={r1DistRange} onChange={setR1DistRange}
+                fmt={v => `${Number(v).toFixed(0)}%`} />
+            </div>
+            <div className="filter-slider-item">
               <span className="filter-slider-label">S1 DISTANCE</span>
               <DualSlider min={0} max={50} step={0.5} value={s1DistRange} onChange={setS1DistRange}
+                fmt={v => `${Number(v).toFixed(0)}%`} />
+            </div>
+            <div className="filter-slider-item">
+              <span className="filter-slider-label">S2 DISTANCE</span>
+              <DualSlider min={0} max={50} step={0.5} value={s2DistRange} onChange={setS2DistRange}
                 fmt={v => `${Number(v).toFixed(0)}%`} />
             </div>
             <div className="filter-slider-item">
@@ -707,26 +796,6 @@ export default function Dashboard() {
         <RangeScanner rows={viewRows} onRowClick={setSelectedRow} />
       ) : (
         <>
-          <div className="source-filter-row">
-            {[
-              { key: "all",        label: "All",        count: allRows.length },
-              { key: "sp500",      label: "S&P 500",    count: sourceCounts.sp500 },
-              { key: "nasdaq100",  label: "Nasdaq 100", count: sourceCounts.nasdaq100 },
-              { key: "ai_sector",  label: "AI Sector",  count: sourceCounts.ai_sector },
-              { key: "ai_nuclear", label: "Nuclear",    count: sourceCounts.ai_nuclear },
-              { key: "etf",        label: "ETF",        count: sourceCounts.etf },
-              { key: "custom",     label: "Custom",     count: sourceCounts.custom },
-            ].map(({ key, label, count }) => count > 0 || key === "all" ? (
-              <button
-                key={key}
-                className={`source-filter-btn${sourceFilter === key ? " active" : ""}`}
-                onClick={() => { setSourceFilter(key); setShowAll(false); }}
-              >
-                {label}
-                <span className="source-filter-count">{count}</span>
-              </button>
-            ) : null)}
-          </div>
           <div className="tabs-row">
             {!showAll && <BucketTabs active={active} counts={counts} onChange={(k) => { setActive(k); setShowAll(false); }} />}
             {showAll && <div className="tabs-spacer" />}

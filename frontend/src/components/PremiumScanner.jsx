@@ -134,7 +134,10 @@ const COLS = [
   { key: "expiry",     label: "Expiry",    align: "right" },
   { key: "dte",        label: "DTE",       align: "right" },
   { key: "oi",         label: "OI",        align: "right" },
+  { key: "r2_dist",    label: "R2 Dist",   align: "right" },
+  { key: "r1_dist",    label: "R1 Dist",   align: "right" },
   { key: "s1_dist",    label: "S1 Dist",   align: "right" },
+  { key: "s2_dist",    label: "S2 Dist",   align: "right" },
   { key: "cc_score",   label: "CC Score",  align: "right" },
   { key: "csp_score",  label: "CSP Score", align: "right" },
 ];
@@ -180,9 +183,27 @@ function cellValue(item, key) {
           ? `${(item.open_interest / 1000).toFixed(1)}K`
           : String(item.open_interest)
         : "—";
+    case "r2_dist": {
+      if (item.resistance_2 == null || item.price == null || item.price <= 0) return <span className="text-muted-sm">PD</span>;
+      const dist = ((item.resistance_2 - item.price) / item.price) * 100;
+      const cls = dist <= 8 ? "s1dist-tight" : dist <= 15 ? "s1dist-ok" : "s1dist-wide";
+      return <span className={cls}>{dist.toFixed(1)}%</span>;
+    }
+    case "r1_dist": {
+      if (item.resistance_1 == null || item.price == null || item.price <= 0) return <span className="text-muted-sm">PD</span>;
+      const dist = ((item.resistance_1 - item.price) / item.price) * 100;
+      const cls = dist <= 8 ? "s1dist-tight" : dist <= 15 ? "s1dist-ok" : "s1dist-wide";
+      return <span className={cls}>{dist.toFixed(1)}%</span>;
+    }
     case "s1_dist": {
       if (item.support_1 == null || item.price == null || item.price <= 0) return "—";
       const dist = ((item.price - item.support_1) / item.price) * 100;
+      const cls = dist <= 8 ? "s1dist-tight" : dist <= 15 ? "s1dist-ok" : "s1dist-wide";
+      return <span className={cls}>{dist.toFixed(1)}%</span>;
+    }
+    case "s2_dist": {
+      if (item.support_2 == null || item.price == null || item.price <= 0) return "—";
+      const dist = ((item.price - item.support_2) / item.price) * 100;
       const cls = dist <= 8 ? "s1dist-tight" : dist <= 15 ? "s1dist-ok" : "s1dist-wide";
       return <span className={cls}>{dist.toFixed(1)}%</span>;
     }
@@ -206,9 +227,19 @@ function sortValue(item, key) {
     case "expiry":     return item._d.expiry ?? "";
     case "dte":        return item._d.dte ?? 9999;
     case "oi":         return item.open_interest ?? -1;
+    case "r2_dist":
+      return (item.resistance_2 != null && item.price > 0)
+        ? ((item.resistance_2 - item.price) / item.price) * 100 : Infinity;
+    case "r1_dist":
+      return (item.resistance_1 != null && item.price > 0)
+        ? ((item.resistance_1 - item.price) / item.price) * 100 : Infinity;
     case "s1_dist":
       return (item.support_1 != null && item.price > 0)
         ? ((item.price - item.support_1) / item.price) * 100
+        : -1;
+    case "s2_dist":
+      return (item.support_2 != null && item.price > 0)
+        ? ((item.price - item.support_2) / item.price) * 100
         : -1;
     case "cc_score":   return item.cc_score ?? -1;
     case "csp_score":  return item.csp_score ?? -1;

@@ -1483,6 +1483,32 @@ body {
   margin-bottom: 2px;
 }
 
+.ds-val-clickable {
+  cursor: pointer;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+.ds-val-clickable:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.ds-edit-input {
+  width: 52px;
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  color: var(--text);
+  font-size: 11px;
+  padding: 1px 3px;
+  /* hide number spinner arrows */
+  -moz-appearance: textfield;
+}
+.ds-edit-input::-webkit-outer-spin-button,
+.ds-edit-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
 .ds-track {
   position: relative;
   height: 4px;
