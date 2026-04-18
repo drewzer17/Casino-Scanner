@@ -1212,99 +1212,12 @@ def _calc_iv_ramp_metrics(
     return result
 
 
-# ── Asymmetric setup flags ────────────────────────────────────────────────────
-
-def _calc_asymmetric_flags(
-    result: ScanRowResult,
-    iv_ramp_flag: bool,
-    iv_velocity_10d: float | None,
-    iv_velocity_20d: float | None,
-) -> dict:
-    """Binary convergence flags — all criteria must be met. No partial credit."""
-    price = result.price
-    iv_rank = result.metrics.iv_rank
-    spread_pct = result.metrics.bid_ask_spread_pct
-    oi = result.metrics.open_interest
-
-    s1_dist: float | None = None
-    if result.support_1 and price and price > 0:
-        s1_dist = (price - result.support_1) / price * 100
-
-    r1_dist: float | None = None
-    if result.resistance_1 and price and price > 0:
-        r1_dist = (result.resistance_1 - price) / price * 100
-
-    # ── ASYMMETRIC_CC_FLAG ────────────────────────────────────────────
-    cc_flag = bool(
-        result.sma_golden_cross is True
-        and (result.sma_regime == "UPTREND" or result.resistance_1 is None)
-        and (result.resistance_1 is None or (r1_dist is not None and r1_dist <= 10.0))
-        and iv_rank is not None and 40.0 <= iv_rank <= 80.0
-        and spread_pct is not None and spread_pct <= 0.10
-        and oi is not None and oi >= 200
-        and result.atm_call_premium is not None and result.atm_call_premium >= 2.00
-        and s1_dist is not None and s1_dist <= 12.0
-    )
-
-    # ── ASYMMETRIC_CSP_FLAG ───────────────────────────────────────────
-    csp_flag = bool(
-        result.sma_golden_cross is True
-        and s1_dist is not None and s1_dist <= 8.0
-        and result.support_1_strength is not None and result.support_1_strength >= 8.0
-        and iv_rank is not None and iv_rank >= 45.0
-        and spread_pct is not None and spread_pct <= 0.10
-        and oi is not None and oi >= 200
-        and result.atm_put_premium is not None and result.atm_put_premium >= 2.00
-    )
-
-    # ── ASYMMETRIC_IVRAMP_FLAG ────────────────────────────────────────
-    ivramp_flag = bool(
-        iv_ramp_flag is True
-        and iv_rank is not None and iv_rank < 40.0
-        and (iv_velocity_10d is None or iv_velocity_10d > 0)
-        and (iv_velocity_20d is None or iv_velocity_20d > 0)
-        and result.sma_golden_cross is True
-        and result.sma_regime == "UPTREND"
-        and spread_pct is not None and spread_pct <= 0.15
-    )
-
-    any_flag = cc_flag or csp_flag or ivramp_flag
-
-    types: list[str] = []
-    if cc_flag:     types.append("CC")
-    if csp_flag:    types.append("CSP")
-    if ivramp_flag: types.append("IV_RAMP")
-
-    if len(types) == 3:
-        asym_type = "ALL_THREE"
-    elif len(types) == 2:
-        asym_type = "+".join(types)
-    elif len(types) == 1:
-        asym_type = types[0]
-    else:
-        asym_type = None
-
-    return {
-        "asymmetric_cc_flag":     cc_flag,
-        "asymmetric_csp_flag":    csp_flag,
-        "asymmetric_ivramp_flag": ivramp_flag,
-        "asymmetric_any_flag":    any_flag,
-        "asymmetric_type":        asym_type,
-    }
-
-
 # ── DB persistence ────────────────────────────────────────────────────────────
 
 def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
     iv_ramp = _calc_iv_ramp_metrics(
         db, result.ticker, result.metrics.iv, result.metrics.iv_rank,
         result.sma_golden_cross, result.sma_regime,
-    )
-    asym = _calc_asymmetric_flags(
-        result,
-        iv_ramp_flag=iv_ramp["iv_ramp_flag"],
-        iv_velocity_10d=iv_ramp["iv_velocity_10d"],
-        iv_velocity_20d=iv_ramp["iv_velocity_20d"],
     )
     db.add(models.ScanResult(
         run_id=run_id,
@@ -1361,8 +1274,6 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
         csp_score=result.csp_score,
         # IV ramp metrics (computed from iv_history)
         **iv_ramp,
-        # Asymmetric setup flags
-        **asym,
     ))
 
     # Record IV snapshot for IV rank history (one row per ticker per day)

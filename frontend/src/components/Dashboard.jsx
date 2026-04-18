@@ -100,6 +100,7 @@ function DualSlider({ min, max, value, onChange, step = 1, fmt = v => String(v) 
 import { api } from "../api/client.js";
 import BucketTabs from "./BucketTabs.jsx";
 import AsymmetricScanner from "./AsymmetricScanner.jsx";
+import { calcAsymmetricFlags } from "../utils/asymmetric.js";
 import IvRampScanner from "./IvRampScanner.jsx";
 import PremiumScanner from "./PremiumScanner.jsx";
 import RangeScanner from "./RangeScanner.jsx";
@@ -488,7 +489,7 @@ export default function Dashboard() {
     ...data.sell_now,
     ...data.buy_sell_later,
     ...data.watchlist,
-  ];
+  ].map(r => ({ ...r, ...calcAsymmetricFlags(r) }));
   const filteredAll = allRows.filter(combinedFilter);
   const viewRows    = allRows.filter(combinedFilter);
 
