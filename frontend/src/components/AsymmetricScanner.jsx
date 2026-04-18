@@ -107,9 +107,44 @@ function generateWhy(row) {
 
 // ── Mini OTM expansion ───────────────────────────────────────────────────────
 
+function PremiumSection({ title, expLabel, dte, tableRows }) {
+  return (
+    <div className="asym-mini-wrap">
+      <div className="asym-mini-title">
+        {title}
+        {expLabel && ` · ${expLabel}`}
+        {dte != null && ` · ${dte}d`}
+      </div>
+      <table className="asym-mini-table">
+        <thead>
+          <tr>
+            <th>Level</th>
+            <th>Strike</th>
+            <th>Premium/sh</th>
+            <th>Per Contract</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tableRows.map(r => (
+            <tr key={r.label}>
+              <td><span className={r.cls}>{r.label}</span></td>
+              <td>{r.strike != null ? `$${r.strike.toFixed(2)}` : "—"}</td>
+              <td>{r.prem != null ? `$${r.prem.toFixed(2)}` : "—"}</td>
+              <td>{r.prem != null ? `$${(r.prem * 100).toFixed(0)}` : "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="asym-mini-note">3–4 OTM: open full detail</div>
+    </div>
+  );
+}
+
 function AsymExpansion({ row, onFullDetail }) {
-  const isCSP = row.asymmetric_type === "CSP";
-  const inc   = guessStrikeIncrement(row.price);
+  const inc = guessStrikeIncrement(row.price);
+
+  const showCalls = row.asymmetric_cc_flag || row.asymmetric_ivramp_flag;
+  const showPuts  = row.asymmetric_csp_flag;
 
   const callRows = [
     { label: "ATM",   cls: "otm-atm",   strike: row.best_strike,
@@ -120,51 +155,45 @@ function AsymExpansion({ row, onFullDetail }) {
       prem: row.premium_otm2 },
   ];
 
+  // Pull put OTM levels from expiry_data (populated by extensive scan)
+  const putExpEntry = (row.expiry_data || []).find(e => e.expiry === row.best_put_expiry)
+    || (row.expiry_data || [])[0];
+  const otmPuts = putExpEntry?.puts || [];
+
   const putRows = [
-    { label: "ATM",   cls: "otm-atm",   strike: row.best_put_strike,
+    { label: "ATM",   cls: "otm-atm",
+      strike: row.best_put_strike,
       prem: row.atm_put_premium },
+    { label: "1 OTM", cls: "otm-1",
+      strike: otmPuts[0]?.strike ?? (row.best_put_strike != null ? row.best_put_strike - inc : null),
+      prem: otmPuts[0]?.prem ?? null },
+    { label: "2 OTM", cls: "otm-2plus",
+      strike: otmPuts[1]?.strike ?? (row.best_put_strike != null ? row.best_put_strike - 2 * inc : null),
+      prem: otmPuts[1]?.prem ?? null },
   ];
 
-  const tableRows = isCSP ? putRows : callRows;
-  const title = isCSP ? "Put Premiums" : "Call Premiums";
-  const expLabel = fmtExpiry(getRelevantExpiry(row));
-  const dte      = getRelevantDte(row);
+  // Fall back to calls if no flags are set (shouldn't happen)
+  const renderCalls = showCalls || !showPuts;
+  const renderPuts  = showPuts;
 
   return (
     <div className="asym-expansion" onClick={e => e.stopPropagation()}>
-      <div className="asym-mini-wrap">
-        <div className="asym-mini-title">
-          {title}
-          {expLabel && ` · ${expLabel}`}
-          {dte != null && ` · ${dte}d`}
-        </div>
-        <table className="asym-mini-table">
-          <thead>
-            <tr>
-              <th>Level</th>
-              <th>Strike</th>
-              <th>Premium/sh</th>
-              <th>Per Contract</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tableRows.map(r => (
-              <tr key={r.label}>
-                <td><span className={r.cls}>{r.label}</span></td>
-                <td>{r.strike != null ? `$${r.strike.toFixed(2)}` : "—"}</td>
-                <td>{r.prem != null ? `$${r.prem.toFixed(2)}` : "—"}</td>
-                <td>{r.prem != null ? `$${(r.prem * 100).toFixed(0)}` : "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {!isCSP && (
-          <div className="asym-mini-note">3–4 OTM: open full detail</div>
-        )}
-        {isCSP && (
-          <div className="asym-mini-note">OTM puts: open full detail</div>
-        )}
-      </div>
+      {renderCalls && (
+        <PremiumSection
+          title="Call Premiums"
+          expLabel={fmtExpiry(row.best_expiry)}
+          dte={row.best_dte}
+          tableRows={callRows}
+        />
+      )}
+      {renderPuts && (
+        <PremiumSection
+          title="Put Premiums"
+          expLabel={fmtExpiry(row.best_put_expiry)}
+          dte={row.best_put_dte}
+          tableRows={putRows}
+        />
+      )}
       <button
         className="asym-full-btn"
         onClick={e => { e.stopPropagation(); onFullDetail(); }}
