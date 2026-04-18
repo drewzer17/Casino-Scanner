@@ -210,7 +210,7 @@ export default function Dashboard() {
 
   // Price display filter
   const [minPrice, setMinPrice] = useState(10);
-  const [maxPrice, setMaxPrice] = useState(300);
+  const [maxPrice, setMaxPrice] = useState(9999);
 
   // Mode selector
   const [mode, setMode] = useState("all"); // "all" | "cc" | "csp"
@@ -459,6 +459,8 @@ export default function Dashboard() {
   const isSearching = searchQuery.trim().length > 0;
 
   const resetFilters = () => {
+    setMinPrice(10);
+    setMaxPrice(9999);
     setMode("all"); // triggers the mode useEffect which resets everything else
   };
 
