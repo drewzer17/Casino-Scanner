@@ -417,6 +417,8 @@ export default function Dashboard() {
         (r.open_interest < oiRange[0] || r.open_interest > oiRange[1])) return false;
     if (mode === "all" && r.safety_score != null &&
         (r.safety_score < safetyRange[0] || r.safety_score > safetyRange[1])) return false;
+    if (mode === "cc"  && (r.cc_score ?? 0) < (r.csp_score ?? 0)) return false;
+    if (mode === "csp" && (r.csp_score ?? 0) < (r.cc_score ?? 0)) return false;
     if (mode !== "csp" && r.cc_score != null &&
         (r.cc_score < ccScoreRange[0] || r.cc_score > ccScoreRange[1])) return false;
     if (mode !== "cc" && r.csp_score != null &&
