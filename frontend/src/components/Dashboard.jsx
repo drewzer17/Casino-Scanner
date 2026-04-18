@@ -461,7 +461,23 @@ export default function Dashboard() {
   const resetFilters = () => {
     setMinPrice(10);
     setMaxPrice(9999);
-    setMode("all"); // triggers the mode useEffect which resets everything else
+    setMode("all");
+    setCcScoreRange([0, 100]);
+    setCspScoreRange([0, 100]);
+    setIvRankRange([0, 100]);
+    setPremRange([0, 999]);
+    setOiRange([0, 999999]);
+    setSpreadRange([0, 50]);
+    setR1DistRange([0, 50]);
+    setR2DistRange([0, 50]);
+    setS1DistRange([0, 50]);
+    setS2DistRange([0, 50]);
+    setIvRampScoreRange([0, 100]);
+    setSafetyRange([0, 5000]);
+    setCrossFilter("all");
+    setTrendFilter("all");
+    setSignalFilter("all");
+    setSourceFilter("all");
   };
 
   // ── Signal options per mode ───────────────────────────────────────
