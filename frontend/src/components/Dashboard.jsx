@@ -230,7 +230,7 @@ export default function Dashboard() {
   const [r1DistRange, setR1DistRange] = useState([0, 999]);
   const [s1DistRange, setS1DistRange] = useState([0, 999]);
   const [s2DistRange, setS2DistRange] = useState([0, 999]);
-  const [spreadRange, setSpreadRange] = useState([0, 50]);
+  const [spreadRange, setSpreadRange] = useState([0, 500]);
   const [ivRampScoreRange, setIvRampScoreRange] = useState([0, 100]);
 
   // Scan trigger state
@@ -318,7 +318,7 @@ export default function Dashboard() {
     setR1DistRange([0, 999]);
     setS1DistRange([0, 999]);
     setS2DistRange([0, 999]);
-    setSpreadRange([0, 50]);
+    setSpreadRange([0, 500]);
     setIvRampScoreRange([0, 100]);
   }, [mode]);
 
@@ -467,7 +467,7 @@ export default function Dashboard() {
     setIvRankRange([0, 100]);
     setPremRange([0, 999]);
     setOiRange([0, 999999]);
-    setSpreadRange([0, 50]);
+    setSpreadRange([0, 500]);
     setR1DistRange([0, 999]);
     setR2DistRange([0, 999]);
     setS1DistRange([0, 999]);
@@ -849,7 +849,7 @@ export default function Dashboard() {
             </div>
             <div className="filter-slider-item">
               <span className="filter-slider-label">SPREAD %</span>
-              <DualSlider min={0} max={50} step={1} value={spreadRange} onChange={setSpreadRange}
+              <DualSlider min={0} max={500} step={1} value={spreadRange} onChange={setSpreadRange}
                 fmt={v => `${v}%`} />
             </div>
           </div>
