@@ -1569,6 +1569,8 @@ body {
 .spread-tight { color: var(--green); font-weight: 600; }
 .spread-ok    { color: var(--yellow); font-weight: 600; }
 .spread-wide  { color: var(--red);   font-weight: 600; }
+.spread-dollar { color: var(--text-muted); font-size: 11px; }
+.text-muted-sm { color: var(--text-muted); font-size: 12px; }
 
 .s1dist-tight { color: var(--green); font-weight: 600; }
 .s1dist-ok    { color: var(--yellow); font-weight: 600; }

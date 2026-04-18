@@ -189,6 +189,7 @@ export default function Dashboard() {
   const [ccScoreRange, setCcScoreRange] = useState([0, 100]);
   const [cspScoreRange, setCspScoreRange] = useState([0, 100]);
   const [s1DistRange, setS1DistRange] = useState([0, 50]);
+  const [spreadRange, setSpreadRange] = useState([0, 50]);
 
   // Scan trigger state
   const [scanning, setScanning] = useState(false);
@@ -272,6 +273,7 @@ export default function Dashboard() {
     setCcScoreRange([0, 100]);
     setCspScoreRange([0, 100]);
     setS1DistRange([0, 50]);
+    setSpreadRange([0, 50]);
   }, [mode]);
 
   const handleRunScan = async () => {
@@ -379,6 +381,10 @@ export default function Dashboard() {
     if (r.support_1 != null && r.price != null && r.price > 0) {
       const dist = ((r.price - r.support_1) / r.price) * 100;
       if (dist < s1DistRange[0] || dist > s1DistRange[1]) return false;
+    }
+    if (r.bid_ask_spread_pct != null) {
+      const spr = r.bid_ask_spread_pct * 100;
+      if (spr < spreadRange[0] || spr > spreadRange[1]) return false;
     }
     return true;
   };
@@ -650,6 +656,11 @@ export default function Dashboard() {
               <span className="filter-slider-label">S1 DISTANCE</span>
               <DualSlider min={0} max={50} step={0.5} value={s1DistRange} onChange={setS1DistRange}
                 fmt={v => `${Number(v).toFixed(0)}%`} />
+            </div>
+            <div className="filter-slider-item">
+              <span className="filter-slider-label">SPREAD %</span>
+              <DualSlider min={0} max={50} step={1} value={spreadRange} onChange={setSpreadRange}
+                fmt={v => `${v}%`} />
             </div>
             {mode === "all" && (
               <div className="filter-slider-item">

@@ -158,10 +158,17 @@ function cellValue(item, key) {
     case "premium":    return item._d.premium != null ? `$${fmt(item._d.premium)}` : "—";
     case "spread": {
       const pct = item.bid_ask_spread_pct;
-      if (pct == null) return "—";
+      if (pct == null || item.atm_call_premium == null) return <span className="text-muted-sm">N/A</span>;
       const val = pct * 100;
+      const dollarSpread = pct * item.atm_call_premium;
       const cls = val <= 5 ? "spread-tight" : val <= 15 ? "spread-ok" : "spread-wide";
-      return <span className={cls}>{val.toFixed(1)}%</span>;
+      return (
+        <span>
+          <span className="spread-dollar">${dollarSpread.toFixed(2)}</span>
+          <br />
+          <span className={cls}>{val.toFixed(1)}%</span>
+        </span>
+      );
     }
     case "premiumPct": return item._d.premiumPct != null ? `${fmt(item._d.premiumPct * 100)}%` : "—";
     case "strike":     return item._d.strike != null ? `$${fmt(item._d.strike, 0)}` : "—";
@@ -193,7 +200,7 @@ function sortValue(item, key) {
     case "type":       return item._type;
     case "price":      return item.price ?? -1;
     case "premium":    return item._d.premium ?? -1;
-    case "spread":     return item.bid_ask_spread_pct ?? Infinity;
+    case "spread":     return item.bid_ask_spread_pct != null ? item.bid_ask_spread_pct : Infinity;
     case "premiumPct": return item._d.premiumPct ?? -1;
     case "strike":     return item._d.strike ?? -1;
     case "expiry":     return item._d.expiry ?? "";
