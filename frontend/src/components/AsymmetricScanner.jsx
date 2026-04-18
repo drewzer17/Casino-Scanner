@@ -1,7 +1,44 @@
 import React, { useState } from "react";
 import CrossConflictWarning from "./CrossConflictWarning.jsx";
 
-const DTE_OPTS = [1, 2, 3, 4, 5, 6, 7, 10, 14, 21, 28, "ALL"];
+const DTE_RANGES = [
+  { label: "≤3",    min: 0,  max: 3  },
+  { label: "4-7",   min: 4,  max: 7  },
+  { label: "10-17", min: 10, max: 17 },
+  { label: "21-30", min: 21, max: 30 },
+  { label: "31-61", min: 31, max: 61 },
+  { label: "61+",   min: 62, max: Infinity },
+];
+
+function dteInAny(dte, dteSelected) {
+  if (dteSelected.size === 0) return true;
+  if (dte == null) return false;
+  for (const label of dteSelected) {
+    const r = DTE_RANGES.find(r => r.label === label);
+    if (r && dte >= r.min && dte <= r.max) return true;
+  }
+  return false;
+}
+
+const OTM_LEVELS = ["ATM", "1", "2", "3", "4", "5"];
+
+function hasOtmLevel(row, levelKey) {
+  if (levelKey === "ATM") return true;
+  const level = parseInt(levelKey);
+  if (isNaN(level)) return false;
+  if (row.asymmetric_cc_flag || row.asymmetric_ivramp_flag) {
+    if (level === 1 && row.premium_otm1 != null) return true;
+    const entry = (row.expiry_data || []).find(e => e.expiry === row.best_expiry)
+      || (row.expiry_data || [])[0];
+    if (entry?.calls?.[level - 1]?.prem != null) return true;
+  }
+  if (row.asymmetric_csp_flag) {
+    const entry = (row.expiry_data || []).find(e => e.expiry === row.best_put_expiry)
+      || (row.expiry_data || [])[0];
+    if (entry?.puts?.[level - 1]?.prem != null) return true;
+  }
+  return false;
+}
 
 const SETUP_COLORS = {
   CC:      "asym-cc",
@@ -366,10 +403,22 @@ const SETUP_MODES = [
 
 export default function AsymmetricScanner({ rows, onRowClick }) {
   const [setupMode, setSetupMode] = useState("all");
-  const [dteFilter, setDteFilter] = useState("ALL");
+  const [dteSelected, setDteSelected] = useState(new Set());
+  const [otmSelected, setOtmSelected] = useState(new Set());
   const [sortCol, setSortCol]     = useState("premium");
   const [sortAsc, setSortAsc]     = useState(false);
   const [expandedRow, setExpandedRow] = useState(null);
+
+  const toggleDte = (label) => setDteSelected(prev => {
+    const next = new Set(prev);
+    if (next.has(label)) next.delete(label); else next.add(label);
+    return next;
+  });
+  const toggleOtm = (level) => setOtmSelected(prev => {
+    const next = new Set(prev);
+    if (next.has(level)) next.delete(level); else next.add(level);
+    return next;
+  });
 
   const flagged = rows.filter(r => r.asymmetric_any_flag);
 
@@ -380,14 +429,16 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
     return true;
   });
 
-  const dteFiltered = dteFilter === "ALL"
-    ? modeFiltered
-    : modeFiltered.filter(r => {
-        const dte = getRelevantDte(r);
-        return dte != null && dte <= dteFilter;
-      });
+  const dteFiltered = modeFiltered.filter(r =>
+    dteInAny(getRelevantDte(r), dteSelected)
+  );
 
-  const sorted = [...dteFiltered].sort((a, b) => {
+  const otmFiltered = dteFiltered.filter(r => {
+    if (otmSelected.size === 0) return true;
+    return [...otmSelected].some(lvl => hasOtmLevel(r, lvl));
+  });
+
+  const sorted = [...otmFiltered].sort((a, b) => {
     const av = sortValue(a, sortCol);
     const bv = sortValue(b, sortCol);
     if (typeof av === "string" && typeof bv === "string")
@@ -423,14 +474,32 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
         ))}
       </div>
       <div className="dte-filter-row">
-        <span className="dte-filter-label">DTE ≤</span>
-        {DTE_OPTS.map(opt => (
+        <span className="dte-filter-label">OTM</span>
+        {OTM_LEVELS.map(lvl => (
           <button
-            key={opt}
-            className={`dte-filter-btn${dteFilter === opt ? " active" : ""}`}
-            onClick={() => setDteFilter(opt)}
-          >{opt}</button>
+            key={lvl}
+            className={`dte-filter-btn${otmSelected.has(lvl) ? " active" : ""}`}
+            onClick={() => toggleOtm(lvl)}
+          >{lvl}</button>
         ))}
+        <button
+          className={`dte-filter-btn${otmSelected.size === 0 ? " active" : ""}`}
+          onClick={() => setOtmSelected(new Set())}
+        >ALL</button>
+      </div>
+      <div className="dte-filter-row">
+        <span className="dte-filter-label">DTE</span>
+        {DTE_RANGES.map(r => (
+          <button
+            key={r.label}
+            className={`dte-filter-btn${dteSelected.has(r.label) ? " active" : ""}`}
+            onClick={() => toggleDte(r.label)}
+          >{r.label}</button>
+        ))}
+        <button
+          className={`dte-filter-btn${dteSelected.size === 0 ? " active" : ""}`}
+          onClick={() => setDteSelected(new Set())}
+        >ALL</button>
       </div>
       <div className="prem-scanner-wrap">
         {sorted.length === 0 ? (
@@ -443,6 +512,7 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
           <table className="prem-scanner-table">
             <thead>
               <tr>
+                <th className="prem-scanner-th" style={{ width: 28 }} />
                 {COLS.map(col => (
                   <th
                     key={col.key}
@@ -463,14 +533,20 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
                 const isExpanded = expandedRow === row.ticker;
                 return (
                   <React.Fragment key={row.ticker}>
-                    <tr
-                      className={`prem-scanner-row${isExpanded ? " asym-row-expanded" : ""}`}
-                      onClick={() => setExpandedRow(isExpanded ? null : row.ticker)}
-                    >
+                    <tr className={`prem-scanner-row${isExpanded ? " asym-row-expanded" : ""}`}>
+                      <td className="prem-scanner-td" style={{ textAlign: "center", padding: "0 4px" }}>
+                        <button
+                          style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: "0.7em", padding: "2px 4px" }}
+                          onClick={() => setExpandedRow(isExpanded ? null : row.ticker)}
+                          title="Show OTM premiums"
+                        >{isExpanded ? "▼" : "▶"}</button>
+                      </td>
                       {COLS.map(col => (
                         <td
                           key={col.key}
                           className={`prem-scanner-td${col.align === "right" ? " right" : col.align === "center" ? " center" : ""}${col.key === "ticker" ? " ticker-col" : ""}${col.key === "why" ? " asym-why-col" : ""}`}
+                          onClick={col.key === "ticker" ? (e) => { e.stopPropagation(); onRowClick && onRowClick(row); } : undefined}
+                          style={col.key === "ticker" ? { cursor: "pointer" } : undefined}
                         >
                           {cellValue(row, col.key)}
                         </td>
@@ -478,7 +554,7 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
                     </tr>
                     {isExpanded && (
                       <tr className="asym-expansion-row">
-                        <td colSpan={COLS.length} className="asym-expansion-cell">
+                        <td colSpan={COLS.length + 1} className="asym-expansion-cell">
                           <AsymExpansion
                             row={row}
                             onFullDetail={() => onRowClick && onRowClick(row)}
