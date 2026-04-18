@@ -9,6 +9,7 @@ const SORT_OPTIONS = [
   { key: "risk_reward",  label: "Risk/Reward" },
   { key: "cc_score",     label: "CC Score" },
   { key: "csp_score",    label: "CSP Score" },
+  { key: "iv_ramp",      label: "IV Ramp Score" },
 ];
 
 const PREM_TIMEFRAMES = [3, 7, 14, 21, 30];
@@ -30,6 +31,7 @@ function sortRows(arr, key, premTimeframe = 30) {
   if (key === "risk_reward") return s.sort((a, b) => (b.safety_score ?? 0) - (a.safety_score ?? 0));
   if (key === "cc_score")    return s.sort((a, b) => (b.cc_score ?? 0) - (a.cc_score ?? 0));
   if (key === "csp_score")   return s.sort((a, b) => (b.csp_score ?? 0) - (a.csp_score ?? 0));
+  if (key === "iv_ramp")     return s.sort((a, b) => (b.iv_ramp_score ?? 0) - (a.iv_ramp_score ?? 0));
   return s;
 }
 
@@ -97,6 +99,7 @@ function DualSlider({ min, max, value, onChange, step = 1, fmt = v => String(v) 
 
 import { api } from "../api/client.js";
 import BucketTabs from "./BucketTabs.jsx";
+import IvRampScanner from "./IvRampScanner.jsx";
 import PremiumScanner from "./PremiumScanner.jsx";
 import RangeScanner from "./RangeScanner.jsx";
 import ScoreCard from "./ScoreCard.jsx";
@@ -225,6 +228,7 @@ export default function Dashboard() {
   const [s1DistRange, setS1DistRange] = useState([0, 50]);
   const [s2DistRange, setS2DistRange] = useState([0, 50]);
   const [spreadRange, setSpreadRange] = useState([0, 50]);
+  const [ivRampScoreRange, setIvRampScoreRange] = useState([0, 100]);
 
   // Scan trigger state
   const [scanning, setScanning] = useState(false);
@@ -312,6 +316,7 @@ export default function Dashboard() {
     setS1DistRange([0, 50]);
     setS2DistRange([0, 50]);
     setSpreadRange([0, 50]);
+    setIvRampScoreRange([0, 100]);
   }, [mode]);
 
   const handleRunScan = async () => {
@@ -436,6 +441,8 @@ export default function Dashboard() {
       const spr = r.bid_ask_spread_pct * 100;
       if (spr < spreadRange[0] || spr > spreadRange[1]) return false;
     }
+    if (r.iv_ramp_score != null &&
+        (r.iv_ramp_score < ivRampScoreRange[0] || r.iv_ramp_score > ivRampScoreRange[1])) return false;
     return true;
   };
 
@@ -518,6 +525,12 @@ export default function Dashboard() {
               onClick={() => setView(v => v === "range" ? "cards" : "range")}
             >
               {view === "range" ? "← Cards" : "Range Scanner"}
+            </button>
+            <button
+              className={`ivramp-view-btn${view === "ivramp" ? " active" : ""}`}
+              onClick={() => setView(v => v === "ivramp" ? "cards" : "ivramp")}
+            >
+              {view === "ivramp" ? "← Cards" : "IV Ramp ↑"}
             </button>
           </div>
           <div className="search-wrap">
@@ -752,6 +765,11 @@ export default function Dashboard() {
               <DualSlider min={0} max={50} step={1} value={spreadRange} onChange={setSpreadRange}
                 fmt={v => `${v}%`} />
             </div>
+            <div className="filter-slider-item">
+              <span className="filter-slider-label">IV RAMP SCORE</span>
+              <DualSlider min={0} max={100} value={ivRampScoreRange} onChange={setIvRampScoreRange}
+                fmt={v => `${v}`} />
+            </div>
             {mode === "all" && (
               <div className="filter-slider-item">
                 <span className="filter-slider-label">SAFETY SCORE</span>
@@ -794,6 +812,8 @@ export default function Dashboard() {
         <PremiumScanner rows={viewRows} onRowClick={setSelectedRow} />
       ) : view === "range" ? (
         <RangeScanner rows={viewRows} onRowClick={setSelectedRow} />
+      ) : view === "ivramp" ? (
+        <IvRampScanner rows={viewRows} onRowClick={setSelectedRow} />
       ) : (
         <>
           <div className="tabs-row">

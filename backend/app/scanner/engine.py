@@ -1117,6 +1117,101 @@ def _scan_with_timeout(ticker: str, price: float | None = None, earn_days: int |
             return None
 
 
+# ── IV Ramp Detection ─────────────────────────────────────────────────────────
+
+def _calc_iv_ramp_metrics(
+    db: Session,
+    ticker: str,
+    current_iv: float | None,
+    iv_rank: float | None,
+    golden_cross: bool | None,
+    sma_regime: str | None,
+) -> dict:
+    """Query iv_history and compute IV momentum / ramp metrics."""
+    empty = {
+        "iv_5d_ago": None, "iv_10d_ago": None, "iv_20d_ago": None,
+        "iv_velocity_5d": None, "iv_velocity_10d": None, "iv_velocity_20d": None,
+        "iv_ramp_score": 0, "iv_ramp_flag": False,
+    }
+    if current_iv is None or current_iv <= 0:
+        return empty
+    try:
+        from sqlalchemy import text as _text
+        rows = db.execute(
+            _text("SELECT iv FROM iv_history WHERE ticker = :t ORDER BY recorded_date DESC LIMIT 30"),
+            {"t": ticker},
+        ).fetchall()
+    except Exception:
+        return empty
+
+    def _get(idx: int) -> float | None:
+        return float(rows[idx].iv) if len(rows) > idx else None
+
+    # rows sorted desc: index 4 = 5d ago, index 9 = 10d ago, index 19 = 20d ago
+    iv_5d  = _get(4)
+    iv_10d = _get(9)
+    iv_20d = _get(19)
+
+    def _vel(prev: float | None) -> float | None:
+        if prev is None or prev <= 0:
+            return None
+        return round((current_iv - prev) / prev * 100, 2)
+
+    v5  = _vel(iv_5d)
+    v10 = _vel(iv_10d)
+    v20 = _vel(iv_20d)
+
+    result = {
+        "iv_5d_ago":       round(iv_5d,  4) if iv_5d  is not None else None,
+        "iv_10d_ago":      round(iv_10d, 4) if iv_10d is not None else None,
+        "iv_20d_ago":      round(iv_20d, 4) if iv_20d is not None else None,
+        "iv_velocity_5d":  v5,
+        "iv_velocity_10d": v10,
+        "iv_velocity_20d": v20,
+        "iv_ramp_score":   0,
+        "iv_ramp_flag":    False,
+    }
+
+    if len(rows) < 10:
+        return result  # not enough history — never fabricate
+
+    s = 0
+    # IV Rank component — low rank means premiums still cheap
+    if iv_rank is not None:
+        if   iv_rank < 40:  s += 25
+        elif iv_rank <= 60: s += 10
+    # 5d velocity
+    if v5 is not None:
+        if   v5 > 10: s += 20
+        elif v5 > 5:  s += 10
+        elif v5 > 0:  s += 5
+    # 10d velocity
+    if v10 is not None:
+        if   v10 > 15: s += 20
+        elif v10 > 8:  s += 10
+        elif v10 > 0:  s += 5
+    # 20d velocity
+    if v20 is not None:
+        if   v20 > 20: s += 15
+        elif v20 > 10: s += 10
+        elif v20 > 0:  s += 5
+    # Golden cross — healthy stock, not fear-driven IV spike
+    if golden_cross: s += 10
+    # SMA regime
+    if   sma_regime == "UPTREND":      s += 10
+    elif sma_regime == "TRANSITIONAL": s += 5
+
+    ramp_score = min(100, max(0, s))
+    any_positive = any(v is not None and v > 0 for v in [v5, v10, v20])
+    result["iv_ramp_score"] = ramp_score
+    result["iv_ramp_flag"] = (
+        ramp_score >= 50
+        and iv_rank is not None and iv_rank < 50
+        and any_positive
+    )
+    return result
+
+
 # ── DB persistence ────────────────────────────────────────────────────────────
 
 def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
@@ -1173,6 +1268,11 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
         # CC / CSP scores
         cc_score=result.cc_score,
         csp_score=result.csp_score,
+        # IV ramp metrics (computed from iv_history)
+        **_calc_iv_ramp_metrics(
+            db, result.ticker, result.metrics.iv, result.metrics.iv_rank,
+            result.sma_golden_cross, result.sma_regime,
+        ),
     ))
 
     # Record IV snapshot for IV rank history (one row per ticker per day)

@@ -91,6 +91,16 @@ class ScanResult(Base):
     cc_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
     csp_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
+    # IV ramp detection (computed from iv_history)
+    iv_5d_ago: Mapped[float | None] = mapped_column(Float, nullable=True)
+    iv_10d_ago: Mapped[float | None] = mapped_column(Float, nullable=True)
+    iv_20d_ago: Mapped[float | None] = mapped_column(Float, nullable=True)
+    iv_velocity_5d: Mapped[float | None] = mapped_column(Float, nullable=True)
+    iv_velocity_10d: Mapped[float | None] = mapped_column(Float, nullable=True)
+    iv_velocity_20d: Mapped[float | None] = mapped_column(Float, nullable=True)
+    iv_ramp_score: Mapped[int] = mapped_column(Integer, default=0)
+    iv_ramp_flag: Mapped[bool] = mapped_column(Boolean, default=False)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 

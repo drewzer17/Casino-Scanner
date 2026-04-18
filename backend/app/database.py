@@ -101,6 +101,19 @@ def init_db() -> None:
     ]:
         _add_column_if_missing(_ddl)
 
+    # IV ramp detection columns added in v8
+    for _ddl in [
+        "ALTER TABLE scan_results ADD COLUMN iv_5d_ago FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN iv_10d_ago FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN iv_20d_ago FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN iv_velocity_5d FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN iv_velocity_10d FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN iv_velocity_20d FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN iv_ramp_score INTEGER DEFAULT 0",
+        "ALTER TABLE scan_results ADD COLUMN iv_ramp_flag BOOLEAN DEFAULT FALSE",
+    ]:
+        _add_column_if_missing(_ddl)
+
     # SMA + S/R columns added in v2
     for _ddl in [
         "ALTER TABLE scan_results ADD COLUMN sma_200 FLOAT",

@@ -137,6 +137,9 @@ function SmaPanel({ row }) {
           {isPD && (
             <span className="regime-tag regime-pd">PRICE DISCOVERY</span>
           )}
+          {row.iv_ramp_flag && (
+            <span className="regime-tag regime-ivramp">IV RAMP ↑</span>
+          )}
         </div>
       )}
 

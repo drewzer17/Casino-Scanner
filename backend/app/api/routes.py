@@ -188,6 +188,15 @@ def _to_out(
         # CC / CSP scores
         cc_score=row.cc_score,
         csp_score=row.csp_score,
+        # IV ramp detection
+        iv_5d_ago=_san(row.iv_5d_ago),
+        iv_10d_ago=_san(row.iv_10d_ago),
+        iv_20d_ago=_san(row.iv_20d_ago),
+        iv_velocity_5d=_san(row.iv_velocity_5d),
+        iv_velocity_10d=_san(row.iv_velocity_10d),
+        iv_velocity_20d=_san(row.iv_velocity_20d),
+        iv_ramp_score=row.iv_ramp_score or 0,
+        iv_ramp_flag=row.iv_ramp_flag or False,
     )
 
 

@@ -91,6 +91,16 @@ class ScanResultOut(BaseModel):
     cc_score: int | None = None
     csp_score: int | None = None
 
+    # IV ramp detection
+    iv_5d_ago: float | None = None
+    iv_10d_ago: float | None = None
+    iv_20d_ago: float | None = None
+    iv_velocity_5d: float | None = None
+    iv_velocity_10d: float | None = None
+    iv_velocity_20d: float | None = None
+    iv_ramp_score: int = 0
+    iv_ramp_flag: bool = False
+
     # Auto-detected support / resistance
     support_1: float | None = None
     support_1_strength: float | None = None
