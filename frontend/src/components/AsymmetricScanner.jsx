@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 
+const DTE_OPTS = [1, 2, 3, 4, 5, 6, 7, 10, 14, 21, 28, "ALL"];
+
 const SETUP_COLORS = {
   CC:      "asym-cc",
   CSP:     "asym-csp",
@@ -18,6 +20,20 @@ function TypeBadge({ type }) {
       ))}
     </span>
   );
+}
+
+function fmtExpiry(exp) {
+  if (!exp) return "—";
+  const [y, m, d] = exp.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+// CSP-only rows use put expiry/dte; everything else uses call
+function getRelevantDte(row) {
+  return row.asymmetric_type === "CSP" ? row.best_put_dte : row.best_dte;
+}
+function getRelevantExpiry(row) {
+  return row.asymmetric_type === "CSP" ? row.best_put_expiry : row.best_expiry;
 }
 
 function generateWhy(row) {
@@ -78,6 +94,8 @@ const COLS = [
   { key: "type",          label: "SETUP TYPE",  align: "left" },
   { key: "price",         label: "PRICE",       align: "right" },
   { key: "premium",       label: "PREMIUM $",   align: "right" },
+  { key: "dte",           label: "DTE",         align: "right" },
+  { key: "expiry",        label: "EXPIRY",      align: "right" },
   { key: "spread",        label: "SPREAD",      align: "right" },
   { key: "iv_rank",       label: "IV RANK",     align: "right" },
   { key: "s1_dist",       label: "S1 DIST",     align: "right" },
@@ -109,6 +127,11 @@ function cellValue(row, key) {
         : row.atm_call_premium;
       return prem != null ? `$${Number(prem).toFixed(2)}` : "—";
     }
+    case "dte": {
+      const dte = getRelevantDte(row);
+      return dte != null ? `${dte}d` : "—";
+    }
+    case "expiry": return fmtExpiry(getRelevantExpiry(row));
     case "spread": {
       const pct = row.bid_ask_spread_pct;
       if (pct == null || row.atm_call_premium == null) return <span className="text-muted-sm">N/A</span>;
@@ -179,6 +202,8 @@ function sortValue(row, key) {
       const prem = row.asymmetric_type === "CSP" ? row.atm_put_premium : row.atm_call_premium;
       return prem ?? -1;
     }
+    case "dte":    return getRelevantDte(row) ?? 9999;
+    case "expiry": return getRelevantExpiry(row) ?? "";
     case "spread":        return row.bid_ask_spread_pct ?? Infinity;
     case "iv_rank":       return row.iv_rank ?? -1;
     case "s1_dist":
@@ -205,6 +230,7 @@ const SETUP_MODES = [
 
 export default function AsymmetricScanner({ rows, onRowClick }) {
   const [setupMode, setSetupMode] = useState("all");
+  const [dteFilter, setDteFilter] = useState("ALL");
   const [sortCol, setSortCol]     = useState("premium");
   const [sortAsc, setSortAsc]     = useState(false);
 
@@ -217,7 +243,14 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
     return true;
   });
 
-  const sorted = [...modeFiltered].sort((a, b) => {
+  const dteFiltered = dteFilter === "ALL"
+    ? modeFiltered
+    : modeFiltered.filter(r => {
+        const dte = getRelevantDte(r);
+        return dte != null && dte <= dteFilter;
+      });
+
+  const sorted = [...dteFiltered].sort((a, b) => {
     const av = sortValue(a, sortCol);
     const bv = sortValue(b, sortCol);
     if (typeof av === "string" && typeof bv === "string")
@@ -252,12 +285,22 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
           </button>
         ))}
       </div>
+      <div className="dte-filter-row">
+        <span className="dte-filter-label">DTE ≤</span>
+        {DTE_OPTS.map(opt => (
+          <button
+            key={opt}
+            className={`dte-filter-btn${dteFilter === opt ? " active" : ""}`}
+            onClick={() => setDteFilter(opt)}
+          >{opt}</button>
+        ))}
+      </div>
       <div className="prem-scanner-wrap">
         {sorted.length === 0 ? (
           <div className="empty">
             {flagged.length === 0
               ? "No asymmetric setups detected in current scan. All criteria must converge simultaneously."
-              : "No setups match this filter."}
+              : "No setups match current filters."}
           </div>
         ) : (
           <table className="prem-scanner-table">
