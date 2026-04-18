@@ -200,6 +200,7 @@ export default function Dashboard() {
   const [view, setView] = useState("cards"); // "cards" | "premium" | "range" | "ivramp" | "asymmetric"
   const [scanMode, setScanMode] = useState(null); // "normal" | "extensive" | null
   const [sourceFilter, setSourceFilter] = useState("all");
+  const [assetTypeFilter, setAssetTypeFilter] = useState("all"); // "all" | "stocks" | "etfs"
   const [reloadMsg, setReloadMsg] = useState(null);
 
   // Ticker detail modal
@@ -382,6 +383,14 @@ export default function Dashboard() {
   const sourceFilterFn = (r) =>
     sourceFilter === "all" || (r.sources || []).includes(sourceFilter);
 
+  const assetTypeFn = (r) => {
+    if (assetTypeFilter === "all") return true;
+    const isEtf = (r.sources || []).includes("etf");
+    if (assetTypeFilter === "etfs")   return isEtf;
+    if (assetTypeFilter === "stocks") return !isEtf;
+    return true;
+  };
+
   const searchFilter = (r) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
@@ -452,7 +461,7 @@ export default function Dashboard() {
   };
 
   const baseNoSourceFn = (r) => priceFilter(r) && searchFilter(r) && sliderFn(r);
-  const baseFn = (r) => baseNoSourceFn(r) && sourceFilterFn(r);
+  const baseFn = (r) => baseNoSourceFn(r) && sourceFilterFn(r) && assetTypeFn(r);
   const combinedFilter = (r) => baseFn(r) && crossFn(r) && trendFn(r) && signalFn(r);
 
   // When a search query is active, it overrides ALL other filters
@@ -478,6 +487,7 @@ export default function Dashboard() {
     setTrendFilter("all");
     setSignalFilter("all");
     setSourceFilter("all");
+    setAssetTypeFilter("all");
   };
 
   // ── Signal options per mode ───────────────────────────────────────
@@ -525,6 +535,7 @@ export default function Dashboard() {
     if (trendFilter !== "all" && !trendFn(r))   return `Trend filter (${trendFilter})`;
     if (signalFilter !== "all" && !signalFn(r)) return `Signal filter (${signalFilter})`;
     if (sourceFilter !== "all" && !sourceFilterFn(r)) return `Source filter (${sourceFilter})`;
+    if (assetTypeFilter !== "all" && !assetTypeFn(r)) return `Asset type filter (${assetTypeFilter})`;
     if (mode === "cc"  && (r.cc_score ?? 0) < (r.csp_score ?? 0))
       return `CC Mode (cc_score ${r.cc_score ?? 0} < csp_score ${r.csp_score ?? 0})`;
     if (mode === "csp" && (r.csp_score ?? 0) < (r.cc_score ?? 0))
@@ -728,6 +739,22 @@ export default function Dashboard() {
       {filtersOpen && (
         <div className="filter-bar">
           <div className="filter-toggles">
+            {/* ASSET TYPE */}
+            <div className="filter-group">
+              <span className="filter-group-label">TYPE</span>
+              {[
+                { key: "all",    label: "All" },
+                { key: "stocks", label: "Stocks" },
+                { key: "etfs",   label: "ETFs" },
+              ].map(opt => (
+                <button
+                  key={opt.key}
+                  className={`filter-toggle-btn${assetTypeFilter === opt.key ? " active" : ""}`}
+                  onClick={() => setAssetTypeFilter(opt.key)}
+                >{opt.label}</button>
+              ))}
+            </div>
+
             {/* CROSS */}
             <div className="filter-group">
               <span className="filter-group-label">CROSS</span>
