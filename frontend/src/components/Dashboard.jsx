@@ -226,10 +226,10 @@ export default function Dashboard() {
   const [safetyRange, setSafetyRange] = useState([0, 99999]);
   const [ccScoreRange, setCcScoreRange] = useState([0, 100]);
   const [cspScoreRange, setCspScoreRange] = useState([0, 100]);
-  const [r2DistRange, setR2DistRange] = useState([0, 50]);
-  const [r1DistRange, setR1DistRange] = useState([0, 50]);
-  const [s1DistRange, setS1DistRange] = useState([0, 50]);
-  const [s2DistRange, setS2DistRange] = useState([0, 50]);
+  const [r2DistRange, setR2DistRange] = useState([0, 999]);
+  const [r1DistRange, setR1DistRange] = useState([0, 999]);
+  const [s1DistRange, setS1DistRange] = useState([0, 999]);
+  const [s2DistRange, setS2DistRange] = useState([0, 999]);
   const [spreadRange, setSpreadRange] = useState([0, 50]);
   const [ivRampScoreRange, setIvRampScoreRange] = useState([0, 100]);
 
@@ -314,10 +314,10 @@ export default function Dashboard() {
     setSafetyRange([0, 5000]);
     setCcScoreRange([0, 100]);
     setCspScoreRange([0, 100]);
-    setR2DistRange([0, 50]);
-    setR1DistRange([0, 50]);
-    setS1DistRange([0, 50]);
-    setS2DistRange([0, 50]);
+    setR2DistRange([0, 999]);
+    setR1DistRange([0, 999]);
+    setS1DistRange([0, 999]);
+    setS2DistRange([0, 999]);
     setSpreadRange([0, 50]);
     setIvRampScoreRange([0, 100]);
   }, [mode]);
@@ -468,12 +468,12 @@ export default function Dashboard() {
     setPremRange([0, 999]);
     setOiRange([0, 999999]);
     setSpreadRange([0, 50]);
-    setR1DistRange([0, 50]);
-    setR2DistRange([0, 50]);
-    setS1DistRange([0, 50]);
-    setS2DistRange([0, 50]);
+    setR1DistRange([0, 999]);
+    setR2DistRange([0, 999]);
+    setS1DistRange([0, 999]);
+    setS2DistRange([0, 999]);
     setIvRampScoreRange([0, 100]);
-    setSafetyRange([0, 5000]);
+    setSafetyRange([0, 99999]);
     setCrossFilter("all");
     setTrendFilter("all");
     setSignalFilter("all");
@@ -856,22 +856,22 @@ export default function Dashboard() {
           <div className="filter-sliders">
             <div className="filter-slider-item">
               <span className="filter-slider-label">R1 DISTANCE</span>
-              <DualSlider min={0} max={50} step={0.5} value={r1DistRange} onChange={setR1DistRange}
+              <DualSlider min={0} max={999} step={1} value={r1DistRange} onChange={setR1DistRange}
                 fmt={v => `${Number(v).toFixed(0)}%`} />
             </div>
             <div className="filter-slider-item">
               <span className="filter-slider-label">R2 DISTANCE</span>
-              <DualSlider min={0} max={50} step={0.5} value={r2DistRange} onChange={setR2DistRange}
+              <DualSlider min={0} max={999} step={1} value={r2DistRange} onChange={setR2DistRange}
                 fmt={v => `${Number(v).toFixed(0)}%`} />
             </div>
             <div className="filter-slider-item">
               <span className="filter-slider-label">S1 DISTANCE</span>
-              <DualSlider min={0} max={50} step={0.5} value={s1DistRange} onChange={setS1DistRange}
+              <DualSlider min={0} max={999} step={1} value={s1DistRange} onChange={setS1DistRange}
                 fmt={v => `${Number(v).toFixed(0)}%`} />
             </div>
             <div className="filter-slider-item">
               <span className="filter-slider-label">S2 DISTANCE</span>
-              <DualSlider min={0} max={50} step={0.5} value={s2DistRange} onChange={setS2DistRange}
+              <DualSlider min={0} max={999} step={1} value={s2DistRange} onChange={setS2DistRange}
                 fmt={v => `${Number(v).toFixed(0)}%`} />
             </div>
             <div className="filter-slider-item">
