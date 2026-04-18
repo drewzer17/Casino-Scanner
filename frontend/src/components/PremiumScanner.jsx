@@ -2,6 +2,28 @@ import React, { useState } from "react";
 import CrossConflictWarning from "./CrossConflictWarning.jsx";
 
 const DTE_OPTS = [1, 2, 3, 4, 5, 6, 7, 10, 14, 21, 28, "ALL"];
+const OTM_LEVELS = ["ATM", "1", "2", "3", "4", "5"];
+
+function guessStrikeIncrement(price) {
+  if (!price) return 5;
+  if (price < 5)   return 0.5;
+  if (price < 25)  return 1;
+  if (price < 50)  return 2.5;
+  if (price < 200) return 5;
+  return 10;
+}
+
+function calcOtmLevel(strike, price, isCSP) {
+  if (strike == null || !price) return null;
+  const inc = guessStrikeIncrement(price);
+  const diff = isCSP ? (price - strike) : (strike - price);
+  return Math.round(diff / inc);
+}
+
+function otmLevelKey(level) {
+  if (level == null || level <= 0) return "ATM";
+  return String(Math.min(level, 5)); // cap display at "5" for anything ≥5 OTM
+}
 
 function fmt(v, digits = 2) {
   if (v == null) return "—";
@@ -263,8 +285,18 @@ function sortValue(item, key) {
 export default function PremiumScanner({ rows, onRowClick }) {
   const [dteFilter, setDteFilter] = useState("ALL");
   const [typeFilter, setTypeFilter] = useState("ALL");
+  const [otmSelected, setOtmSelected] = useState(new Set()); // empty = ALL
   const [sortCol, setSortCol] = useState("premium");
   const [sortAsc, setSortAsc] = useState(false);
+
+  const toggleOtm = (level) => {
+    setOtmSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(level)) next.delete(level);
+      else next.add(level);
+      return next;
+    });
+  };
 
   const handleSort = (key) => {
     if (sortCol === key) {
@@ -280,8 +312,20 @@ export default function PremiumScanner({ rows, onRowClick }) {
   for (const row of rows) {
     const callD = getCallData(row, dteFilter);
     const putD  = getPutData(row, dteFilter);
-    if (callD && typeFilter !== "CSP") items.push({ ...row, _d: callD, _type: "CC",  _key: `${row.ticker}-CC` });
-    if (putD  && typeFilter !== "CC")  items.push({ ...row, _d: putD,  _type: "CSP", _key: `${row.ticker}-CSP` });
+    if (callD && typeFilter !== "CSP") {
+      const level = calcOtmLevel(callD.strike, row.price, false);
+      const key   = otmLevelKey(level);
+      if (otmSelected.size === 0 || otmSelected.has(key)) {
+        items.push({ ...row, _d: callD, _type: "CC",  _key: `${row.ticker}-CC`,  _otmLevel: level });
+      }
+    }
+    if (putD && typeFilter !== "CC") {
+      const level = calcOtmLevel(putD.strike, row.price, true);
+      const key   = otmLevelKey(level);
+      if (otmSelected.size === 0 || otmSelected.has(key)) {
+        items.push({ ...row, _d: putD,  _type: "CSP", _key: `${row.ticker}-CSP`, _otmLevel: level });
+      }
+    }
   }
 
   const sorted = [...items].sort((a, b) => {
@@ -305,6 +349,20 @@ export default function PremiumScanner({ rows, onRowClick }) {
             onClick={() => setTypeFilter(opt)}
           >{opt}</button>
         ))}
+      </div>
+      <div className="dte-filter-row">
+        <span className="dte-filter-label">OTM</span>
+        {OTM_LEVELS.map(lvl => (
+          <button
+            key={lvl}
+            className={`dte-filter-btn${otmSelected.has(lvl) ? " active" : ""}`}
+            onClick={() => toggleOtm(lvl)}
+          >{lvl}</button>
+        ))}
+        <button
+          className={`dte-filter-btn${otmSelected.size === 0 ? " active" : ""}`}
+          onClick={() => setOtmSelected(new Set())}
+        >ALL</button>
       </div>
       <div className="dte-filter-row">
         <span className="dte-filter-label">DTE ≤</span>

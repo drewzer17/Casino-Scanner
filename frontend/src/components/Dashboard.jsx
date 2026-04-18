@@ -730,6 +730,7 @@ export default function Dashboard() {
           </div>
 
           <div className="filter-sliders">
+            {/* Row 1: score/metric sliders */}
             {mode !== "csp" && (
               <div className="filter-slider-item">
                 <span className="filter-slider-label">CC SCORE</span>
@@ -760,13 +761,19 @@ export default function Dashboard() {
                 fmt={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`} />
             </div>
             <div className="filter-slider-item">
-              <span className="filter-slider-label">R2 DISTANCE</span>
-              <DualSlider min={0} max={50} step={0.5} value={r2DistRange} onChange={setR2DistRange}
-                fmt={v => `${Number(v).toFixed(0)}%`} />
+              <span className="filter-slider-label">SPREAD %</span>
+              <DualSlider min={0} max={50} step={1} value={spreadRange} onChange={setSpreadRange}
+                fmt={v => `${v}%`} />
             </div>
+            {/* Row 2: price-level distances (top = resistance above price, bottom = support below) */}
             <div className="filter-slider-item">
               <span className="filter-slider-label">R1 DISTANCE</span>
               <DualSlider min={0} max={50} step={0.5} value={r1DistRange} onChange={setR1DistRange}
+                fmt={v => `${Number(v).toFixed(0)}%`} />
+            </div>
+            <div className="filter-slider-item">
+              <span className="filter-slider-label">R2 DISTANCE</span>
+              <DualSlider min={0} max={50} step={0.5} value={r2DistRange} onChange={setR2DistRange}
                 fmt={v => `${Number(v).toFixed(0)}%`} />
             </div>
             <div className="filter-slider-item">
@@ -778,11 +785,6 @@ export default function Dashboard() {
               <span className="filter-slider-label">S2 DISTANCE</span>
               <DualSlider min={0} max={50} step={0.5} value={s2DistRange} onChange={setS2DistRange}
                 fmt={v => `${Number(v).toFixed(0)}%`} />
-            </div>
-            <div className="filter-slider-item">
-              <span className="filter-slider-label">SPREAD %</span>
-              <DualSlider min={0} max={50} step={1} value={spreadRange} onChange={setSpreadRange}
-                fmt={v => `${v}%`} />
             </div>
             <div className="filter-slider-item">
               <span className="filter-slider-label">IV RAMP SCORE</span>
