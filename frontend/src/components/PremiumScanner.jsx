@@ -1,7 +1,24 @@
 import React, { useState } from "react";
 import CrossConflictWarning from "./CrossConflictWarning.jsx";
 
-const DTE_OPTS = [1, 2, 3, 4, 5, 6, 7, 10, 14, 21, 28, "ALL"];
+const DTE_RANGES = [
+  { label: "≤3",    min: 0,  max: 3  },
+  { label: "4-7",   min: 4,  max: 7  },
+  { label: "10-17", min: 10, max: 17 },
+  { label: "21-30", min: 21, max: 30 },
+  { label: "31-61", min: 31, max: 61 },
+  { label: "61+",   min: 62, max: Infinity },
+];
+
+function dteInAny(dte, dteSelected) {
+  if (dteSelected.size === 0) return true;
+  if (dte == null) return false;
+  for (const label of dteSelected) {
+    const r = DTE_RANGES.find(r => r.label === label);
+    if (r && dte >= r.min && dte <= r.max) return true;
+  }
+  return false;
+}
 const OTM_LEVELS = ["ATM", "1", "2", "3", "4", "5"];
 
 function guessStrikeIncrement(price) {
@@ -26,10 +43,10 @@ function otmLevelKey(level) {
   return String(Math.min(level, 5));
 }
 
-function getOtmCallsFromExpiry(row, dteFilter) {
+function getOtmCallsFromExpiry(row, dteSelected) {
   const allExp = row.expiry_data || [];
   if (!allExp.length) return [];
-  const expiries = dteFilter === "ALL" ? allExp : allExp.filter(e => e.dte != null && e.dte <= dteFilter);
+  const expiries = allExp.filter(e => dteInAny(e.dte, dteSelected));
   if (!expiries.length) return [];
   const best = [...expiries].sort((a, b) => (b.atm_call_prem ?? 0) - (a.atm_call_prem ?? 0))[0];
   const result = [];
@@ -40,10 +57,10 @@ function getOtmCallsFromExpiry(row, dteFilter) {
   return result;
 }
 
-function getOtmPutsFromExpiry(row, dteFilter) {
+function getOtmPutsFromExpiry(row, dteSelected) {
   const allExp = row.expiry_data || [];
   if (!allExp.length) return [];
-  const expiries = dteFilter === "ALL" ? allExp : allExp.filter(e => e.dte != null && e.dte <= dteFilter);
+  const expiries = allExp.filter(e => dteInAny(e.dte, dteSelected));
   if (!expiries.length) return [];
   const best = [...expiries].sort((a, b) => (b.atm_put_prem ?? 0) - (a.atm_put_prem ?? 0))[0];
   const result = [];
@@ -67,9 +84,9 @@ function fmtExpiry(exp) {
 
 // ── Data extractors ───────────────────────────────────────────────
 
-function getCallData(row, dteFilter) {
-  if (dteFilter === "ALL") {
-    // Use stored best call (always available from normal scan)
+function getCallData(row, dteSelected) {
+  if (dteSelected.size === 0) {
+    // ALL: use stored best call directly
     if (row.atm_call_premium != null) {
       return {
         premium: row.atm_call_premium,
@@ -79,7 +96,6 @@ function getCallData(row, dteFilter) {
         dte: row.best_dte,
       };
     }
-    // Fall back to best entry in expiry_data
     const entries = (row.expiry_data || []).filter(e => e.atm_call_prem != null);
     if (!entries.length) return null;
     entries.sort((a, b) => (b.atm_call_prem ?? 0) - (a.atm_call_prem ?? 0));
@@ -92,9 +108,9 @@ function getCallData(row, dteFilter) {
       dte: e.dte,
     };
   }
-  // DTE-filtered: prefer expiry_data entries within window
+  // Range-filtered: prefer expiry_data entries within any selected range
   const entries = (row.expiry_data || []).filter(
-    e => e.dte != null && e.dte <= dteFilter && e.atm_call_prem != null
+    e => e.atm_call_prem != null && dteInAny(e.dte, dteSelected)
   );
   if (entries.length) {
     entries.sort((a, b) => (b.atm_call_prem ?? 0) - (a.atm_call_prem ?? 0));
@@ -108,7 +124,7 @@ function getCallData(row, dteFilter) {
     };
   }
   // Fall back to stored best if it fits
-  if (row.best_dte != null && row.best_dte <= dteFilter && row.atm_call_premium != null) {
+  if (row.best_dte != null && dteInAny(row.best_dte, dteSelected) && row.atm_call_premium != null) {
     return {
       premium: row.atm_call_premium,
       premiumPct: row.premium_pct,
@@ -120,9 +136,9 @@ function getCallData(row, dteFilter) {
   return null;
 }
 
-function getPutData(row, dteFilter) {
-  if (dteFilter === "ALL") {
-    // Prefer stored atm_put_premium (from normal scan)
+function getPutData(row, dteSelected) {
+  if (dteSelected.size === 0) {
+    // ALL: prefer stored atm_put_premium directly
     if (row.atm_put_premium != null) {
       return {
         premium: row.atm_put_premium,
@@ -132,7 +148,6 @@ function getPutData(row, dteFilter) {
         dte: row.best_put_dte,
       };
     }
-    // Fall back to best entry in expiry_data
     const entries = (row.expiry_data || []).filter(e => e.atm_put_prem != null);
     if (!entries.length) return null;
     entries.sort((a, b) => (b.atm_put_prem ?? 0) - (a.atm_put_prem ?? 0));
@@ -145,9 +160,9 @@ function getPutData(row, dteFilter) {
       dte: e.dte,
     };
   }
-  // DTE-filtered: prefer expiry_data entries within window
+  // Range-filtered: prefer expiry_data entries within any selected range
   const entries = (row.expiry_data || []).filter(
-    e => e.atm_put_prem != null && e.dte != null && e.dte <= dteFilter
+    e => e.atm_put_prem != null && dteInAny(e.dte, dteSelected)
   );
   if (entries.length) {
     entries.sort((a, b) => (b.atm_put_prem ?? 0) - (a.atm_put_prem ?? 0));
@@ -160,8 +175,8 @@ function getPutData(row, dteFilter) {
       dte: e.dte,
     };
   }
-  // Fall back to stored put if it fits the DTE filter
-  if (row.best_put_dte != null && row.best_put_dte <= dteFilter && row.atm_put_premium != null) {
+  // Fall back to stored put if it fits
+  if (row.best_put_dte != null && dteInAny(row.best_put_dte, dteSelected) && row.atm_put_premium != null) {
     return {
       premium: row.atm_put_premium,
       premiumPct: (row.atm_put_premium && row.price) ? row.atm_put_premium / row.price : null,
@@ -385,13 +400,22 @@ function ExclusionTable({ allExcluded }) {
 // ── Component ─────────────────────────────────────────────────────
 
 export default function PremiumScanner({ rows, onRowClick, allScanRows = [], excludedRows = [] }) {
-  const [dteFilter, setDteFilter] = useState("ALL");
+  const [dteSelected, setDteSelected] = useState(new Set()); // empty = ALL
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [otmSelected, setOtmSelected] = useState(new Set()); // empty = ALL
   const [sortCol, setSortCol] = useState("premium");
   const [sortAsc, setSortAsc] = useState(false);
   const [showExcl, setShowExcl] = useState(false);
   const [showAll, setShowAll] = useState(false);
+
+  const toggleDte = (label) => {
+    setDteSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  };
 
   const toggleOtm = (level) => {
     setOtmSelected(prev => {
@@ -417,24 +441,24 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const items = [];
   for (const row of baseRows) {
     if (typeFilter !== "CSP") {
-      const callD = getCallData(row, dteFilter);
+      const callD = getCallData(row, dteSelected);
       if (callD) {
         if (otmSelected.size === 0 || otmSelected.has("ATM"))
           items.push({ ...row, _d: callD, _type: "CC", _key: `${row.ticker}-CC-ATM`, _otmLevel: 0 });
       }
-      for (const oc of getOtmCallsFromExpiry(row, dteFilter)) {
+      for (const oc of getOtmCallsFromExpiry(row, dteSelected)) {
         const key = otmLevelKey(oc.level);
         if (otmSelected.size === 0 || otmSelected.has(key))
           items.push({ ...row, _d: oc, _type: "CC", _key: `${row.ticker}-CC-${oc.level}`, _otmLevel: oc.level });
       }
     }
     if (typeFilter !== "CC") {
-      const putD = getPutData(row, dteFilter);
+      const putD = getPutData(row, dteSelected);
       if (putD) {
         if (otmSelected.size === 0 || otmSelected.has("ATM"))
           items.push({ ...row, _d: putD, _type: "CSP", _key: `${row.ticker}-CSP-ATM`, _otmLevel: 0 });
       }
-      for (const op of getOtmPutsFromExpiry(row, dteFilter)) {
+      for (const op of getOtmPutsFromExpiry(row, dteSelected)) {
         const key = otmLevelKey(op.level);
         if (otmSelected.size === 0 || otmSelected.has(key))
           items.push({ ...row, _d: op, _type: "CSP", _key: `${row.ticker}-CSP-${op.level}`, _otmLevel: op.level });
@@ -447,16 +471,16 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const internalExcluded = baseRows
     .filter(r => !passedTickerSet.has(r.ticker))
     .map(r => {
-      const callAny = getCallData(r, "ALL");
-      const putAny  = getPutData(r, "ALL");
+      const callAny = getCallData(r, new Set());
+      const putAny  = getPutData(r, new Set());
       if (!callAny && !putAny)
         return { ticker: r.ticker, price: r.price, company_name: r.company_name,
                  _reason: "No premium data (options chain not fetched or null)" };
-      const callInDte = getCallData(r, dteFilter);
-      const putInDte  = getPutData(r, dteFilter);
-      if (!callInDte && !putInDte && dteFilter !== "ALL")
+      const callInDte = getCallData(r, dteSelected);
+      const putInDte  = getPutData(r, dteSelected);
+      if (!callInDte && !putInDte && dteSelected.size > 0)
         return { ticker: r.ticker, price: r.price, company_name: r.company_name,
-                 _reason: `DTE filter (≤${dteFilter}d — no expiry fits)` };
+                 _reason: `DTE filter (${[...dteSelected].join(", ")} — no expiry fits)` };
       if (otmSelected.size > 0)
         return { ticker: r.ticker, price: r.price, company_name: r.company_name,
                  _reason: `OTM filter (only ${[...otmSelected].join(", ")} OTM selected)` };
@@ -535,21 +559,25 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
         >ALL</button>
       </div>
       <div className="dte-filter-row">
-        <span className="dte-filter-label">DTE ≤</span>
-        {DTE_OPTS.map(opt => (
+        <span className="dte-filter-label">DTE</span>
+        {DTE_RANGES.map(r => (
           <button
-            key={opt}
-            className={`dte-filter-btn${dteFilter === opt ? " active" : ""}`}
-            onClick={() => setDteFilter(opt)}
-          >{opt}</button>
+            key={r.label}
+            className={`dte-filter-btn${dteSelected.has(r.label) ? " active" : ""}`}
+            onClick={() => toggleDte(r.label)}
+          >{r.label}</button>
         ))}
+        <button
+          className={`dte-filter-btn${dteSelected.size === 0 ? " active" : ""}`}
+          onClick={() => setDteSelected(new Set())}
+        >ALL</button>
         <span className="dte-filter-count">{sorted.length} rows · {uniqueTickers} tickers</span>
       </div>
       <div className="prem-scanner-wrap">
         {sorted.length === 0 ? (
           <div className="empty">
             No tickers match this DTE filter.
-            {dteFilter !== "ALL" && dteFilter <= 7
+            {dteSelected.size > 0 && [...dteSelected].some(l => l === "≤3" || l === "4-7")
               ? " Run an Extensive Scan to populate short-term weekly data."
               : ""}
           </div>
