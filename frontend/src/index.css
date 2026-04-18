@@ -1298,6 +1298,8 @@ body {
   font-size: 14px;
 }
 
+.prem-scanner-td.compact-col { padding-left: 4px; padding-right: 4px; }
+
 .prem-scanner-td.prem-col {
   font-weight: 600;
   color: var(--green);

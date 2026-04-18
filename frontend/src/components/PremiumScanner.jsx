@@ -184,16 +184,14 @@ const COLS = [
   { key: "premium",    label: "Premium $", align: "right" },
   { key: "spread",     label: "Spread",    align: "right" },
   { key: "bid_ask",    label: "Bid/Mark",  align: "right" },
-  { key: "premiumPct", label: "Premium %", align: "right" },
-  { key: "expiry",     label: "Expiry",    align: "right" },
+  { key: "premiumPct", label: "Prem %",    align: "right", compact: true },
   { key: "dte",        label: "DTE",       align: "right" },
   { key: "oi",         label: "OI",        align: "right" },
   { key: "r2_dist",    label: "R2 Dist",   align: "right" },
   { key: "r1_dist",    label: "R1 Dist",   align: "right" },
   { key: "s1_dist",    label: "S1 Dist",   align: "right" },
   { key: "s2_dist",    label: "S2 Dist",   align: "right" },
-  { key: "cc_score",   label: "CC Score",  align: "right" },
-  { key: "csp_score",  label: "CSP Score",   align: "right" },
+  { key: "score",      label: "Score",     align: "right" },
   { key: "asymmetric", label: "ASYMMETRIC",  align: "center" },
 ];
 
@@ -243,9 +241,9 @@ function cellValue(item, key) {
       const bid = spr != null ? mid * (1 - spr / 2) : null;
       return <span style={{ fontSize: "0.82em", whiteSpace: "nowrap" }}>{bid != null ? `$${fmt(bid)}/$${fmt(mid)}` : `—/$${fmt(mid)}`}</span>;
     }
-    case "premiumPct": return item._d.premiumPct != null ? `${fmt(item._d.premiumPct * 100)}%` : "—";
+    case "premiumPct": return item._d.premiumPct != null
+      ? <span style={{ fontSize: "0.88em" }}>{fmt(item._d.premiumPct * 100)}%</span> : "—";
     case "strike":     return item._d.strike != null ? `$${fmt(item._d.strike, 0)}` : "—";
-    case "expiry":     return fmtExpiry(item._d.expiry);
     case "dte":        return item._d.dte != null ? `${item._d.dte}d` : "—";
     case "oi":
       return item.open_interest != null
@@ -277,10 +275,10 @@ function cellValue(item, key) {
       const cls = dist <= 8 ? "s1dist-tight" : dist <= 15 ? "s1dist-ok" : "s1dist-wide";
       return <span className={cls}>{dist.toFixed(1)}%</span>;
     }
-    case "cc_score":  return item.cc_score != null
-      ? <span className="score-cc">{item.cc_score}</span> : "—";
-    case "csp_score": return item.csp_score != null
-      ? <span className="score-csp">{item.csp_score}</span> : "—";
+    case "score":
+      if (item._type === "CC")
+        return item.cc_score != null ? <span className="score-cc">{item.cc_score}</span> : "—";
+      return item.csp_score != null ? <span className="score-csp">{item.csp_score}</span> : "—";
     case "asymmetric": {
       if (!item.asymmetric_any_flag || !item.asymmetric_type) return "—";
       const label = item.asymmetric_type === "ALL_THREE"
@@ -303,7 +301,6 @@ function sortValue(item, key) {
     case "bid_ask":    return (item._d.premium != null && item.bid_ask_spread_pct != null) ? item._d.premium * (1 - item.bid_ask_spread_pct / 2) : -1;
     case "premiumPct": return item._d.premiumPct ?? -1;
     case "strike":     return item._d.strike ?? -1;
-    case "expiry":     return item._d.expiry ?? "";
     case "dte":        return item._d.dte ?? 9999;
     case "oi":         return item.open_interest ?? -1;
     case "r2_dist":
@@ -320,8 +317,7 @@ function sortValue(item, key) {
       return (item.support_2 != null && item.price > 0)
         ? ((item.price - item.support_2) / item.price) * 100
         : -1;
-    case "cc_score":   return item.cc_score ?? -1;
-    case "csp_score":  return item.csp_score ?? -1;
+    case "score": return item._type === "CC" ? (item.cc_score ?? -1) : (item.csp_score ?? -1);
     case "asymmetric": return item.asymmetric_any_flag ? 1 : 0;
     default: return 0;
   }
@@ -411,7 +407,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
       setSortAsc(v => !v);
     } else {
       setSortCol(key);
-      setSortAsc(key === "ticker" || key === "type" || key === "expiry");
+      setSortAsc(key === "ticker" || key === "type");
     }
   };
 
@@ -585,7 +581,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                   {COLS.map(col => (
                     <td
                       key={col.key}
-                      className={`prem-scanner-td${col.align === "right" ? " right" : ""}${col.key === "ticker" ? " ticker-col" : ""}${col.key === "premium" ? " prem-col" : ""}`}
+                      className={`prem-scanner-td${col.align === "right" ? " right" : ""}${col.key === "ticker" ? " ticker-col" : ""}${col.key === "premium" ? " prem-col" : ""}${col.compact ? " compact-col" : ""}`}
                     >
                       {cellValue(item, col.key)}
                     </td>
