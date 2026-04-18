@@ -455,6 +455,9 @@ export default function Dashboard() {
   const baseFn = (r) => baseNoSourceFn(r) && sourceFilterFn(r);
   const combinedFilter = (r) => baseFn(r) && crossFn(r) && trendFn(r) && signalFn(r);
 
+  // When a search query is active, it overrides ALL other filters
+  const isSearching = searchQuery.trim().length > 0;
+
   const resetFilters = () => {
     setMode("all"); // triggers the mode useEffect which resets everything else
   };
@@ -491,7 +494,8 @@ export default function Dashboard() {
     ...data.watchlist,
   ].map(r => ({ ...r, ...calcAsymmetricFlags(r) }));
   const filteredAll = allRows.filter(combinedFilter);
-  const viewRows    = allRows.filter(combinedFilter);
+  // Search overrides all filters — shows every ticker/company name match regardless of price, sliders, etc.
+  const viewRows = isSearching ? allRows.filter(searchFilter) : allRows.filter(combinedFilter);
 
   // Cascading counts for toggle filters (each group excludes itself)
   const countForCross  = (opt) => allRows.filter(r => baseFn(r) && trendFn(r) && signalFn(r) && crossFn(r, opt)).length;
@@ -504,9 +508,11 @@ export default function Dashboard() {
     (key === "all" || (r.sources||[]).includes(key))
   ).length;
 
-  const rows = showAll
-    ? sortRows(filteredAll, sort, premTimeframe)
-    : sortRows((data[active] || []).filter(combinedFilter), sort, premTimeframe);
+  const rows = isSearching
+    ? sortRows(allRows.filter(searchFilter), sort, premTimeframe)
+    : showAll
+      ? sortRows(filteredAll, sort, premTimeframe)
+      : sortRows((data[active] || []).filter(combinedFilter), sort, premTimeframe);
 
   return (
     <>
