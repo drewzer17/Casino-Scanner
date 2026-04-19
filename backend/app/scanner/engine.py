@@ -480,7 +480,8 @@ def _pick_call_strikes(
     1 OTM / 2 OTM = the next 1 and 2 strikes above ATM in the chain.
     """
     calls = sorted(
-        [o for o in options if o.get("option_type") == "call" and _is_valid(o.get("strike"))],
+        [o for o in options
+         if o.get("option_type") == "call" and _is_valid(o.get("strike")) and _is_sane_contract(o, price)],
         key=lambda o: float(o["strike"]),
     )
     if not calls:
@@ -499,7 +500,8 @@ def _collect_otm_calls(options: list[dict], price: float, n: int = 4) -> list[di
     and premium must not exceed ATM premium (OTM can't be worth more than ATM).
     """
     calls = sorted(
-        [o for o in options if o.get("option_type") == "call" and _is_valid(o.get("strike"))],
+        [o for o in options
+         if o.get("option_type") == "call" and _is_valid(o.get("strike")) and _is_sane_contract(o, price)],
         key=lambda o: float(o["strike"]),
     )
     if not calls:
@@ -535,7 +537,8 @@ def _collect_otm_puts(options: list[dict], price: float, n: int = 4) -> list[dic
     and premium must not exceed ATM premium.
     """
     puts = sorted(
-        [o for o in options if o.get("option_type") == "put" and _is_valid(o.get("strike"))],
+        [o for o in options
+         if o.get("option_type") == "put" and _is_valid(o.get("strike")) and _is_sane_contract(o, price)],
         key=lambda o: float(o["strike"]),
     )
     if not puts:
@@ -573,6 +576,45 @@ def _contract_mid(contract: dict | None) -> float | None:
     if bid > 0 and ask > 0:
         return (bid + ask) / 2
     return None
+
+
+def _is_standard_strike(strike: float) -> bool:
+    """Return True if strike is a multiple of $0.50 — all standard option strikes are.
+
+    Adjusted/restructured contracts frequently carry non-standard strikes like
+    $60.22 or $47.13 that fail this test.
+    """
+    return abs(strike * 2 - round(strike * 2)) < 0.01
+
+
+def _is_sane_contract(contract: dict, price: float) -> bool:
+    """Return False if this contract is physically impossible — adjusted/phantom.
+
+    Hard rules (option theory limits):
+      - Strike must be a standard $0.50-multiple.
+      - Call premium can never exceed the stock price.
+      - Call premium can never exceed the strike price (true for ATM/OTM calls).
+      - Put premium can never exceed the strike price.
+    """
+    strike_raw = contract.get("strike")
+    if not _is_valid(strike_raw):
+        return False
+    strike = float(strike_raw)
+    if not _is_standard_strike(strike):
+        return False
+    mid = _contract_mid(contract)
+    if mid is None:
+        return True  # no bid/ask data — cannot reject on premium alone
+    otype = contract.get("option_type")
+    if otype == "call":
+        if mid > price:
+            return False   # call premium > stock price: impossible
+        if mid > strike:
+            return False   # call premium > strike: impossible for ATM/OTM calls
+    elif otype == "put":
+        if mid > strike:
+            return False   # put premium > strike: impossible
+    return True
 
 
 # ── Safety score ─────────────────────────────────────────────────────────────
@@ -958,7 +1000,7 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
                 best_strike = round(float(atm_c["strike"]), 2) if atm_c else None
                 # ATM put from same chain
                 _puts = sorted(
-                    [o for o in chain if o.get("option_type") == "put" and _is_valid(o.get("strike"))],
+                    [o for o in chain if o.get("option_type") == "put" and _is_valid(o.get("strike")) and _is_sane_contract(o, price)],
                     key=lambda o: float(o["strike"]),
                 )
                 if _puts:
@@ -984,7 +1026,7 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
             best_strike = round(float(atm_c["strike"]), 2) if atm_c else None
             # ATM put from fallback IV chain
             _puts = sorted(
-                [o for o in iv_chain if o.get("option_type") == "put" and _is_valid(o.get("strike"))],
+                [o for o in iv_chain if o.get("option_type") == "put" and _is_valid(o.get("strike")) and _is_sane_contract(o, price)],
                 key=lambda o: float(o["strike"]),
             )
             if _puts:
@@ -1360,7 +1402,7 @@ def scan_ticker_extensive(ticker: str, price: float | None = None, earn_days: in
                 w_atm_prem = _contract_mid(w_atm)
                 w_atm_strike = round(float(w_atm["strike"]), 2) if w_atm else None
                 w_puts = sorted(
-                    [o for o in w_chain if o.get("option_type") == "put" and _is_valid(o.get("strike"))],
+                    [o for o in w_chain if o.get("option_type") == "put" and _is_valid(o.get("strike")) and _is_sane_contract(o, w_price)],
                     key=lambda o: float(o["strike"]),
                 )
                 w_atm_put_mid: float | None = None
