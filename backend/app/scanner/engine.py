@@ -591,11 +591,18 @@ def _is_sane_contract(contract: dict, price: float) -> bool:
     """Return False if this contract is physically impossible — adjusted/phantom.
 
     Hard rules (option theory limits):
+      - contract_size must be exactly 100 (standard equity option).
+        Adjusted contracts from spinoffs/mergers/special dividends have non-100
+        contract sizes (e.g. 104, 181) and inflated premiums — always skip them.
       - Strike must be a standard $0.50-multiple.
       - Call premium can never exceed the stock price.
       - Call premium can never exceed the strike price (true for ATM/OTM calls).
       - Put premium can never exceed the strike price.
     """
+    # Reject adjusted contracts — standard equity options are always 100 shares
+    contract_size = contract.get("contract_size")
+    if contract_size is not None and int(contract_size) != 100:
+        return False
     strike_raw = contract.get("strike")
     if not _is_valid(strike_raw):
         return False
