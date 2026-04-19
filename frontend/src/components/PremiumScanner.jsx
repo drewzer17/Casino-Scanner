@@ -258,7 +258,19 @@ function cellValue(item, key) {
     }
     case "premiumPct": return item._d.premiumPct != null
       ? <span style={{ fontSize: "0.88em" }}>{fmt(item._d.premiumPct * 100)}%</span> : "—";
-    case "strike":     return item._d.strike != null ? `$${fmt(item._d.strike, 0)}` : "—";
+    case "strike": {
+      if (item._d.strike == null) return "—";
+      const sk = item._d.strike;
+      const isCSPItem = item._type === "CSP";
+      const distPct = item.price ? (isCSPItem ? (item.price - sk) : (sk - item.price)) / item.price * 100 : null;
+      const distCls = distPct == null ? "" : distPct >= 3 ? "spread-tight" : distPct >= 1 ? "spread-ok" : "spread-wide";
+      return (
+        <span>
+          ${fmt(sk, 0)}
+          {distPct != null && <><br /><span className={distCls}>{isCSPItem ? "-" : "+"}{distPct.toFixed(1)}%</span></>}
+        </span>
+      );
+    }
     case "dte":        return item._d.dte != null ? `${item._d.dte}d` : "—";
     case "oi":
       return item.open_interest != null

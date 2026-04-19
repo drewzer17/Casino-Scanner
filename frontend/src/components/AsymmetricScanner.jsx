@@ -385,7 +385,15 @@ function cellValue(row, key, evalOtmLevel = 0) {
     }
     case "strike": {
       const s = isCSP ? getPutStrike(row, evalOtmLevel) : getCallStrike(row, evalOtmLevel);
-      return s != null ? `$${s.toFixed(2)}` : "—";
+      if (s == null) return "—";
+      const distPct = price ? (isCSP ? (price - s) : (s - price)) / price * 100 : null;
+      const distCls = distPct == null ? "" : distPct >= 3 ? "spread-tight" : distPct >= 1 ? "spread-ok" : "spread-wide";
+      return (
+        <span>
+          ${s.toFixed(2)}
+          {distPct != null && <><br /><span className={distCls}>{isCSP ? "-" : "+"}{distPct.toFixed(1)}%</span></>}
+        </span>
+      );
     }
     case "otm": {
       if (evalOtmLevel === 0) return <span className="otm-atm">ATM</span>;
