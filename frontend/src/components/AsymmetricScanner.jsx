@@ -23,10 +23,11 @@ function dteInAny(dte, dteSelected) {
 }
 
 const EVAL_LEVELS = [
-  { key: 0, label: "ATM" },
-  { key: 1, label: "1 OTM" },
-  { key: 2, label: "2 OTM" },
-  { key: 3, label: "3 OTM" },
+  { key: "all", label: "ALL" },
+  { key: 0,     label: "ATM" },
+  { key: 1,     label: "1 OTM" },
+  { key: 2,     label: "2 OTM" },
+  { key: 3,     label: "3 OTM" },
 ];
 
 const SETUP_COLORS = {
@@ -196,6 +197,57 @@ function getBestNearMiss(ev) {
   return { setupType: best.type, fails: best.fails, failedCriteria: best.criteria.filter(c => !c.pass) };
 }
 
+function calcAsymmetricScore(row, ev, callPrem, putPrem) {
+  const price  = row.price;
+  const ivRank = row.iv_rank;
+  const spread = row.bid_ask_spread_pct;
+  const oi     = row.open_interest;
+  const s1Dist = (row.support_1 && price > 0) ? (price - row.support_1) / price * 100 : null;
+  const r1Dist = (row.resistance_1 && price > 0) ? (row.resistance_1 - price) / price * 100 : null;
+
+  let best = 0;
+
+  if (ev.ccPass) {
+    let s = 0;
+    if (row.sma_golden_cross)                               s += 15;
+    if (row.sma_regime === "UPTREND" || !row.resistance_1) s += 8;
+    s += r1Dist != null ? Math.max(0, 10 - r1Dist) : 5;
+    if (ivRank != null && ivRank >= 40 && ivRank <= 80)    s += 10;
+    if (spread != null)                                    s += Math.max(0, 10 - spread * 100);
+    if (oi != null && oi >= 200)                           s += Math.min(10, Math.log2(oi / 100) * 2);
+    if (callPrem != null && callPrem >= 2)                 s += Math.min(25, (callPrem - 2) * 3);
+    if (s1Dist != null)                                    s += Math.max(0, 12 - s1Dist);
+    best = Math.max(best, Math.round(s));
+  }
+
+  if (ev.cspPass) {
+    let s = 0;
+    if (row.sma_golden_cross)                              s += 15;
+    if (s1Dist != null)                                    s += Math.max(0, (8 - s1Dist) * 1.5);
+    if (row.support_1_strength != null && row.support_1_strength >= 8)
+                                                           s += Math.min(10, (row.support_1_strength - 8) * 1.5);
+    if (ivRank != null && ivRank >= 45)                    s += Math.min(15, (ivRank - 45) * 0.3);
+    if (spread != null)                                    s += Math.max(0, 10 - spread * 100);
+    if (oi != null && oi >= 200)                           s += Math.min(10, Math.log2(oi / 100) * 2);
+    if (putPrem != null && putPrem >= 2)                   s += Math.min(25, (putPrem - 2) * 3);
+    best = Math.max(best, Math.round(s));
+  }
+
+  if (ev.ivRampPass) {
+    let s = 0;
+    if (row.iv_ramp_flag)                                  s += 20;
+    if (ivRank != null && ivRank < 40)                     s += Math.min(15, (40 - ivRank) * 0.5);
+    if (row.iv_velocity_10d > 0)                           s += 10;
+    if (row.iv_velocity_20d > 0)                           s += 10;
+    if (row.sma_golden_cross)                              s += 10;
+    if (row.sma_regime === "UPTREND")                      s += 8;
+    if (spread != null)                                    s += Math.max(0, 15 - spread * 100);
+    best = Math.max(best, Math.round(s));
+  }
+
+  return best;
+}
+
 // ── Display helpers ──────────────────────────────────────────────────────────
 
 function TypeBadge({ type }) {
@@ -355,6 +407,7 @@ function AsymExpansion({ row, onFullDetail }) {
 const COLS = [
   { key: "ticker",        label: "TICKER",      align: "left" },
   { key: "type",          label: "SETUP TYPE",  align: "left" },
+  { key: "score",         label: "SCORE",       align: "right" },
   { key: "price",         label: "PRICE",       align: "right" },
   { key: "premium",       label: "PREMIUM $",   align: "right" },
   { key: "strike",        label: "STRIKE",      align: "right" },
@@ -373,9 +426,10 @@ const COLS = [
 ];
 
 function cellValue(row, key, evalOtmLevel = 0) {
+  const lv    = row._evalLevel ?? evalOtmLevel;
   const price = row.price;
   const nmType = row._nearMissInfo?.setupType;
-  const isCSP = nmType ? nmType === "CSP" : row.asymmetric_type === "CSP";
+  const isCSP = nmType ? nmType === "CSP" : (row._evalType === "CSP" || row.asymmetric_type === "CSP");
 
   switch (key) {
     case "ticker": return (
@@ -391,12 +445,17 @@ function cellValue(row, key, evalOtmLevel = 0) {
       if (row._nearMissInfo) return <NearMissBadge level={row._nearMissInfo.fails} setupType={nmType} />;
       return <TypeBadge type={row.asymmetric_type} />;
     case "price": return price != null ? `$${Number(price).toFixed(2)}` : "—";
+    case "score": {
+      const s = row._score ?? 0;
+      const cls = s >= 60 ? "ramp-hi" : s >= 35 ? "ramp-mid" : "text-muted-sm";
+      return <span className={cls}>{s}</span>;
+    }
     case "premium": {
-      const prem = isCSP ? getPutPrem(row, evalOtmLevel) : getCallPrem(row, evalOtmLevel);
+      const prem = isCSP ? getPutPrem(row, lv) : getCallPrem(row, lv);
       return prem != null ? `$${Number(prem).toFixed(2)}` : "—";
     }
     case "strike": {
-      const s = isCSP ? getPutStrike(row, evalOtmLevel) : getCallStrike(row, evalOtmLevel);
+      const s = isCSP ? getPutStrike(row, lv) : getCallStrike(row, lv);
       if (s == null) return "—";
       const distPct = price ? (isCSP ? (price - s) : (s - price)) / price * 100 : null;
       const distCls = distPct == null ? "" : distPct >= 3 ? "spread-tight" : distPct >= 1 ? "spread-ok" : "spread-wide";
@@ -408,9 +467,9 @@ function cellValue(row, key, evalOtmLevel = 0) {
       );
     }
     case "otm": {
-      if (evalOtmLevel === 0) return <span className="otm-atm">ATM</span>;
-      const cls = evalOtmLevel === 1 ? "otm-1" : "otm-2plus";
-      return <span className={cls}>{evalOtmLevel} OTM</span>;
+      if (lv === 0) return <span className="otm-atm">ATM</span>;
+      const cls = lv === 1 ? "otm-1" : "otm-2plus";
+      return <span className={cls}>{lv} OTM</span>;
     }
     case "dte": {
       const dte = getRelevantDte(row);
@@ -419,7 +478,7 @@ function cellValue(row, key, evalOtmLevel = 0) {
     case "expiry": return fmtExpiry(getRelevantExpiry(row));
     case "spread": {
       const pct = row.bid_ask_spread_pct;
-      const prem = isCSP ? getPutPrem(row, evalOtmLevel) : getCallPrem(row, evalOtmLevel);
+      const prem = isCSP ? getPutPrem(row, lv) : getCallPrem(row, lv);
       if (pct == null || prem == null) return <span className="text-muted-sm">N/A</span>;
       const val    = pct * 100;
       const dollar = (pct * prem).toFixed(2);
@@ -475,20 +534,22 @@ function cellValue(row, key, evalOtmLevel = 0) {
   }
 }
 
-function sortValue(row, key, evalOtmLevel = 0) {
+function sortValue(row, key) {
+  const lv    = row._evalLevel ?? 0;
   const price = row.price;
   const nmType = row._nearMissInfo?.setupType;
-  const isCSP = nmType ? nmType === "CSP" : row.asymmetric_type === "CSP";
+  const isCSP = nmType ? nmType === "CSP" : (row._evalType === "CSP" || row.asymmetric_type === "CSP");
 
   switch (key) {
     case "ticker":   return row.ticker;
-    case "type":     return row._nearMissInfo ? `ZNM${row._nearMissInfo.fails}` : (row.asymmetric_type || "");
+    case "type":     return row._nearMissInfo ? `ZNM${row._nearMissInfo.fails}` : (row._evalType || row.asymmetric_type || "");
+    case "score":    return row._score ?? 0;
     case "price":    return price ?? -1;
-    case "premium":  return (isCSP ? getPutPrem(row, evalOtmLevel) : getCallPrem(row, evalOtmLevel)) ?? -1;
-    case "strike":   return (isCSP ? getPutStrike(row, evalOtmLevel) : getCallStrike(row, evalOtmLevel)) ?? -1;
-    case "otm": return evalOtmLevel;
-    case "dte":    return getRelevantDte(row) ?? 9999;
-    case "expiry": return getRelevantExpiry(row) ?? "";
+    case "premium":  return (isCSP ? getPutPrem(row, lv) : getCallPrem(row, lv)) ?? -1;
+    case "strike":   return (isCSP ? getPutStrike(row, lv) : getCallStrike(row, lv)) ?? -1;
+    case "otm":      return lv;
+    case "dte":      return getRelevantDte(row) ?? 9999;
+    case "expiry":   return getRelevantExpiry(row) ?? "";
     case "spread":        return row.bid_ask_spread_pct ?? Infinity;
     case "iv_rank":       return row.iv_rank ?? -1;
     case "s1_dist":
@@ -519,7 +580,7 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
   const [evalOtmLevel, setEvalOtmLevel] = useState(0);
   const [showNearMiss1, setShowNearMiss1] = useState(false);
   const [showNearMiss2, setShowNearMiss2] = useState(false);
-  const [sortCol, setSortCol]           = useState("premium");
+  const [sortCol, setSortCol]           = useState("score");
   const [sortAsc, setSortAsc]           = useState(false);
   const [expandedRow, setExpandedRow]   = useState(null);
 
@@ -527,30 +588,43 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
     const next = new Set(prev); if (next.has(label)) next.delete(label); else next.add(label); return next;
   });
 
-  // At OTM level > 0, only evaluate rows that have premium data at that level
-  const eligibleRows = evalOtmLevel === 0 ? rows : rows.filter(row =>
-    getCallPrem(row, evalOtmLevel) != null || getPutPrem(row, evalOtmLevel) != null
-  );
+  const isAllMode = evalOtmLevel === "all";
 
-  // Evaluate each row with the selected OTM level
-  const evaluated = eligibleRows.map(row => {
-    const callPrem = getCallPrem(row, evalOtmLevel);
-    const putPrem  = getPutPrem(row, evalOtmLevel);
+  // ── Evaluation pipeline ────────────────────────────────────────────────────
+  function buildEvaluatedRow(row, level) {
+    const callPrem = getCallPrem(row, level);
+    const putPrem  = getPutPrem(row, level);
     const ev = evalRow(row, callPrem, putPrem);
     const anyPass = ev.ccPass || ev.cspPass || ev.ivRampPass;
     const types = [];
     if (ev.ccPass)     types.push("CC");
     if (ev.cspPass)    types.push("CSP");
     if (ev.ivRampPass) types.push("IV_RAMP");
-    const asymmetric_type = types.length === 3 ? "ALL_THREE" : types.length >= 2 ? types.join("+") : types[0] ?? null;
-    return { ...row, _ev: ev, _anyPass: anyPass, _evalType: asymmetric_type };
-  });
+    const _evalType = types.length === 3 ? "ALL_THREE" : types.length >= 2 ? types.join("+") : types[0] ?? null;
+    const _score = anyPass ? calcAsymmetricScore(row, ev, callPrem, putPrem) : 0;
+    return { ...row, _ev: ev, _anyPass: anyPass, _evalType, _evalLevel: level, _score, _key: `${row.ticker}-L${level}` };
+  }
 
-  // Full asymmetric passes at this eval level
+  let evaluated;
+  if (isAllMode) {
+    evaluated = [0, 1, 2, 3].flatMap(level => {
+      const eligible = level === 0 ? rows : rows.filter(r =>
+        getCallPrem(r, level) != null || getPutPrem(r, level) != null
+      );
+      return eligible.map(row => buildEvaluatedRow(row, level)).filter(r => r._anyPass);
+    });
+  } else {
+    const eligible = evalOtmLevel === 0 ? rows : rows.filter(r =>
+      getCallPrem(r, evalOtmLevel) != null || getPutPrem(r, evalOtmLevel) != null
+    );
+    evaluated = eligible.map(row => buildEvaluatedRow(row, evalOtmLevel));
+  }
+
+  // Full asymmetric passes
   const fullPass = evaluated.filter(r => r._anyPass);
 
-  // Near miss rows (not full passes, best setup fails 1 or 2 criteria)
-  const allNearMiss = evaluated
+  // Near miss rows (skipped in ALL mode to avoid complexity)
+  const allNearMiss = isAllMode ? [] : evaluated
     .filter(r => !r._anyPass)
     .map(r => {
       const nm = getBestNearMiss(r._ev);
@@ -588,8 +662,8 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
   const filteredNM2 = filterNearMiss(nearMiss2All);
 
   const doSort = (arr) => [...arr].sort((a, b) => {
-    const av = sortValue(a, sortCol, evalOtmLevel);
-    const bv = sortValue(b, sortCol, evalOtmLevel);
+    const av = sortValue(a, sortCol);
+    const bv = sortValue(b, sortCol);
     if (typeof av === "string" && typeof bv === "string")
       return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
     if (av < bv) return sortAsc ? -1 : 1;
@@ -617,19 +691,19 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
   const nm2Count = nearMiss2All.length;
 
   const renderRow = (row) => {
-    const isExpanded = expandedRow === row.ticker;
-    // For full-pass rows, use _evalType; for near miss rows, use _nearMissInfo
+    const rowKey = row._key || row.ticker;
+    const isExpanded = expandedRow === rowKey;
     const rowForExpansion = row._nearMissInfo
       ? row
       : { ...row, asymmetric_cc_flag: row._ev?.ccPass, asymmetric_csp_flag: row._ev?.cspPass, asymmetric_ivramp_flag: row._ev?.ivRampPass };
 
     return (
-      <React.Fragment key={`${row.ticker}-${row._nearMissInfo ? "nm" : "pass"}`}>
+      <React.Fragment key={`${rowKey}-${row._nearMissInfo ? "nm" : "pass"}`}>
         <tr className={`prem-scanner-row${isExpanded ? " asym-row-expanded" : ""}${row._nearMissInfo ? " asym-near-miss-row" : ""}`}>
           <td className="prem-scanner-td" style={{ textAlign: "center", padding: "0 4px" }}>
             <button
               style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: "0.7em", padding: "2px 4px" }}
-              onClick={() => setExpandedRow(isExpanded ? null : row.ticker)}
+              onClick={() => setExpandedRow(isExpanded ? null : rowKey)}
               title="Show OTM premiums"
             >{isExpanded ? "▼" : "▶"}</button>
           </td>
@@ -640,7 +714,7 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
               onClick={col.key === "ticker" ? (e) => { e.stopPropagation(); onRowClick && onRowClick(row); } : undefined}
               style={col.key === "ticker" ? { cursor: "pointer" } : undefined}
             >
-              {cellValue(row, col.key, evalOtmLevel)}
+              {cellValue(row, col.key)}
             </td>
           ))}
         </tr>
