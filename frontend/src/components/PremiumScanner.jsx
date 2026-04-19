@@ -196,7 +196,7 @@ const COLS = [
   { key: "otm",        label: "OTM",       align: "center" },
   { key: "price",      label: "Price",     align: "right", compact: true },
   { key: "strike",     label: "Strike",    align: "right", compact: true },
-  { key: "premium",    label: "Premium $", align: "right" },
+  { key: "premium",    label: "Prem $",    align: "right" },
   { key: "spread",     label: "Spread",    align: "right" },
   { key: "bid_ask",    label: "Bid/Mark",  align: "right" },
   { key: "premiumPct", label: "Prem %",    align: "right", compact: true },
@@ -245,9 +245,16 @@ function cellValue(item, key) {
     case "otm": {
       const lvl = item._otmLevel;
       if (lvl == null) return "—";
-      if (lvl <= 0) return <span className="otm-atm">ATM</span>;
-      if (lvl === 1) return <span className="otm-1">1</span>;
-      return <span className="otm-2plus">{Math.min(lvl, 5)}{lvl >= 5 ? "+" : ""}</span>;
+      const isCSPItem = item._type === "CSP";
+      const sk = item._d.strike;
+      const distPct = sk != null && item.price ? (isCSPItem ? (item.price - sk) : (sk - item.price)) / item.price * 100 : null;
+      const sign = isCSPItem ? "-" : "+";
+      const distStr = distPct != null ? ` ${sign}${distPct.toFixed(1)}%` : "";
+      const distCls = distPct == null ? "" : distPct >= 3 ? "spread-tight" : distPct >= 1 ? "spread-ok" : "spread-wide";
+      if (lvl <= 0) return <span className="otm-atm">ATM{distStr && <span className={distCls}>{distStr}</span>}</span>;
+      if (lvl === 1) return <span className="otm-1">1 OTM{distStr && <span className={distCls}>{distStr}</span>}</span>;
+      const n = Math.min(lvl, 5);
+      return <span className="otm-2plus">{n}{lvl >= 5 ? "+" : ""} OTM{distStr && <span className={distCls}>{distStr}</span>}</span>;
     }
     case "bid_ask": {
       const mid = item._d.premium;
@@ -258,19 +265,8 @@ function cellValue(item, key) {
     }
     case "premiumPct": return item._d.premiumPct != null
       ? <span style={{ fontSize: "0.88em" }}>{fmt(item._d.premiumPct * 100)}%</span> : "—";
-    case "strike": {
-      if (item._d.strike == null) return "—";
-      const sk = item._d.strike;
-      const isCSPItem = item._type === "CSP";
-      const distPct = item.price ? (isCSPItem ? (item.price - sk) : (sk - item.price)) / item.price * 100 : null;
-      const distCls = distPct == null ? "" : distPct >= 3 ? "spread-tight" : distPct >= 1 ? "spread-ok" : "spread-wide";
-      return (
-        <span>
-          ${fmt(sk, 0)}
-          {distPct != null && <><br /><span className={distCls}>{isCSPItem ? "-" : "+"}{distPct.toFixed(1)}%</span></>}
-        </span>
-      );
-    }
+    case "strike":
+      return item._d.strike != null ? `$${fmt(item._d.strike, 0)}` : "—";
     case "dte":        return item._d.dte != null ? `${item._d.dte}d` : "—";
     case "oi":
       return item.open_interest != null

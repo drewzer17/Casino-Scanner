@@ -409,7 +409,7 @@ const COLS = [
   { key: "type",          label: "SETUP TYPE",  align: "left" },
   { key: "score",         label: "SCORE",       align: "right" },
   { key: "price",         label: "PRICE",       align: "right" },
-  { key: "premium",       label: "PREMIUM $",   align: "right" },
+  { key: "premium",       label: "PREM $",      align: "right" },
   { key: "strike",        label: "STRIKE",      align: "right" },
   { key: "otm",           label: "OTM",         align: "center" },
   { key: "dte",           label: "DTE",         align: "right" },
@@ -456,20 +456,17 @@ function cellValue(row, key, evalOtmLevel = 0) {
     }
     case "strike": {
       const s = isCSP ? getPutStrike(row, lv) : getCallStrike(row, lv);
-      if (s == null) return "—";
-      const distPct = price ? (isCSP ? (price - s) : (s - price)) / price * 100 : null;
-      const distCls = distPct == null ? "" : distPct >= 3 ? "spread-tight" : distPct >= 1 ? "spread-ok" : "spread-wide";
-      return (
-        <span>
-          ${s.toFixed(2)}
-          {distPct != null && <><br /><span className={distCls}>{isCSP ? "-" : "+"}{distPct.toFixed(1)}%</span></>}
-        </span>
-      );
+      return s != null ? `$${s.toFixed(2)}` : "—";
     }
     case "otm": {
-      if (lv === 0) return <span className="otm-atm">ATM</span>;
+      const s = isCSP ? getPutStrike(row, lv) : getCallStrike(row, lv);
+      const distPct = s != null && price ? (isCSP ? (price - s) : (s - price)) / price * 100 : null;
+      const sign = isCSP ? "-" : "+";
+      const distStr = distPct != null ? ` ${sign}${distPct.toFixed(1)}%` : "";
+      const distCls = distPct == null ? "" : distPct >= 3 ? "spread-tight" : distPct >= 1 ? "spread-ok" : "spread-wide";
+      if (lv === 0) return <span className="otm-atm">ATM{distStr && <span className={distCls}>{distStr}</span>}</span>;
       const cls = lv === 1 ? "otm-1" : "otm-2plus";
-      return <span className={cls}>{lv} OTM</span>;
+      return <span className={cls}>{lv} OTM{distStr && <span className={distCls}>{distStr}</span>}</span>;
     }
     case "dte": {
       const dte = getRelevantDte(row);
