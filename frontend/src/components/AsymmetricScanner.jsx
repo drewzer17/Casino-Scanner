@@ -415,8 +415,10 @@ const COLS = [
   { key: "dte",           label: "DTE",         align: "right" },
   { key: "spread",        label: "SPREAD",      align: "right" },
   { key: "iv_rank",       label: "IV RANK",     align: "right" },
-  { key: "s1_dist",       label: "S1",          align: "right", compact: true, groupEnd: true },
+  { key: "s1_dist",       label: "S1",          align: "right", compact: true },
+  { key: "s2_dist",       label: "S2",          align: "right", compact: true, groupEnd: true },
   { key: "r1_dist",       label: "R1",          align: "right", compact: true },
+  { key: "r2_dist",       label: "R2",          align: "right", compact: true },
   { key: "cross",         label: "CROSS",       align: "center", compact: true },
   { key: "trend",         label: "TREND",       align: "center", compact: true },
   { key: "cc_score",      label: "CC SCORE",    align: "right" },
@@ -492,14 +494,26 @@ function cellValue(row, key, evalOtmLevel = 0) {
     case "s1_dist": {
       if (!row.support_1 || !price || price <= 0) return <span style={{ color: "#ef4444", fontWeight: "bold" }}>FF</span>;
       const dist = ((price - row.support_1) / price) * 100;
-      const cls  = dist <= 5 ? "s1dist-tight" : dist <= 15 ? "s1dist-ok" : "s1dist-wide";
+      const cls  = dist <= 8 ? "s1dist-tight" : dist <= 15 ? "s1dist-ok" : "s1dist-wide";
+      return <span className={cls}>{dist.toFixed(1)}%</span>;
+    }
+    case "s2_dist": {
+      if (row.support_2 == null || !price || price <= 0) return <span style={{ color: "#ef4444", fontWeight: "bold" }}>FF</span>;
+      const dist = ((price - row.support_2) / price) * 100;
+      const cls  = dist <= 8 ? "s1dist-tight" : dist <= 15 ? "s1dist-ok" : "s1dist-wide";
       return <span className={cls}>{dist.toFixed(1)}%</span>;
     }
     case "r1_dist": {
       if (!row.resistance_1) return <span style={{ color: "#a855f7", fontWeight: "bold" }}>PD</span>;
       if (!price || price <= 0) return "—";
       const dist = ((row.resistance_1 - price) / price) * 100;
-      const cls  = dist <= 5 ? "s1dist-tight" : dist <= 15 ? "s1dist-ok" : "s1dist-wide";
+      const cls  = dist <= 8 ? "s1dist-tight" : dist <= 15 ? "s1dist-ok" : "s1dist-wide";
+      return <span className={cls}>{dist.toFixed(1)}%</span>;
+    }
+    case "r2_dist": {
+      if (row.resistance_2 == null || !price || price <= 0) return <span style={{ color: "#a855f7", fontWeight: "bold" }}>PD</span>;
+      const dist = ((row.resistance_2 - price) / price) * 100;
+      const cls  = dist <= 8 ? "s1dist-tight" : dist <= 15 ? "s1dist-ok" : "s1dist-wide";
       return <span className={cls}>{dist.toFixed(1)}%</span>;
     }
     case "cross": {
@@ -550,9 +564,13 @@ function sortValue(row, key) {
     case "spread":        return row.bid_ask_spread_pct ?? Infinity;
     case "iv_rank":       return row.iv_rank ?? -1;
     case "s1_dist":
-      return (row.support_1 && price && price > 0) ? ((price - row.support_1) / price) * 100 : Infinity;
+      return (row.support_1 && price > 0) ? ((price - row.support_1) / price) * 100 : Infinity;
+    case "s2_dist":
+      return (row.support_2 != null && price > 0) ? ((price - row.support_2) / price) * 100 : Infinity;
     case "r1_dist":
-      return (row.resistance_1 && price && price > 0) ? ((row.resistance_1 - price) / price) * 100 : Infinity;
+      return (row.resistance_1 && price > 0) ? ((row.resistance_1 - price) / price) * 100 : Infinity;
+    case "r2_dist":
+      return (row.resistance_2 != null && price > 0) ? ((row.resistance_2 - price) / price) * 100 : Infinity;
     case "cross":         return row.sma_golden_cross == null ? 0 : row.sma_golden_cross ? 1 : -1;
     case "trend":         return row.sma_regime ?? "";
     case "cc_score":      return row.cc_score ?? -1;
@@ -623,26 +641,19 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
   // Near miss rows — in ALL mode, compute across all levels and deduplicate by ticker
   let allNearMiss;
   if (isAllMode) {
-    const passedTickers = new Set(fullPass.map(r => r.ticker));
-    const byTicker = new Map();
-    [0, 1, 2, 3].forEach(level => {
+    // Each (ticker, level) is an independent evaluation — no suppression based on other levels
+    allNearMiss = [0, 1, 2, 3].flatMap(level => {
       const eligible = level === 0 ? rows : rows.filter(r =>
         getCallPrem(r, level) != null || getPutPrem(r, level) != null
       );
-      eligible.forEach(row => {
-        if (passedTickers.has(row.ticker)) return;
+      return eligible.flatMap(row => {
         const evRow = buildEvaluatedRow(row, level);
-        if (evRow._anyPass) return;
+        if (evRow._anyPass) return [];
         const nm = getBestNearMiss(evRow._ev);
-        if (!nm) return;
-        const existing = byTicker.get(row.ticker);
-        // Keep lowest OTM level; on tie, keep fewer fails
-        if (!existing || level < existing._evalLevel || (level === existing._evalLevel && nm.fails < existing._nearMissInfo.fails)) {
-          byTicker.set(row.ticker, { ...evRow, _nearMissInfo: nm });
-        }
+        if (!nm) return [];
+        return [{ ...evRow, _nearMissInfo: nm }];
       });
     });
-    allNearMiss = Array.from(byTicker.values());
   } else {
     allNearMiss = evaluated
       .filter(r => !r._anyPass)
