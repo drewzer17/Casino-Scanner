@@ -1223,3 +1223,107 @@ def universe_sources(db: Session = Depends(get_db)) -> dict:
 @router.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+# ── Debug endpoints ────────────────────────────────────────────────────────────
+
+@router.get("/debug/chain/{ticker}")
+def debug_chain(ticker: str) -> dict:
+    """Return the raw Tradier options chain for every available expiry.
+
+    Useful for diagnosing bad premium data — returns every contract field
+    exactly as Tradier delivers it, with no filtering or processing applied.
+    Each expiry entry includes the raw list of contracts plus a summary of
+    the min/max bid and ask so anomalies are easy to spot at a glance.
+    """
+    from ..scanner.engine import fetch_expirations, fetch_quotes, _get
+
+    ticker = ticker.upper().strip()
+
+    # ── Current quote ──────────────────────────────────────────────────────────
+    try:
+        quotes = fetch_quotes([ticker])
+        quote = quotes.get(ticker, {})
+        price = quote.get("last") or quote.get("close")
+    except Exception as exc:
+        quote = {"error": str(exc)}
+        price = None
+
+    # ── Expiry list ────────────────────────────────────────────────────────────
+    try:
+        expirations = fetch_expirations(ticker)
+    except Exception as exc:
+        return {
+            "ticker": ticker,
+            "price": price,
+            "quote": quote,
+            "error": f"Could not fetch expirations: {exc}",
+        }
+
+    # ── Chains (raw) ───────────────────────────────────────────────────────────
+    chains: list[dict] = []
+    for exp in expirations:
+        try:
+            raw = _get("/v1/markets/options/chains", {
+                "symbol": ticker,
+                "expiration": exp,
+                "greeks": "true",
+            })
+            options = (raw.get("options") or {}).get("option") or []
+            if isinstance(options, dict):
+                options = [options]
+
+            # Quick anomaly summary per expiry so bad contracts stand out
+            anomalies = []
+            for c in options:
+                bid = c.get("bid")
+                ask = c.get("ask")
+                strike = c.get("strike")
+                otype = c.get("option_type")
+                try:
+                    bid_f = float(bid) if bid is not None else None
+                    ask_f = float(ask) if ask is not None else None
+                    strike_f = float(strike) if strike is not None else None
+                    mid = (bid_f + ask_f) / 2 if bid_f is not None and ask_f is not None else None
+                    if price and mid is not None and strike_f is not None:
+                        if otype == "call" and mid > float(price):
+                            anomalies.append({
+                                "strike": strike_f, "type": otype,
+                                "bid": bid_f, "ask": ask_f, "mid": mid,
+                                "flag": "call_mid_exceeds_stock_price",
+                            })
+                        elif otype == "put" and mid > strike_f:
+                            anomalies.append({
+                                "strike": strike_f, "type": otype,
+                                "bid": bid_f, "ask": ask_f, "mid": mid,
+                                "flag": "put_mid_exceeds_strike",
+                            })
+                        elif mid > 0 and float(price) > 0 and mid / float(price) > 0.5:
+                            anomalies.append({
+                                "strike": strike_f, "type": otype,
+                                "bid": bid_f, "ask": ask_f, "mid": mid,
+                                "flag": f"mid_is_{round(mid/float(price)*100)}pct_of_stock_price",
+                            })
+                except (TypeError, ValueError):
+                    pass
+
+            chains.append({
+                "expiry": exp,
+                "contract_count": len(options),
+                "anomalies": anomalies,
+                "contracts": options,
+            })
+        except Exception as exc:
+            chains.append({
+                "expiry": exp,
+                "error": str(exc),
+                "contracts": [],
+            })
+
+    return {
+        "ticker": ticker,
+        "price": price,
+        "quote": quote,
+        "expiry_count": len(expirations),
+        "chains": chains,
+    }
