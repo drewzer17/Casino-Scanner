@@ -262,7 +262,7 @@ function calcOtmLevel(strike, price, isCSP) {
 
 // ── Mini OTM expansion ───────────────────────────────────────────────────────
 
-function PremiumSection({ title, expLabel, dte, tableRows }) {
+function PremiumSection({ title, expLabel, dte, tableRows, price, showProfit }) {
   return (
     <div className="asym-mini-wrap">
       <div className="asym-mini-title">
@@ -274,17 +274,30 @@ function PremiumSection({ title, expLabel, dte, tableRows }) {
         <thead>
           <tr>
             <th>Level</th><th>Strike</th><th>Premium/sh</th><th>Per Contract</th>
+            {showProfit && <th>Profit if Called</th>}
           </tr>
         </thead>
         <tbody>
-          {tableRows.map(r => (
-            <tr key={r.label}>
-              <td><span className={r.cls}>{r.label}</span></td>
-              <td>{r.strike != null ? `$${r.strike.toFixed(2)}` : "—"}</td>
-              <td>{r.prem != null ? `$${r.prem.toFixed(2)}` : "—"}</td>
-              <td>{r.prem != null ? `$${(r.prem * 100).toFixed(0)}` : "—"}</td>
-            </tr>
-          ))}
+          {tableRows.map(r => {
+            const profit = showProfit && r.strike != null && r.prem != null && price
+              ? (r.strike - price) * 100 + r.prem * 100
+              : null;
+            const profitPct = profit != null ? (profit / (price * 100)) * 100 : null;
+            return (
+              <tr key={r.label}>
+                <td><span className={r.cls}>{r.label}</span></td>
+                <td>{r.strike != null ? `$${r.strike.toFixed(2)}` : "—"}</td>
+                <td>{r.prem != null ? `$${r.prem.toFixed(2)}` : "—"}</td>
+                <td>{r.prem != null ? `$${(r.prem * 100).toFixed(0)}` : "—"}</td>
+                {showProfit && (
+                  <td>{profit != null
+                    ? `$${Math.round(profit).toLocaleString()} (${profitPct.toFixed(1)}%)`
+                    : "—"}
+                  </td>
+                )}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       <div className="asym-mini-note">3–4 OTM: open full detail</div>
@@ -325,7 +338,7 @@ function AsymExpansion({ row, onFullDetail }) {
   return (
     <div className="asym-expansion" onClick={e => e.stopPropagation()}>
       {renderCalls && (
-        <PremiumSection title="Call Premiums" expLabel={fmtExpiry(row.best_expiry)} dte={row.best_dte} tableRows={callRows} />
+        <PremiumSection title="Call Premiums" expLabel={fmtExpiry(row.best_expiry)} dte={row.best_dte} tableRows={callRows} price={row.price} showProfit />
       )}
       {showPuts && (
         <PremiumSection title="Put Premiums" expLabel={fmtExpiry(row.best_put_expiry)} dte={row.best_put_dte} tableRows={putRows} />

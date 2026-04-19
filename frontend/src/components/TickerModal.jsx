@@ -105,7 +105,7 @@ function WheelLeg({ label, suggestion, effectiveBasis, profitIfCalled }) {
 
 const OTM_LABELS = ["1 OTM", "2 OTM", "3 OTM", "4 OTM"];
 
-function ChainsTable({ expirations }) {
+function ChainsTable({ expirations, price }) {
   if (!expirations || expirations.length === 0) return null;
 
   const fmtP = (v) => (v == null ? "—" : `$${Number(v).toFixed(2)}`);
@@ -114,12 +114,18 @@ function ChainsTable({ expirations }) {
     const [y, m, d] = exp.split("-").map(Number);
     return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
+  const fmtProfit = (strike, prem) => {
+    if (strike == null || prem == null || !price) return null;
+    const profit = (strike - price) * 100 + prem * 100;
+    const pct = (profit / (price * 100)) * 100;
+    return `$${Math.round(profit).toLocaleString()} (${pct.toFixed(1)}%)`;
+  };
 
   const firstValid = expirations.find(e => !e.error && e.calls?.length > 0);
   const callStrikes = firstValid?.calls?.map(c => c.strike) ?? [];
   const putStrikes = firstValid?.puts?.map(c => c.strike) ?? [];
 
-  const tableSection = (title, dataKey, strikesArr, atmPremKey) => (
+  const tableSection = (title, dataKey, strikesArr, atmPremKey, showProfit) => (
     <div className="prem-exp-section" style={{ marginBottom: 12 }}>
       <div className="prem-exp-title">{title}</div>
       <table className="prem-exp-table">
@@ -151,13 +157,18 @@ function ChainsTable({ expirations }) {
                   <td>{fmtExp(e.expiry)}</td>
                   <td className="prem-exp-dte">{e.dte}d</td>
                   <td className={`prem-exp-atm-col${e[atmPremKey] ? "" : " prem-exp-empty"}`}>
-                    {fmtP(e[atmPremKey])}
+                    <div>{fmtP(e[atmPremKey])}</div>
+                    {showProfit && fmtProfit(e.atm_strike, e[atmPremKey]) && (
+                      <div className="prem-exp-profit">{fmtProfit(e.atm_strike, e[atmPremKey])}</div>
+                    )}
                   </td>
                   {Array.from({ length: 4 }, (_, i) => {
                     const s = e[dataKey]?.[i];
+                    const profitStr = showProfit ? fmtProfit(s?.strike, s?.prem) : null;
                     return (
                       <td key={i} className={s?.prem ? "" : "prem-exp-empty"}>
-                        {fmtP(s?.prem)}
+                        <div>{fmtP(s?.prem)}</div>
+                        {profitStr && <div className="prem-exp-profit">{profitStr}</div>}
                       </td>
                     );
                   })}
@@ -172,8 +183,8 @@ function ChainsTable({ expirations }) {
 
   return (
     <div>
-      {tableSection("Covered Calls ▲", "calls", callStrikes, "atm_call_prem")}
-      {tableSection("Cash-Secured Puts ▼", "puts", putStrikes, "atm_put_prem")}
+      {tableSection("Covered Calls ▲", "calls", callStrikes, "atm_call_prem", true)}
+      {tableSection("Cash-Secured Puts ▼", "puts", putStrikes, "atm_put_prem", false)}
     </div>
   );
 }
@@ -431,7 +442,7 @@ export default function TickerModal({ row, onClose }) {
             </div>
           )}
           {chains && chains.length > 0 && (
-            <ChainsTable expirations={chains} />
+            <ChainsTable expirations={chains} price={row.price} />
           )}
         </div>
       </div>
