@@ -203,9 +203,9 @@ const COLS = [
   { key: "dte",        label: "DTE",       align: "right", compact: true },
   { key: "oi",         label: "OI",        align: "right", compact: true },
   { key: "r2_dist",    label: "R2",        align: "right" },
-  { key: "r1_dist",    label: "R1",        align: "right" },
+  { key: "r1_dist",    label: "R1",        align: "right", groupEnd: true },
   { key: "s1_dist",    label: "S1",        align: "right" },
-  { key: "s2_dist",    label: "S2",        align: "right" },
+  { key: "s2_dist",    label: "S2",        align: "right", groupEnd: true },
   { key: "score",      label: "Score",     align: "right" },
   { key: "asymmetric", label: "ASYMMETRIC",  align: "center" },
 ];
@@ -598,6 +598,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                     key={col.key}
                     className={`prem-scanner-th${col.align === "right" ? " right" : ""}${sortCol === col.key ? " sorted" : ""}${col.compact ? " compact-col" : ""}`}
                     onClick={() => handleSort(col.key)}
+                    style={col.groupEnd ? { borderRight: "1px solid rgba(255,255,255,0.15)" } : undefined}
                   >
                     {col.label}
                     {sortCol === col.key && (
@@ -618,6 +619,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                     <td
                       key={col.key}
                       className={`prem-scanner-td${col.align === "right" ? " right" : ""}${col.key === "ticker" ? " ticker-col" : ""}${col.key === "premium" ? " prem-col" : ""}${col.compact ? " compact-col" : ""}`}
+                      style={col.groupEnd ? { borderRight: "1px solid rgba(255,255,255,0.15)" } : undefined}
                     >
                       {cellValue(item, col.key)}
                     </td>

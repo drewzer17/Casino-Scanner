@@ -406,8 +406,8 @@ function AsymExpansion({ row, onFullDetail }) {
 
 const COLS = [
   { key: "ticker",        label: "TICKER",      align: "left" },
-  { key: "type",          label: "SETUP TYPE",  align: "left" },
-  { key: "score",         label: "SCORE",       align: "right" },
+  { key: "type",          label: "SETUP",       align: "left" },
+  { key: "score",         label: "SCORE",       align: "right", compact: true },
   { key: "price",         label: "PRICE",       align: "right" },
   { key: "premium",       label: "PREM $",      align: "right" },
   { key: "strike",        label: "STRIKE",      align: "right" },
@@ -415,12 +415,12 @@ const COLS = [
   { key: "dte",           label: "DTE",         align: "right" },
   { key: "spread",        label: "SPREAD",      align: "right" },
   { key: "iv_rank",       label: "IV RANK",     align: "right" },
-  { key: "s1_dist",       label: "S1",          align: "right" },
-  { key: "r1_dist",       label: "R1",          align: "right" },
-  { key: "cross",         label: "CROSS",       align: "center" },
-  { key: "trend",         label: "TREND",       align: "center" },
+  { key: "s1_dist",       label: "S1",          align: "right", groupEnd: true },
+  { key: "r1_dist",       label: "R1",          align: "right", groupEnd: true },
+  { key: "cross",         label: "CROSS",       align: "center", compact: true },
+  { key: "trend",         label: "TREND",       align: "center", compact: true },
   { key: "cc_score",      label: "CC SCORE",    align: "right" },
-  { key: "csp_score",     label: "CSP SCORE",   align: "right" },
+  { key: "csp_score",     label: "CSP SCORE",   align: "right", compact: true },
   { key: "iv_ramp_score", label: "RAMP SCORE",  align: "right" },
   { key: "why",           label: "WHY",         align: "left",  noSort: true },
 ];
@@ -707,9 +707,9 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
           {COLS.map(col => (
             <td
               key={col.key}
-              className={`prem-scanner-td${col.align === "right" ? " right" : col.align === "center" ? " center" : ""}${col.key === "ticker" ? " ticker-col" : ""}${col.key === "why" ? " asym-why-col" : ""}`}
+              className={`prem-scanner-td${col.align === "right" ? " right" : col.align === "center" ? " center" : ""}${col.key === "ticker" ? " ticker-col" : ""}${col.key === "why" ? " asym-why-col" : ""}${col.compact ? " compact-col" : ""}`}
               onClick={col.key === "ticker" ? (e) => { e.stopPropagation(); onRowClick && onRowClick(row); } : undefined}
-              style={col.key === "ticker" ? { cursor: "pointer" } : undefined}
+              style={{ ...(col.key === "ticker" ? { cursor: "pointer" } : {}), ...(col.groupEnd ? { borderRight: "1px solid rgba(255,255,255,0.15)" } : {}) }}
             >
               {cellValue(row, col.key)}
             </td>
@@ -806,9 +806,9 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
                 {COLS.map(col => (
                   <th
                     key={col.key}
-                    className={`prem-scanner-th${col.align === "right" ? " right" : col.align === "center" ? " center" : ""}${sortCol === col.key ? " sorted" : ""}`}
+                    className={`prem-scanner-th${col.align === "right" ? " right" : col.align === "center" ? " center" : ""}${sortCol === col.key ? " sorted" : ""}${col.compact ? " compact-col" : ""}`}
                     onClick={col.noSort ? undefined : () => handleSort(col.key)}
-                    style={col.noSort ? { cursor: "default" } : {}}
+                    style={{ ...(col.noSort ? { cursor: "default" } : {}), ...(col.groupEnd ? { borderRight: "1px solid rgba(255,255,255,0.15)" } : {}) }}
                   >
                     {col.label}
                     {!col.noSort && sortCol === col.key && (
