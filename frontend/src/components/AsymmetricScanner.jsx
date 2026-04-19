@@ -620,15 +620,39 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
   // Full asymmetric passes
   const fullPass = evaluated.filter(r => r._anyPass);
 
-  // Near miss rows (skipped in ALL mode to avoid complexity)
-  const allNearMiss = isAllMode ? [] : evaluated
-    .filter(r => !r._anyPass)
-    .map(r => {
-      const nm = getBestNearMiss(r._ev);
-      if (!nm) return null;
-      return { ...r, _nearMissInfo: nm };
-    })
-    .filter(Boolean);
+  // Near miss rows — in ALL mode, compute across all levels and deduplicate by ticker
+  let allNearMiss;
+  if (isAllMode) {
+    const passedTickers = new Set(fullPass.map(r => r.ticker));
+    const byTicker = new Map();
+    [0, 1, 2, 3].forEach(level => {
+      const eligible = level === 0 ? rows : rows.filter(r =>
+        getCallPrem(r, level) != null || getPutPrem(r, level) != null
+      );
+      eligible.forEach(row => {
+        if (passedTickers.has(row.ticker)) return;
+        const evRow = buildEvaluatedRow(row, level);
+        if (evRow._anyPass) return;
+        const nm = getBestNearMiss(evRow._ev);
+        if (!nm) return;
+        const existing = byTicker.get(row.ticker);
+        // Keep lowest OTM level; on tie, keep fewer fails
+        if (!existing || level < existing._evalLevel || (level === existing._evalLevel && nm.fails < existing._nearMissInfo.fails)) {
+          byTicker.set(row.ticker, { ...evRow, _nearMissInfo: nm });
+        }
+      });
+    });
+    allNearMiss = Array.from(byTicker.values());
+  } else {
+    allNearMiss = evaluated
+      .filter(r => !r._anyPass)
+      .map(r => {
+        const nm = getBestNearMiss(r._ev);
+        if (!nm) return null;
+        return { ...r, _nearMissInfo: nm };
+      })
+      .filter(Boolean);
+  }
 
   const nearMiss1All = allNearMiss.filter(r => r._nearMissInfo.fails === 1);
   const nearMiss2All = allNearMiss.filter(r => r._nearMissInfo.fails === 2);
