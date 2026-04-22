@@ -35,4 +35,5 @@ export const api = {
   chains: (ticker) => get(`/api/ticker/${encodeURIComponent(ticker)}/chains`),
   reloadUniverse: () => post("/api/universe/reload"),
   stopScan: () => post("/api/scan/stop"),
+  resetScan: () => post("/api/scan/reset"),
 };

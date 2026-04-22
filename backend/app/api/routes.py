@@ -498,10 +498,10 @@ def scan_status(db: Session = Depends(get_db)) -> dict:
 def stop_scan(db: Session = Depends(get_db)) -> dict:
     """Cancel the currently running scan.
 
-    Sets the cancel flag — the scan loop checks it after each batch (≤25 tickers)
-    and stops cleanly, committing all results so far. The ScanRun status is set
-    to 'cancelled'. Returns immediately; the scan may finish its current batch
-    before actually stopping.
+    Sets the in-process cancel flag AND immediately marks any stuck 'running'
+    ScanRun as 'cancelled' in the DB. This means it works whether the scan
+    process is still alive (flag stops the loop) or was killed by a deploy
+    (DB reset unblocks new scans).
     """
     run = db.execute(
         select(models.ScanRun).where(models.ScanRun.status == "running").limit(1)
@@ -510,18 +510,60 @@ def stop_scan(db: Session = Depends(get_db)) -> dict:
     if run is None:
         return {"status": "not_running", "message": "No scan is currently in progress."}
 
+    # Signal any live scan loop to stop after its current batch
     _scan_cancel.set()
 
+    # Also forcibly close the DB record — handles deploy-killed processes
     scanned = db.execute(
         select(func.count()).select_from(models.ScanResult)
         .where(models.ScanResult.run_id == run.id)
     ).scalar() or 0
 
+    run.status = "cancelled"
+    run.finished_at = datetime.utcnow()
+    db.commit()
+
     return {
-        "status": "stop_requested",
+        "status": "cancelled",
         "run_id": run.id,
         "tickers_completed": scanned,
-        "message": f"Cancel signal sent. Scan will stop after its current batch. {scanned} tickers committed so far.",
+        "message": f"Scan cancelled. {scanned} tickers were committed.",
+    }
+
+
+@router.post("/scan/reset")
+def reset_scan(db: Session = Depends(get_db)) -> dict:
+    """Force-reset any stuck 'running' scan so a new one can start.
+
+    Use this after a deploy or crash kills a scan mid-run and the status
+    is permanently stuck at 'running'. Marks the orphaned run as 'cancelled'
+    and clears the in-process cancel flag so the next scan starts clean.
+    """
+    runs = db.execute(
+        select(models.ScanRun).where(models.ScanRun.status == "running")
+    ).scalars().all()
+
+    if not runs:
+        _scan_cancel.clear()
+        return {"status": "nothing_to_reset", "message": "No running scans found. Ready to start a new scan."}
+
+    reset_ids = []
+    for run in runs:
+        scanned = db.execute(
+            select(func.count()).select_from(models.ScanResult)
+            .where(models.ScanResult.run_id == run.id)
+        ).scalar() or 0
+        run.status = "cancelled"
+        run.finished_at = datetime.utcnow()
+        reset_ids.append({"run_id": run.id, "tickers_committed": scanned})
+
+    db.commit()
+    _scan_cancel.clear()
+
+    return {
+        "status": "reset",
+        "runs_reset": reset_ids,
+        "message": f"Cleared {len(reset_ids)} stuck run(s). Ready to start a new scan.",
     }
 
 

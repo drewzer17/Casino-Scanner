@@ -358,11 +358,14 @@ export default function Dashboard() {
     try {
       await api.stopScan();
     } catch {
-      // non-fatal — backend may already be finishing up
+      // non-fatal — backend may already be finishing up; fall through to reset UI
     }
-    // Don't immediately clear scanning state — let the polling loop detect
-    // the "cancelled" status and clean up, so the progress label stays visible
-    // until the backend confirms it stopped.
+    // Stop endpoint now writes "cancelled" to DB immediately, so clear UI right away
+    // rather than waiting for the next poll cycle.
+    stopPolling();
+    setScanning(false);
+    setScanMode(null);
+    setScanProgress(null);
   };
 
   const handleReloadUniverse = async () => {
