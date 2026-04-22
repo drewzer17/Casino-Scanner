@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import logging
 import math
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeout
 from dataclasses import dataclass, field
@@ -1469,11 +1470,20 @@ def _scan_extensive_with_timeout(ticker: str, price: float | None = None, earn_d
             return None
 
 
-def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = None, scanner_fn=None) -> int:
+def run_scan(
+    db: Session,
+    tickers: list[str] | None = None,
+    limit: int | None = None,
+    scanner_fn=None,
+    cancel_event: "threading.Event | None" = None,
+) -> int:
     """Crash-resilient, resumable scan. Returns ScanRun id.
 
     scanner_fn: optional override for per-ticker scan function (defaults to _scan_with_timeout).
     Pass _scan_extensive_with_timeout for extensive mode.
+
+    cancel_event: if set, the scan loop checks it after each batch and stops early
+    (status = "cancelled") when the event is set.
     """
     if scanner_fn is None:
         scanner_fn = _scan_with_timeout
@@ -1585,6 +1595,14 @@ def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = 
         db.commit()
         logger.info("run_id=%s batch done — scanned=%d errored=%d", run.id, scanned, errored)
 
+        # Check cancel flag after each batch — set by POST /api/scan/stop
+        if cancel_event is not None and cancel_event.is_set():
+            run.finished_at = datetime.utcnow()
+            run.status = "cancelled"
+            db.commit()
+            logger.info("run_id=%s cancelled after %d tickers", run.id, scanned)
+            return run.id
+
     run.finished_at = datetime.utcnow()
     run.status = "completed"
     db.commit()
@@ -1592,9 +1610,20 @@ def run_scan(db: Session, tickers: list[str] | None = None, limit: int | None = 
     return run.id
 
 
-def run_scan_extensive(db: Session, tickers: list[str] | None = None, limit: int | None = None) -> int:
+def run_scan_extensive(
+    db: Session,
+    tickers: list[str] | None = None,
+    limit: int | None = None,
+    cancel_event: "threading.Event | None" = None,
+) -> int:
     """Extensive scan: normal scan + nearest weekly expiry chain per ticker."""
-    return run_scan(db, tickers=tickers, limit=limit, scanner_fn=_scan_extensive_with_timeout)
+    return run_scan(
+        db,
+        tickers=tickers,
+        limit=limit,
+        scanner_fn=_scan_extensive_with_timeout,
+        cancel_event=cancel_event,
+    )
 
 
 def run_scan_cli() -> None:

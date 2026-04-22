@@ -30,6 +30,9 @@ logger = logging.getLogger(__name__)
 # Simple lock so two HTTP requests can't kick off concurrent scans
 _scan_lock = threading.Lock()
 
+# Cancel event — set by POST /api/scan/stop, cleared when a new scan starts
+_scan_cancel = threading.Event()
+
 # ── Score history helpers ──────────────────────────────────────────────────────
 
 HISTORY_DAYS = [1, 2, 3, 4, 5, 7, 14]
@@ -385,10 +388,11 @@ def trigger_scan(
         if not _scan_lock.acquire(blocking=False):
             logger.warning("trigger_scan: lock already held, skipping duplicate run")
             return
+        _scan_cancel.clear()
         bg_db = SessionLocal()
         try:
             from ..scanner.engine import run_scan
-            run_id = run_scan(bg_db, limit=limit)
+            run_id = run_scan(bg_db, limit=limit, cancel_event=_scan_cancel)
             logger.info("background scan finished run_id=%s", run_id)
         except Exception as exc:
             logger.exception("background scan failed: %s", exc)
@@ -435,10 +439,11 @@ def trigger_scan_extensive(
         if not _scan_lock.acquire(blocking=False):
             logger.warning("trigger_scan_extensive: lock already held, skipping duplicate run")
             return
+        _scan_cancel.clear()
         bg_db = SessionLocal()
         try:
             from ..scanner.engine import run_scan_extensive
-            run_id = run_scan_extensive(bg_db, limit=limit)
+            run_id = run_scan_extensive(bg_db, limit=limit, cancel_event=_scan_cancel)
             logger.info("background extensive scan finished run_id=%s", run_id)
         except Exception as exc:
             logger.exception("background extensive scan failed: %s", exc)
@@ -476,7 +481,7 @@ def scan_status(db: Session = Depends(get_db)) -> dict:
     remaining = max(0, total - committed) if run.status == "running" else 0
 
     return {
-        "status": run.status,           # "running" | "completed" | "failed"
+        "status": run.status,           # "running" | "completed" | "failed" | "cancelled"
         "run_id": run.id,
         "started_at": run.started_at,
         "finished_at": run.finished_at,
@@ -486,6 +491,37 @@ def scan_status(db: Session = Depends(get_db)) -> dict:
         "tickers_errored": run.tickers_errored,
         "estimated_minutes_left": round(remaining / 35) if remaining > 0 else 0,
         "batch_size": 25,
+    }
+
+
+@router.post("/scan/stop")
+def stop_scan(db: Session = Depends(get_db)) -> dict:
+    """Cancel the currently running scan.
+
+    Sets the cancel flag — the scan loop checks it after each batch (≤25 tickers)
+    and stops cleanly, committing all results so far. The ScanRun status is set
+    to 'cancelled'. Returns immediately; the scan may finish its current batch
+    before actually stopping.
+    """
+    run = db.execute(
+        select(models.ScanRun).where(models.ScanRun.status == "running").limit(1)
+    ).scalar_one_or_none()
+
+    if run is None:
+        return {"status": "not_running", "message": "No scan is currently in progress."}
+
+    _scan_cancel.set()
+
+    scanned = db.execute(
+        select(func.count()).select_from(models.ScanResult)
+        .where(models.ScanResult.run_id == run.id)
+    ).scalar() or 0
+
+    return {
+        "status": "stop_requested",
+        "run_id": run.id,
+        "tickers_completed": scanned,
+        "message": f"Cancel signal sent. Scan will stop after its current batch. {scanned} tickers committed so far.",
     }
 
 

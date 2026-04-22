@@ -261,9 +261,10 @@ export default function Dashboard() {
       try {
         const status = await api.scanStatus();
         setScanProgress(status);
-        if (status.status === "completed" || status.status === "failed") {
+        if (status.status === "completed" || status.status === "failed" || status.status === "cancelled") {
           stopPolling();
           setScanning(false);
+          setScanMode(null);
           setScanProgress(null);
           if (status.status === "completed") {
             refreshData();
@@ -351,6 +352,17 @@ export default function Dashboard() {
       setScanMode(null);
       setScanProgress(null);
     }
+  };
+
+  const handleStopScan = async () => {
+    try {
+      await api.stopScan();
+    } catch {
+      // non-fatal — backend may already be finishing up
+    }
+    // Don't immediately clear scanning state — let the polling loop detect
+    // the "cancelled" status and clean up, so the progress label stays visible
+    // until the backend confirms it stopped.
   };
 
   const handleReloadUniverse = async () => {
@@ -664,20 +676,29 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="header-right">
-          <button
-            className={`scan-btn scan-btn-extensive${scanning ? " scanning" : ""}`}
-            onClick={handleRunExtensiveScan}
-            disabled={scanning}
-          >
-            {scanning && scanMode === "extensive" ? scanProgressLabel() : "Extensive Scan"}
-          </button>
-          <button
-            className={`scan-btn${scanning ? " scanning" : ""}`}
-            onClick={handleRunScan}
-            disabled={scanning}
-          >
-            {scanning && scanMode === "normal" ? scanProgressLabel() : "Run Scan"}
-          </button>
+          {scanning ? (
+            <>
+              <span className="scan-progress-label">{scanProgressLabel()}</span>
+              <button className="scan-btn scan-btn-stop" onClick={handleStopScan}>
+                Stop Scan
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                className="scan-btn scan-btn-extensive"
+                onClick={handleRunExtensiveScan}
+              >
+                Extensive Scan
+              </button>
+              <button
+                className="scan-btn"
+                onClick={handleRunScan}
+              >
+                Run Scan
+              </button>
+            </>
+          )}
           <div className="reload-universe-wrap">
             <button className="reload-universe-btn" onClick={handleReloadUniverse}>
               Reload Universe

@@ -1181,6 +1181,26 @@ body {
   color: #92400e !important;
 }
 
+.scan-btn-stop {
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+  animation: none !important;
+}
+
+.scan-btn-stop:hover {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #f87171 !important;
+}
+
+.scan-progress-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  align-self: center;
+  white-space: nowrap;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
 /* ── Premium Scanner view button ───────────────────────────────── */
 .prem-view-btn {
   display: inline-block;
