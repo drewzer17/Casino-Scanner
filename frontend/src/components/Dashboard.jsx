@@ -106,7 +106,8 @@ import PremiumScanner from "./PremiumScanner.jsx";
 import RangeScanner from "./RangeScanner.jsx";
 import ScoreCard from "./ScoreCard.jsx";
 import TickerModal from "./TickerModal.jsx";
-import MarketHealth from "./MarketHealth/index.jsx";
+// TODO: MarketHealth side-tabled — feature unfinished, restore when ready
+// import MarketHealth from "./MarketHealth/index.jsx";
 
 function toUtcDate(isoString) {
   if (!isoString) return null;
@@ -663,12 +664,14 @@ export default function Dashboard() {
             >
               {view === "asymmetric" ? "← Cards" : "⬟ Asymmetric Setups"}
             </button>
+            {/* TODO: MarketHealth side-tabled — restore button when feature is ready
             <button
               className={`mh-view-btn${view === "markethealth" ? " active" : ""}`}
               onClick={() => setView(v => v === "markethealth" ? "cards" : "markethealth")}
             >
               {view === "markethealth" ? "← Cards" : "⬡ Market Health"}
             </button>
+            */}
           </div>
           <div className="search-and-overview">
             <div className="search-wrap">
@@ -747,7 +750,8 @@ export default function Dashboard() {
       </div>
 
       {/* ── Mode Selector ── */}
-      {view !== "markethealth" && <div className="mode-selector">
+      {/* TODO: MarketHealth side-tabled — guard restored to always-true */}
+      {true && <div className="mode-selector">
         <div className="mode-btns">
           <button
             className={`mode-btn mode-btn-all${mode === "all" ? " active" : ""}`}
@@ -772,7 +776,8 @@ export default function Dashboard() {
       </div>}
 
       {/* ── Collapsible filter bar ── */}
-      {view !== "markethealth" && filtersOpen && (
+      {/* TODO: MarketHealth side-tabled — guard restored to always-true */}
+      {filtersOpen && (
         <div className="filter-bar">
           <div className="filter-toggles">
             {/* ASSET TYPE */}
@@ -978,7 +983,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {view !== "markethealth" && <TopMovers movers={movers} />}
+      {/* TODO: MarketHealth side-tabled — guard restored to always-true */}
+      {<TopMovers movers={movers} />}
 
       {view === "premium" ? (
         <PremiumScanner rows={viewRows} onRowClick={setSelectedRow}
@@ -989,9 +995,7 @@ export default function Dashboard() {
         <IvRampScanner rows={viewRows} onRowClick={setSelectedRow} />
       ) : view === "asymmetric" ? (
         <AsymmetricScanner rows={viewRows} onRowClick={setSelectedRow} />
-      ) : view === "markethealth" ? (
-        <MarketHealth />
-      ) : (
+      ) : /* TODO: MarketHealth side-tabled — render branch removed until feature is ready */ (
         <>
           <div className="tabs-row">
             {!showAll && <BucketTabs active={active} counts={counts} onChange={(k) => { setActive(k); setShowAll(false); }} />}
