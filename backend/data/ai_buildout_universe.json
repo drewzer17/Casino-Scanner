@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "total_tickers": 177,
+    "total_tickers": 181,
     "sources": {
       "Combined v2": "AI_Buildout_Master_Combined_v2.pdf \u2014 77 names, full canonical depth, Parts 1A-4B",
       "COMPLETE": "AI_Buildout_Sitreps_COMPLETE.pdf \u2014 93 names, batches 1-10",
@@ -477,8 +477,18 @@
       "source": "Combined v2"
     },
     {
+      "ticker": "IREN",
+      "company_name": "IREN Limited",
+      "source": "Combined v2"
+    },
+    {
       "ticker": "IRM",
       "company_name": "Iron Mountain",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "J",
+      "company_name": "Jacobs Solutions",
       "source": "COMPLETE"
     },
     {
@@ -647,6 +657,11 @@
       "source": "COMPLETE"
     },
     {
+      "ticker": "NVT",
+      "company_name": "nVent Electric",
+      "source": "Combined v2"
+    },
+    {
       "ticker": "OKLO",
       "company_name": "Oklo",
       "source": "COMPLETE"
@@ -739,6 +754,11 @@
     {
       "ticker": "ROK",
       "company_name": "Rockwell Automation",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "S",
+      "company_name": "SentinelOne",
       "source": "COMPLETE"
     },
     {
