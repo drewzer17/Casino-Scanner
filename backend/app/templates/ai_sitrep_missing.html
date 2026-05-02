@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sitrep Not Available</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f0f13;
+      --surface:   #18181f;
+      --border:    #2a2a35;
+      --text:      #e2e2e8;
+      --muted:     #8888a0;
+      --accent:    #a855f7;
+      --accent-dk: #7e22ce;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Nav bar ─────────────────────────────────── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      padding: 16px 28px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      background: transparent;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+    }
+    .back-btn:hover { background: var(--accent-dk); color: #fff; }
+
+    /* ── Center content ──────────────────────────── */
+    .center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 28px;
+      text-align: center;
+      gap: 16px;
+    }
+
+    .missing-icon {
+      font-size: 48px;
+      line-height: 1;
+      opacity: 0.4;
+    }
+
+    .missing-ticker {
+      font-size: 52px;
+      font-weight: 800;
+      font-family: "Courier New", Courier, monospace;
+      color: var(--accent);
+      letter-spacing: -0.01em;
+      opacity: 0.85;
+    }
+
+    .missing-company {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      opacity: 0.9;
+    }
+
+    .missing-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      margin-top: 8px;
+    }
+
+    .missing-desc {
+      font-size: 14px;
+      color: var(--muted);
+      max-width: 440px;
+      line-height: 1.7;
+    }
+
+    .missing-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      background: #1a0a2e;
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .missing-badge .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #6b7280;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <a class="back-btn" href="/ai-overview">← Back to AI Overview</a>
+  </div>
+
+  <div class="center">
+    <div class="missing-icon">📋</div>
+    <div class="missing-ticker" id="missing-ticker">—</div>
+    <div class="missing-company" id="missing-company"></div>
+    <div class="missing-title">Sitrep Not Yet Available</div>
+    <p class="missing-desc">
+      This ticker is part of the AI Buildout Universe but a full research sitrep
+      has not been parsed for it yet. Check back later or view the overview for
+      all available sitreps.
+    </p>
+    <div class="missing-badge">
+      <span class="dot"></span>
+      No sitrep in database
+    </div>
+  </div>
+
+  <script>
+    // Parse ticker from URL path: /ai-overview/TICKER
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+    const ticker = pathParts[pathParts.length - 1].toUpperCase();
+
+    document.title = "Sitrep Not Available — " + ticker;
+    document.getElementById("missing-ticker").textContent = ticker;
+
+    // Try to get company name from the tickers list
+    fetch("/api/ai-overview/tickers")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return;
+        const list = data.tickers || data;
+        const entry = list.find(t => t.ticker === ticker);
+        if (entry && entry.company_name) {
+          document.getElementById("missing-company").textContent = entry.company_name;
+        }
+      })
+      .catch(() => {});
+  </script>
+</body>
+</html>

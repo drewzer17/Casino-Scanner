@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Sitrep — Loading…</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f0f13;
+      --surface:   #18181f;
+      --border:    #2a2a35;
+      --text:      #e2e2e8;
+      --muted:     #8888a0;
+      --accent:    #a855f7;
+      --accent-dk: #7e22ce;
+      --green:     #3fc27f;
+      --red:       #e0525e;
+      --yellow:    #fbbf24;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Nav bar ─────────────────────────────────── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 28px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      background: transparent;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+    }
+    .back-btn:hover { background: var(--accent-dk); color: #fff; }
+    .last-updated {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* ── Hero header ─────────────────────────────── */
+    .hero {
+      padding: 36px 28px 28px;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-ticker {
+      font-size: 48px;
+      font-weight: 800;
+      font-family: "Courier New", Courier, monospace;
+      color: var(--accent);
+      letter-spacing: -0.01em;
+      line-height: 1;
+    }
+    .hero-company {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text);
+      margin-top: 8px;
+    }
+    .hero-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Content ─────────────────────────────────── */
+    .content {
+      max-width: 900px;
+      padding: 32px 28px 60px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    /* ── Section blocks ──────────────────────────── */
+    .section-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .section-header {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-icon {
+      font-size: 16px;
+      line-height: 1;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+    .section-body {
+      padding: 18px 20px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+
+    /* Section accent colors */
+    .sec-purple .section-header { background: #1a0a2e; }
+    .sec-purple .section-title  { color: var(--accent); }
+    .sec-red    .section-header { background: #1f0a0a; }
+    .sec-red    .section-title  { color: var(--red); }
+    .sec-green  .section-header { background: #071a10; }
+    .sec-green  .section-title  { color: var(--green); }
+
+    /* ── Hidden angles list ──────────────────────── */
+    .angles-list {
+      list-style: none;
+      padding: 14px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .angle-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+    .angle-num {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #2e1065;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+    }
+
+    /* ── Kill probability ────────────────────────── */
+    .kill-prob-row {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      padding: 18px 20px 8px;
+    }
+    .kill-prob-pct {
+      font-size: 42px;
+      font-weight: 800;
+      color: var(--accent);
+      font-family: "Courier New", Courier, monospace;
+      line-height: 1;
+    }
+    .kill-prob-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .kill-prob-horizon {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .kill-components {
+      padding: 6px 20px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .kill-component {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .kill-comp-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .kill-comp-pct {
+      font-weight: 600;
+      color: var(--text);
+    }
+    .kill-bar-bg {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .kill-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--accent-dk), var(--accent));
+      transition: width 0.4s ease;
+    }
+
+    /* ── Winners grid ────────────────────────────── */
+    .winners-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 18px 20px;
+    }
+    @media (max-width: 680px) {
+      .winners-grid { grid-template-columns: 1fr; }
+    }
+    .winner-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .winner-ticker {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+    }
+    .winner-rationale {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 5px;
+      line-height: 1.5;
+    }
+
+    /* ── Details (collapsible) ───────────────────── */
+    .detail-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .detail-block summary {
+      padding: 12px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .detail-block summary::-webkit-details-marker { display: none; }
+    .detail-block summary::before {
+      content: "▶";
+      font-size: 10px;
+      transition: transform 0.15s;
+    }
+    .detail-block[open] summary::before { transform: rotate(90deg); }
+    .detail-block summary:hover { color: var(--text); }
+    .detail-content {
+      padding: 0 20px 18px;
+      border-top: 1px solid var(--border);
+    }
+    .raw-pre {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.55;
+      margin-top: 14px;
+    }
+    .warnings-list {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .warning-item {
+      font-size: 12px;
+      color: var(--yellow);
+      background: #1c1600;
+      border: 1px solid #4a3800;
+      border-radius: 5px;
+      padding: 6px 10px;
+    }
+
+    /* ── Footer ──────────────────────────────────── */
+    .page-footer {
+      text-align: center;
+      padding: 20px;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Error / loading states ──────────────────── */
+    .state-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+      color: var(--muted);
+      gap: 12px;
+    }
+    .error-banner {
+      margin: 20px 28px;
+      padding: 14px 18px;
+      background: #3b0000;
+      border: 1px solid #ef4444;
+      border-radius: 8px;
+      color: #fca5a5;
+      font-size: 13px;
+      display: none;
+    }
+    .error-banner.visible { display: block; }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <a class="back-btn" href="/ai-overview">← Back to AI Overview</a>
+    <span class="last-updated" id="last-updated"></span>
+  </div>
+
+  <div id="error-banner" class="error-banner"></div>
+
+  <div id="loading" class="state-container">
+    <span>Loading sitrep…</span>
+  </div>
+
+  <div id="main" style="display:none">
+    <div class="hero">
+      <div class="hero-ticker" id="hero-ticker"></div>
+      <div class="hero-company" id="hero-company"></div>
+      <div class="hero-sub">AI Buildout Sitrep</div>
+    </div>
+
+    <div class="content">
+
+      <!-- What They Do -->
+      <div class="section-block sec-purple" id="sec-what-they-do">
+        <div class="section-header">
+          <span class="section-icon">🏢</span>
+          <span class="section-title">What They Do</span>
+        </div>
+        <div class="section-body" id="body-what-they-do"></div>
+      </div>
+
+      <!-- Hidden Angles -->
+      <div class="section-block sec-purple" id="sec-hidden-angles">
+        <div class="section-header">
+          <span class="section-icon">🔍</span>
+          <span class="section-title">Hidden Angles</span>
+        </div>
+        <ul class="angles-list" id="body-hidden-angles"></ul>
+      </div>
+
+      <!-- Bear Case -->
+      <div class="section-block sec-red">
+        <div class="section-header">
+          <span class="section-icon">🐻</span>
+          <span class="section-title">Bear Case</span>
+        </div>
+        <div class="section-body" id="body-bear-case"></div>
+      </div>
+
+      <!-- Contrarian Case -->
+      <div class="section-block sec-green">
+        <div class="section-header">
+          <span class="section-icon">💡</span>
+          <span class="section-title">Contrarian Case</span>
+        </div>
+        <div class="section-body" id="body-contrarian-case"></div>
+      </div>
+
+      <!-- What Kills It -->
+      <div class="section-block sec-red">
+        <div class="section-header">
+          <span class="section-icon">💀</span>
+          <span class="section-title">What Kills It</span>
+        </div>
+        <div class="section-body" id="body-what-kills-it"></div>
+      </div>
+
+      <!-- Kill Probability -->
+      <div class="section-block sec-purple" id="sec-kill-prob">
+        <div class="section-header">
+          <span class="section-icon">📊</span>
+          <span class="section-title">Kill Probability</span>
+        </div>
+        <div class="kill-prob-row">
+          <div class="kill-prob-pct" id="kill-prob-pct">—</div>
+          <div class="kill-prob-meta">
+            <span class="kill-prob-horizon" id="kill-prob-horizon"></span>
+          </div>
+        </div>
+        <div class="kill-components" id="kill-components"></div>
+      </div>
+
+      <!-- Winners -->
+      <div class="section-block sec-purple" id="sec-winners">
+        <div class="section-header">
+          <span class="section-icon">🏆</span>
+          <span class="section-title">Who Wins If the Kill Fires</span>
+        </div>
+        <div class="winners-grid" id="winners-grid"></div>
+      </div>
+
+      <!-- Parse Warnings (collapsed) -->
+      <details class="detail-block" id="sec-warnings" style="display:none">
+        <summary>⚠ Parse Warnings</summary>
+        <div class="detail-content">
+          <div class="warnings-list" id="warnings-list"></div>
+        </div>
+      </details>
+
+      <!-- Raw Text (collapsed) -->
+      <details class="detail-block">
+        <summary>📄 Raw Source Text</summary>
+        <div class="detail-content">
+          <pre class="raw-pre" id="raw-text"></pre>
+        </div>
+      </details>
+
+    </div><!-- .content -->
+  </div><!-- #main -->
+
+  <div class="page-footer" id="page-footer" style="display:none">
+    Source: AI_Buildout_Ultimate_Master_Final
+  </div>
+
+  <script>
+    // Parse ticker from URL path: /ai-overview/TICKER
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+    const ticker = pathParts[pathParts.length - 1].toUpperCase();
+
+    document.title = "AI Sitrep — " + ticker;
+
+    function showError(msg) {
+      const banner = document.getElementById("error-banner");
+      banner.textContent = msg;
+      banner.classList.add("visible");
+      document.getElementById("loading").style.display = "none";
+    }
+
+    function setText(id, val) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val || "—";
+    }
+
+    function renderKillProb(data) {
+      const lo = data.kill_probability_low;
+      const hi = data.kill_probability_high;
+      const hr = data.kill_horizon_months;
+
+      const pctEl = document.getElementById("kill-prob-pct");
+      if (lo != null && hi != null) {
+        pctEl.textContent = lo + "–" + hi + "%";
+      } else if (lo != null) {
+        pctEl.textContent = lo + "%";
+      } else {
+        pctEl.textContent = "—";
+      }
+
+      const horizonEl = document.getElementById("kill-prob-horizon");
+      if (hr) {
+        horizonEl.textContent = "over " + hr + " months";
+      }
+
+      const comps = data.kill_components;
+      const container = document.getElementById("kill-components");
+      if (!comps || !Array.isArray(comps) || comps.length === 0) {
+        container.style.display = "none";
+        return;
+      }
+      container.innerHTML = comps.map(c => {
+        const label = c.label || c.name || "Component";
+        const low   = c.low  != null ? c.low  : (c.pct_low  || 0);
+        const high  = c.high != null ? c.high : (c.pct_high || low);
+        const midPct = (low + high) / 2;
+        return `
+          <div class="kill-component">
+            <div class="kill-comp-label-row">
+              <span>${label}</span>
+              <span class="kill-comp-pct">${low}–${high}%</span>
+            </div>
+            <div class="kill-bar-bg">
+              <div class="kill-bar-fill" style="width:${Math.min(midPct, 100)}%"></div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderHiddenAngles(angles) {
+      const list = document.getElementById("body-hidden-angles");
+      if (!angles || !Array.isArray(angles) || angles.length === 0) {
+        document.getElementById("sec-hidden-angles").style.display = "none";
+        return;
+      }
+      list.innerHTML = angles.map((a, i) => {
+        const text = typeof a === "string" ? a : (a.text || a.angle || JSON.stringify(a));
+        return `<li class="angle-item">
+          <span class="angle-num">${i + 1}</span>
+          <span>${text}</span>
+        </li>`;
+      }).join("");
+    }
+
+    function renderWinners(winners) {
+      const grid = document.getElementById("winners-grid");
+      if (!winners || !Array.isArray(winners) || winners.length === 0) {
+        document.getElementById("sec-winners").style.display = "none";
+        return;
+      }
+      grid.innerHTML = winners.map(w => {
+        const t = w.ticker || w;
+        const r = w.rationale || "";
+        return `<div class="winner-card">
+          <div class="winner-ticker">${t}</div>
+          ${r ? `<div class="winner-rationale">${r}</div>` : ""}
+        </div>`;
+      }).join("");
+    }
+
+    function renderWarnings(warnings) {
+      if (!warnings || !Array.isArray(warnings) || warnings.length === 0) return;
+      const sec = document.getElementById("sec-warnings");
+      sec.style.display = "";
+      document.getElementById("warnings-list").innerHTML =
+        warnings.map(w => `<div class="warning-item">${w}</div>`).join("");
+    }
+
+    async function loadSitrep() {
+      try {
+        const res = await fetch("/api/ai-overview/sitrep/" + ticker);
+        if (res.status === 404) {
+          showError("Sitrep not found for " + ticker + ".");
+          return;
+        }
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const d = await res.json();
+
+        document.title = "AI Sitrep — " + d.ticker;
+        document.getElementById("hero-ticker").textContent  = d.ticker;
+        document.getElementById("hero-company").textContent = d.company_name || "";
+
+        if (d.last_updated) {
+          document.getElementById("last-updated").textContent = "Last updated: " + d.last_updated;
+        }
+
+        setText("body-what-they-do",    d.what_they_do);
+        setText("body-bear-case",       d.bear_case);
+        setText("body-contrarian-case", d.contrarian_case);
+        setText("body-what-kills-it",   d.what_kills_it);
+
+        renderHiddenAngles(d.hidden_angles);
+        renderKillProb(d);
+        renderWinners(d.winners);
+        renderWarnings(d.parse_warnings);
+
+        document.getElementById("raw-text").textContent = d.raw_text || "";
+
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("main").style.display    = "";
+        document.getElementById("page-footer").style.display = "";
+
+      } catch (err) {
+        showError("Failed to load sitrep for " + ticker + ": " + err.message);
+      }
+    }
+
+    loadSitrep();
+  </script>
+</body>
+</html>

@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from .. import models
@@ -1414,10 +1414,53 @@ _AI_UNIVERSE_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "ai
 
 
 @router.get("/ai-overview/tickers", include_in_schema=True)
-def get_ai_overview_tickers():
-    """Return the full AI buildout ticker universe from the static JSON file."""
+def get_ai_overview_tickers(db: Session = Depends(get_db)):
+    """Return the full AI buildout ticker universe merged with sitrep parse status."""
     if not _AI_UNIVERSE_PATH.exists():
         raise HTTPException(status_code=404, detail="AI universe data file not found")
     with open(_AI_UNIVERSE_PATH, "r") as f:
         data = json.load(f)
+
+    # Fetch sections_parsed for all sitreps in one query and merge
+    rows = db.execute(text("SELECT ticker, sections_parsed FROM sitreps")).fetchall()
+    sitrep_map: dict[str, int] = {r.ticker: r.sections_parsed for r in rows}
+    for t in data.get("tickers", []):
+        t["sections_parsed"] = sitrep_map.get(t["ticker"])  # None = no sitrep
+
+    return data
+
+
+@router.get("/ai-overview/sitrep/{ticker}", include_in_schema=True)
+def get_ai_sitrep_detail(ticker: str, db: Session = Depends(get_db)):
+    """Return the full parsed sitrep for a single ticker."""
+    ticker = ticker.upper()
+    row = db.execute(
+        text("SELECT * FROM sitreps WHERE ticker = :t"),
+        {"t": ticker},
+    ).fetchone()
+
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"No sitrep found for {ticker}")
+
+    data = dict(row._mapping)
+
+    # JSONB fields come back as Python objects from psycopg2; normalise any
+    # edge cases where they might arrive as a raw string.
+    for field in ("hidden_angles", "kill_components", "winners", "parse_warnings"):
+        val = data.get(field)
+        if isinstance(val, str):
+            try:
+                data[field] = json.loads(val)
+            except Exception:
+                data[field] = None
+        # psycopg2 already deserialises JSONB → list/dict; leave as-is otherwise
+
+    # Serialise non-JSON-native types
+    if data.get("last_updated") is not None:
+        data["last_updated"] = str(data["last_updated"])
+    if data.get("created_at") is not None:
+        data["created_at"] = data["created_at"].isoformat()
+    if data.get("updated_at") is not None:
+        data["updated_at"] = data["updated_at"].isoformat()
+
     return data

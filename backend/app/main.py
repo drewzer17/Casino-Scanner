@@ -7,10 +7,11 @@ Serves the React SPA for all non-API routes.
 """
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -89,6 +90,51 @@ async def serve_ai_overview() -> FileResponse | dict:
             },
         )
     return {"error": "AI overview template not found"}
+
+
+# ── AI Overview ticker detail pages ───────────────────────────────────────────
+# Registered BEFORE the catch-all.  Decides detail vs missing vs 404.
+_AI_UNIVERSE_PATH = _REPO_ROOT / "backend" / "data" / "ai_buildout_universe.json"
+
+
+@app.get("/ai-overview/{ticker}", include_in_schema=False, response_model=None)
+async def serve_ai_sitrep(ticker: str) -> FileResponse:
+    ticker = ticker.upper()
+
+    # Load universe to validate the ticker is known
+    if not _AI_UNIVERSE_PATH.exists():
+        raise HTTPException(status_code=404, detail="Universe data not found")
+    with open(_AI_UNIVERSE_PATH) as f:
+        universe = json.load(f)
+    known = {t["ticker"] for t in universe.get("tickers", [])}
+    if ticker not in known:
+        raise HTTPException(status_code=404, detail=f"Ticker {ticker} not in AI universe")
+
+    # Check whether a sitrep exists in the DB
+    from .database import SessionLocal
+    from sqlalchemy import text as _text
+    db = SessionLocal()
+    try:
+        row = db.execute(_text("SELECT 1 FROM sitreps WHERE ticker = :t"), {"t": ticker}).fetchone()
+        has_sitrep = row is not None
+    except Exception:
+        has_sitrep = False
+    finally:
+        db.close()
+
+    template = "ai_sitrep_detail.html" if has_sitrep else "ai_sitrep_missing.html"
+    html = _TEMPLATES_DIR / template
+    if not html.exists():
+        raise HTTPException(status_code=500, detail=f"Template {template} not found")
+    return FileResponse(
+        str(html),
+        media_type="text/html",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
 
 
 # ── SPA catch-all ──────────────────────────────────────────────────────────────

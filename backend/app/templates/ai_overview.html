@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Buildout Universe — 177 Tickers</title>
+  <title>AI Buildout Universe — 181 Tickers</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -16,6 +16,8 @@
       --accent:    #a855f7;
       --accent-dk: #7e22ce;
       --green:     #22c55e;
+      --red:       #e0525e;
+      --yellow:    #fbbf24;
       --row-hover: #1e1e28;
     }
 
@@ -39,13 +41,11 @@
       gap: 16px;
       flex-wrap: wrap;
     }
-
     .page-header-left {
       display: flex;
       align-items: center;
       gap: 14px;
     }
-
     .back-btn {
       display: inline-flex;
       align-items: center;
@@ -62,14 +62,12 @@
       transition: background 0.15s, color 0.15s;
     }
     .back-btn:hover { background: var(--accent-dk); color: #fff; }
-
     .page-title {
       font-size: 20px;
       font-weight: 700;
       color: var(--text);
       letter-spacing: -0.01em;
     }
-
     .ticker-count-badge {
       display: inline-flex;
       align-items: center;
@@ -91,7 +89,6 @@
       border-bottom: 1px solid var(--border);
       flex-wrap: wrap;
     }
-
     .search-input {
       flex: 1;
       min-width: 220px;
@@ -107,7 +104,6 @@
     }
     .search-input::placeholder { color: var(--muted); }
     .search-input:focus { border-color: var(--accent); }
-
     .source-filter {
       display: flex;
       align-items: center;
@@ -129,7 +125,6 @@
       cursor: pointer;
     }
     .source-select:focus { border-color: var(--accent); }
-
     .result-count {
       margin-left: auto;
       font-size: 12px;
@@ -143,17 +138,12 @@
       padding: 0 28px 40px;
       margin-top: 4px;
     }
-
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 8px;
     }
-
-    thead tr {
-      border-bottom: 2px solid var(--border);
-    }
-
+    thead tr { border-bottom: 2px solid var(--border); }
     th {
       padding: 10px 14px;
       text-align: left;
@@ -167,8 +157,8 @@
       cursor: pointer;
       transition: color 0.15s;
     }
-    th:hover { color: var(--text); }
-
+    th.th-nodot { cursor: default; }
+    th:not(.th-nodot):hover { color: var(--text); }
     th .sort-icon {
       display: inline-block;
       margin-left: 4px;
@@ -177,25 +167,16 @@
     }
     th.sorted .sort-icon { opacity: 1; color: var(--accent); }
     th.sorted { color: var(--accent); }
-
     tbody tr {
       border-bottom: 1px solid var(--border);
       transition: background 0.1s;
+      cursor: pointer;
     }
     tbody tr:hover { background: var(--row-hover); }
+    td { padding: 10px 14px; font-size: 13px; }
 
-    td {
-      padding: 10px 14px;
-      font-size: 13px;
-    }
-
-    .td-num {
-      color: var(--muted);
-      font-size: 12px;
-      width: 48px;
-    }
-
-    .td-ticker {
+    .td-num     { color: var(--muted); font-size: 12px; width: 48px; }
+    .td-ticker  {
       font-weight: 700;
       font-family: "Courier New", Courier, monospace;
       font-size: 14px;
@@ -203,11 +184,22 @@
       letter-spacing: 0.02em;
       width: 80px;
     }
+    .td-company { color: var(--text); }
+    .td-dot     { width: 60px; text-align: center; }
 
-    .td-company {
-      color: var(--text);
+    /* Research dot */
+    .rdot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      vertical-align: middle;
     }
+    .rdot-green  { background: var(--green); box-shadow: 0 0 4px rgba(34,197,94,0.5); }
+    .rdot-yellow { background: var(--yellow); box-shadow: 0 0 4px rgba(251,191,36,0.5); }
+    .rdot-gray   { background: #6b7280; }
 
+    /* Source badges */
     .source-badge {
       display: inline-block;
       padding: 2px 9px;
@@ -216,19 +208,17 @@
       font-weight: 600;
       white-space: nowrap;
     }
-    .source-badge.combined  { background: #1e3a5f; color: #60a5fa; border: 1px solid #3b82f6; }
-    .source-badge.complete  { background: #14532d; color: #4ade80; border: 1px solid #22c55e; }
+    .source-badge.combined   { background: #1e3a5f; color: #60a5fa; border: 1px solid #3b82f6; }
+    .source-badge.complete   { background: #14532d; color: #4ade80; border: 1px solid #22c55e; }
     .source-badge.supplement { background: #4a1d96; color: #c084fc; border: 1px solid #a855f7; }
 
-    /* ── Empty / loading state ───────────────────── */
+    /* ── State / error ───────────────────────────── */
     .state-row td {
       text-align: center;
       padding: 48px;
       color: var(--muted);
       font-size: 14px;
     }
-
-    /* ── Error banner ────────────────────────────── */
     .error-banner {
       margin: 20px 28px;
       padding: 14px 18px;
@@ -244,41 +234,31 @@
 </head>
 <body>
 
-  <!-- Header -->
   <div class="page-header">
     <div class="page-header-left">
       <a class="back-btn" href="/">← Back to Scanner</a>
       <h1 class="page-title">AI Buildout Universe</h1>
-      <span class="ticker-count-badge" id="badge">177 Tickers</span>
+      <span class="ticker-count-badge" id="badge">181 Tickers</span>
     </div>
   </div>
 
-  <!-- Controls -->
   <div class="controls-bar">
-    <input
-      id="search"
-      class="search-input"
-      type="text"
-      placeholder="Filter by ticker or company…"
-      autocomplete="off"
-      spellcheck="false"
-    />
+    <input id="search" class="search-input" type="text"
+      placeholder="Filter by ticker or company…" autocomplete="off" spellcheck="false" />
     <div class="source-filter">
       <label for="source-select">Source:</label>
       <select id="source-select" class="source-select">
         <option value="">All Sources</option>
-        <option value="Combined v2">Combined v2 (77)</option>
-        <option value="COMPLETE">COMPLETE (93)</option>
+        <option value="Combined v2">Combined v2 (79)</option>
+        <option value="COMPLETE">COMPLETE (95)</option>
         <option value="Final Supplement">Final Supplement (7)</option>
       </select>
     </div>
     <span class="result-count" id="result-count"></span>
   </div>
 
-  <!-- Error banner -->
   <div class="error-banner" id="error-banner"></div>
 
-  <!-- Table -->
   <div class="table-wrap">
     <table id="ticker-table">
       <thead>
@@ -287,27 +267,26 @@
           <th data-col="ticker" class="sorted">Ticker <span class="sort-icon">↑</span></th>
           <th data-col="company_name">Company <span class="sort-icon">↕</span></th>
           <th data-col="source">Source <span class="sort-icon">↕</span></th>
+          <th class="td-dot th-nodot">Research</th>
         </tr>
       </thead>
       <tbody id="table-body">
-        <tr class="state-row"><td colspan="4">Loading…</td></tr>
+        <tr class="state-row"><td colspan="5">Loading…</td></tr>
       </tbody>
     </table>
   </div>
 
   <script>
-    // ── State ───────────────────────────────────────────────────────────────────
-    let allTickers  = [];
-    let sortCol     = "ticker";
-    let sortDir     = 1;   // 1 = asc, -1 = desc
-    let filterText  = "";
+    let allTickers   = [];
+    let sortCol      = "ticker";
+    let sortDir      = 1;
+    let filterText   = "";
     let filterSource = "";
 
-    // ── Fetch data ──────────────────────────────────────────────────────────────
     async function loadTickers() {
       try {
         const res = await fetch("/api/ai-overview/tickers");
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
         allTickers = data.tickers || data;
         document.getElementById("badge").textContent = allTickers.length + " Tickers";
@@ -317,14 +296,12 @@
         banner.textContent = "Failed to load tickers: " + err.message;
         banner.classList.add("visible");
         document.getElementById("table-body").innerHTML =
-          '<tr class="state-row"><td colspan="4">Error loading data.</td></tr>';
+          '<tr class="state-row"><td colspan="5">Error loading data.</td></tr>';
       }
     }
 
-    // ── Sort ────────────────────────────────────────────────────────────────────
     function sortedFiltered() {
-      let rows = allTickers.map((t, i) => ({ ...t, idx: i + 1 }));
-
+      let rows = allTickers.map((t, i) => Object.assign({}, t, { idx: i + 1 }));
       if (filterText) {
         const q = filterText.toLowerCase();
         rows = rows.filter(r =>
@@ -332,89 +309,85 @@
           r.company_name.toLowerCase().includes(q)
         );
       }
-
       if (filterSource) {
         rows = rows.filter(r => r.source === filterSource);
       }
-
       rows.sort((a, b) => {
-        const av = a[sortCol] ?? "";
-        const bv = b[sortCol] ?? "";
+        const av = a[sortCol] != null ? a[sortCol] : "";
+        const bv = b[sortCol] != null ? b[sortCol] : "";
         if (typeof av === "number" && typeof bv === "number") return sortDir * (av - bv);
         return sortDir * String(av).localeCompare(String(bv), undefined, { numeric: true });
       });
-
       return rows;
     }
 
-    // ── Source badge ────────────────────────────────────────────────────────────
     function sourceBadge(source) {
-      if (source === "Combined v2")      return `<span class="source-badge combined">Combined v2</span>`;
-      if (source === "COMPLETE")         return `<span class="source-badge complete">COMPLETE</span>`;
-      if (source === "Final Supplement") return `<span class="source-badge supplement">Final Supplement</span>`;
-      return `<span class="source-badge">${source}</span>`;
+      if (source === "Combined v2")
+        return '<span class="source-badge combined">Combined v2</span>';
+      if (source === "COMPLETE")
+        return '<span class="source-badge complete">COMPLETE</span>';
+      if (source === "Final Supplement")
+        return '<span class="source-badge supplement">Final Supplement</span>';
+      return '<span class="source-badge">' + source + '</span>';
     }
 
-    // ── Render ──────────────────────────────────────────────────────────────────
+    function researchDot(sections_parsed) {
+      if (sections_parsed == null)
+        return '<span class="rdot rdot-gray" title="Sitrep not yet available"></span>';
+      if (sections_parsed === 7)
+        return '<span class="rdot rdot-green" title="7/7 sections"></span>';
+      return '<span class="rdot rdot-yellow" title="' + sections_parsed + '/7 sections"></span>';
+    }
+
     function render() {
-      const rows = sortedFiltered();
+      const rows  = sortedFiltered();
       const tbody = document.getElementById("table-body");
 
       document.getElementById("result-count").textContent =
         rows.length === allTickers.length
-          ? `${rows.length} tickers`
-          : `${rows.length} of ${allTickers.length} tickers`;
+          ? rows.length + " tickers"
+          : rows.length + " of " + allTickers.length + " tickers";
 
       if (rows.length === 0) {
-        tbody.innerHTML = '<tr class="state-row"><td colspan="4">No tickers match your filter.</td></tr>';
+        tbody.innerHTML = '<tr class="state-row"><td colspan="5">No tickers match your filter.</td></tr>';
         return;
       }
 
-      tbody.innerHTML = rows.map(r => `
-        <tr>
-          <td class="td-num">${r.idx}</td>
-          <td class="td-ticker">${r.ticker}</td>
-          <td class="td-company">${r.company_name}</td>
-          <td>${sourceBadge(r.source)}</td>
-        </tr>
-      `).join("");
+      tbody.innerHTML = rows.map(r =>
+        '<tr onclick="window.location=\'/ai-overview/' + r.ticker + '\'">' +
+          '<td class="td-num">' + r.idx + '</td>' +
+          '<td class="td-ticker">' + r.ticker + '</td>' +
+          '<td class="td-company">' + r.company_name + '</td>' +
+          '<td>' + sourceBadge(r.source) + '</td>' +
+          '<td class="td-dot">' + researchDot(r.sections_parsed) + '</td>' +
+        '</tr>'
+      ).join("");
     }
 
-    // ── Sort click ──────────────────────────────────────────────────────────────
     document.querySelectorAll("th[data-col]").forEach(th => {
       th.addEventListener("click", () => {
         const col = th.dataset.col;
-        if (sortCol === col) {
-          sortDir = -sortDir;
-        } else {
-          sortCol = col;
-          sortDir = 1;
-        }
-
-        // Update header icons
+        if (sortCol === col) { sortDir = -sortDir; }
+        else { sortCol = col; sortDir = 1; }
         document.querySelectorAll("th[data-col]").forEach(h => {
           h.classList.remove("sorted");
           h.querySelector(".sort-icon").textContent = "↕";
         });
         th.classList.add("sorted");
         th.querySelector(".sort-icon").textContent = sortDir === 1 ? "↑" : "↓";
-
         render();
       });
     });
 
-    // ── Filter inputs ───────────────────────────────────────────────────────────
     document.getElementById("search").addEventListener("input", e => {
       filterText = e.target.value.trim();
       render();
     });
-
     document.getElementById("source-select").addEventListener("change", e => {
       filterSource = e.target.value;
       render();
     });
 
-    // ── Kick off ────────────────────────────────────────────────────────────────
     loadTickers();
   </script>
 </body>
