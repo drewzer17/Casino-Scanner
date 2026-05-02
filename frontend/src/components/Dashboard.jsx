@@ -106,6 +106,7 @@ import PremiumScanner from "./PremiumScanner.jsx";
 import RangeScanner from "./RangeScanner.jsx";
 import ScoreCard from "./ScoreCard.jsx";
 import TickerModal from "./TickerModal.jsx";
+import MarketHealth from "./MarketHealth/index.jsx";
 
 function toUtcDate(isoString) {
   if (!isoString) return null;
@@ -197,7 +198,7 @@ export default function Dashboard() {
   const [premTimeframe, setPremTimeframe] = useState(30);
   const [showAll, setShowAll] = useState(false);
   const [asymOnly, setAsymOnly] = useState(false);
-  const [view, setView] = useState("cards"); // "cards" | "premium" | "range" | "ivramp" | "asymmetric"
+  const [view, setView] = useState("cards"); // "cards" | "premium" | "range" | "ivramp" | "asymmetric" | "markethealth"
   const [scanMode, setScanMode] = useState(null); // "normal" | "extensive" | null
   const [sourceFilter, setSourceFilter] = useState("all");
   const [assetTypeFilter, setAssetTypeFilter] = useState("all"); // "all" | "stocks" | "etfs"
@@ -662,20 +663,31 @@ export default function Dashboard() {
             >
               {view === "asymmetric" ? "← Cards" : "⬟ Asymmetric Setups"}
             </button>
+            <button
+              className={`mh-view-btn${view === "markethealth" ? " active" : ""}`}
+              onClick={() => setView(v => v === "markethealth" ? "cards" : "markethealth")}
+            >
+              {view === "markethealth" ? "← Cards" : "⬡ Market Health"}
+            </button>
           </div>
-          <div className="search-wrap">
-            <input
-              className="search-input"
-              type="text"
-              placeholder="Search ticker or company…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-            />
-            {searchQuery && (
-              <button className="search-clear" onClick={() => setSearchQuery("")}>✕</button>
-            )}
+          <div className="search-and-overview">
+            <div className="search-wrap">
+              <input
+                className="search-input"
+                type="text"
+                placeholder="Search ticker or company…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              {searchQuery && (
+                <button className="search-clear" onClick={() => setSearchQuery("")}>✕</button>
+              )}
+            </div>
+            <a href="/ai-overview" className="ai-overview-btn" target="_blank" rel="noreferrer">
+              AI Overview
+            </a>
           </div>
         </div>
         <div className="header-right">
@@ -735,7 +747,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Mode Selector ── */}
-      <div className="mode-selector">
+      {view !== "markethealth" && <div className="mode-selector">
         <div className="mode-btns">
           <button
             className={`mode-btn mode-btn-all${mode === "all" ? " active" : ""}`}
@@ -757,10 +769,10 @@ export default function Dashboard() {
           >{filtersOpen ? "▲ Filters" : "▼ Filters"}</button>
           <button className="filter-reset-btn" onClick={resetFilters}>Reset</button>
         </div>
-      </div>
+      </div>}
 
       {/* ── Collapsible filter bar ── */}
-      {filtersOpen && (
+      {view !== "markethealth" && filtersOpen && (
         <div className="filter-bar">
           <div className="filter-toggles">
             {/* ASSET TYPE */}
@@ -966,7 +978,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <TopMovers movers={movers} />
+      {view !== "markethealth" && <TopMovers movers={movers} />}
 
       {view === "premium" ? (
         <PremiumScanner rows={viewRows} onRowClick={setSelectedRow}
@@ -977,6 +989,8 @@ export default function Dashboard() {
         <IvRampScanner rows={viewRows} onRowClick={setSelectedRow} />
       ) : view === "asymmetric" ? (
         <AsymmetricScanner rows={viewRows} onRowClick={setSelectedRow} />
+      ) : view === "markethealth" ? (
+        <MarketHealth />
       ) : (
         <>
           <div className="tabs-row">

@@ -6,6 +6,7 @@ import logging
 import math
 import threading
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import func, select
@@ -1405,3 +1406,18 @@ def debug_chain(ticker: str) -> dict:
         "expiry_count": len(expirations),
         "chains": chains,
     }
+
+
+# ── AI Overview ────────────────────────────────────────────────────────────────
+
+_AI_UNIVERSE_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "ai_buildout_universe.json"
+
+
+@router.get("/ai-overview/tickers", include_in_schema=True)
+def get_ai_overview_tickers():
+    """Return the full AI buildout ticker universe from the static JSON file."""
+    if not _AI_UNIVERSE_PATH.exists():
+        raise HTTPException(status_code=404, detail="AI universe data file not found")
+    with open(_AI_UNIVERSE_PATH, "r") as f:
+        data = json.load(f)
+    return data

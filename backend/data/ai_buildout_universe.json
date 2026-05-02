@@ -1,0 +1,900 @@
+{
+  "metadata": {
+    "total_tickers": 177,
+    "sources": {
+      "Combined v2": "AI_Buildout_Master_Combined_v2.pdf \u2014 77 names, full canonical depth, Parts 1A-4B",
+      "COMPLETE": "AI_Buildout_Sitreps_COMPLETE.pdf \u2014 93 names, batches 1-10",
+      "Final Supplement": "AI_Buildout_Final_Supplement_v2.pdf \u2014 7 names, Tier 1 + Tier 2 adds (CMI, CAT, D, SBGSY, ABB, FTV, GE)"
+    },
+    "merged_pdf": "AI_Buildout_Ultimate_Master_Final_177names.pdf \u2014 177 unique tickers, 381 pages",
+    "generated": "May 2, 2026",
+    "purpose": "AI Research module ticker universe for Casino Scanner integration"
+  },
+  "tickers": [
+    {
+      "ticker": "AAOI",
+      "company_name": "Applied Optoelectronics",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "AAON",
+      "company_name": "AAON Inc.",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "ABB",
+      "company_name": "ABB Ltd",
+      "source": "Final Supplement"
+    },
+    {
+      "ticker": "ACLS",
+      "company_name": "Axcelis Technologies",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "ADI",
+      "company_name": "Analog Devices",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "AEHR",
+      "company_name": "AEHR Test Systems",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "AGX",
+      "company_name": "Argan Inc.",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "AKAM",
+      "company_name": "Akamai Technologies",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "ALAB",
+      "company_name": "Astera Labs",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "AMAT",
+      "company_name": "Applied Materials",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "AMBA",
+      "company_name": "Ambarella",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "AMD",
+      "company_name": "Advanced Micro Devices",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "AMKR",
+      "company_name": "Amkor Technology",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "AMT",
+      "company_name": "American Tower",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "AMZN",
+      "company_name": "Amazon.com",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "ANET",
+      "company_name": "Arista Networks",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "APD",
+      "company_name": "Air Products and Chemicals",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "APH",
+      "company_name": "Amphenol",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "APLD",
+      "company_name": "Applied Digital",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "ARM",
+      "company_name": "ARM Holdings",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "ASML",
+      "company_name": "ASML Holding",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "ASX",
+      "company_name": "ASE Technology Holding",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "AVGO",
+      "company_name": "Broadcom",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "AZZ",
+      "company_name": "AZZ Inc.",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "BABA",
+      "company_name": "Alibaba Group",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "BE",
+      "company_name": "Bloom Energy",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "BHE",
+      "company_name": "Benchmark Electronics",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "BIDU",
+      "company_name": "Baidu",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "BITF",
+      "company_name": "Bitfarms",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "BKR",
+      "company_name": "Baker Hughes",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "BTDR",
+      "company_name": "Bitdeer Technologies",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "BWXT",
+      "company_name": "BWX Technologies",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "CAMT",
+      "company_name": "Camtek",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "CARR",
+      "company_name": "Carrier Global",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "CAT",
+      "company_name": "Caterpillar Inc.",
+      "source": "Final Supplement"
+    },
+    {
+      "ticker": "CCJ",
+      "company_name": "Cameco",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "CDNS",
+      "company_name": "Cadence Design Systems",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "CEG",
+      "company_name": "Constellation Energy",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "CFLT",
+      "company_name": "Confluent",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "CIEN",
+      "company_name": "Ciena Corporation",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "CIFR",
+      "company_name": "Cipher Digital",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "CLS",
+      "company_name": "Celestica",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "CMI",
+      "company_name": "Cummins Inc.",
+      "source": "Final Supplement"
+    },
+    {
+      "ticker": "COHR",
+      "company_name": "Coherent Corp",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "CORZ",
+      "company_name": "Core Scientific",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "CRDO",
+      "company_name": "Credo Technology",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "CRWD",
+      "company_name": "CrowdStrike",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "CRWV",
+      "company_name": "CoreWeave",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "CSCO",
+      "company_name": "Cisco Systems",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "D",
+      "company_name": "Dominion Energy",
+      "source": "Final Supplement"
+    },
+    {
+      "ticker": "DBRG",
+      "company_name": "DigitalBridge Group",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "DD",
+      "company_name": "DuPont",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "DDOG",
+      "company_name": "Datadog",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "DELL",
+      "company_name": "Dell Technologies",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "DLR",
+      "company_name": "Digital Realty",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "DOV",
+      "company_name": "Dover Corporation",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "DY",
+      "company_name": "Dycom Industries",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "ECL",
+      "company_name": "Ecolab",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "EME",
+      "company_name": "EMCOR Group",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "EMR",
+      "company_name": "Emerson Electric",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "ENTG",
+      "company_name": "Entegris",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "EQIX",
+      "company_name": "Equinix",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "ESI",
+      "company_name": "Element Solutions",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "ESTC",
+      "company_name": "Elastic",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "ETN",
+      "company_name": "Eaton Corporation",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "FIX",
+      "company_name": "Comfort Systems USA",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "FLEX",
+      "company_name": "Flex Ltd.",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "FLNC",
+      "company_name": "Fluence Energy",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "FLR",
+      "company_name": "Fluor",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "FN",
+      "company_name": "Fabrinet",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "FTNT",
+      "company_name": "Fortinet",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "FTV",
+      "company_name": "Fortive Corporation",
+      "source": "Final Supplement"
+    },
+    {
+      "ticker": "GE",
+      "company_name": "General Electric (GE Aerospace)",
+      "source": "Final Supplement"
+    },
+    {
+      "ticker": "GEV",
+      "company_name": "GE Vernova",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "GFS",
+      "company_name": "GlobalFoundries",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "GILT",
+      "company_name": "Gilat Satellite Networks",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "GLW",
+      "company_name": "Corning",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "GLXY",
+      "company_name": "Galaxy Digital",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "GNRC",
+      "company_name": "Generac Holdings",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "GOOGL",
+      "company_name": "Alphabet",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "GTES",
+      "company_name": "Gates Industrial",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "GTLB",
+      "company_name": "GitLab",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "GTLS",
+      "company_name": "Chart Industries",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "HON",
+      "company_name": "Honeywell",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "HPE",
+      "company_name": "Hewlett Packard Enterprise",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "HUBB",
+      "company_name": "Hubbell Inc.",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "HUT",
+      "company_name": "Hut 8",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "IBM",
+      "company_name": "IBM",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "ICHR",
+      "company_name": "Ichor Holdings",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "IESC",
+      "company_name": "IES Holdings",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "IMOS",
+      "company_name": "ChipMOS Technologies",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "INTC",
+      "company_name": "Intel",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "IPGP",
+      "company_name": "IPG Photonics",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "IRM",
+      "company_name": "Iron Mountain",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "JBL",
+      "company_name": "Jabil",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "JCI",
+      "company_name": "Johnson Controls",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "KBR",
+      "company_name": "KBR Inc.",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "KEYS",
+      "company_name": "Keysight Technologies",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "KLAC",
+      "company_name": "KLA Corporation",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "KLIC",
+      "company_name": "Kulicke & Soffa",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "LEU",
+      "company_name": "Centrus Energy",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "LII",
+      "company_name": "Lennox International",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "LIN",
+      "company_name": "Linde",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "LITE",
+      "company_name": "Lumentum Holdings",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "LMB",
+      "company_name": "Limbach Holdings",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "LRCX",
+      "company_name": "Lam Research",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "LSCC",
+      "company_name": "Lattice Semiconductor",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "MCHP",
+      "company_name": "Microchip Technology",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "MDB",
+      "company_name": "MongoDB",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "META",
+      "company_name": "Meta Platforms",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "MKSI",
+      "company_name": "MKS Instruments",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "MOD",
+      "company_name": "Modine Manufacturing",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "MP",
+      "company_name": "MP Materials",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "MPWR",
+      "company_name": "Monolithic Power Systems",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "MRVL",
+      "company_name": "Marvell Technology",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "MSFT",
+      "company_name": "Microsoft",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "MTRN",
+      "company_name": "Materion",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "MTSI",
+      "company_name": "MACOM Technology Solutions",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "MTZ",
+      "company_name": "MasTec",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "MU",
+      "company_name": "Micron Technology",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "MYRG",
+      "company_name": "MYR Group",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "NBIS",
+      "company_name": "Nebius Group",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "NEE",
+      "company_name": "NextEra Energy",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "NET",
+      "company_name": "Cloudflare",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "NTAP",
+      "company_name": "NetApp",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "NVDA",
+      "company_name": "NVIDIA",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "NVMI",
+      "company_name": "Nova Ltd",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "OKLO",
+      "company_name": "Oklo",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "ONTO",
+      "company_name": "Onto Innovation",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "ORCL",
+      "company_name": "Oracle",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "PANW",
+      "company_name": "Palo Alto Networks",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "PENG",
+      "company_name": "Penguin Solutions",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "PH",
+      "company_name": "Parker Hannifin",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "PLAB",
+      "company_name": "Photronics",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "PLTR",
+      "company_name": "Palantir Technologies",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "PLXS",
+      "company_name": "Plexus Corp",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "PNR",
+      "company_name": "Pentair",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "POET",
+      "company_name": "POET Technologies",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "POWL",
+      "company_name": "Powell Industries",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "PRIM",
+      "company_name": "Primoris Services",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "PSTG",
+      "company_name": "Pure Storage",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "PWR",
+      "company_name": "Quanta Services",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "QCOM",
+      "company_name": "Qualcomm",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "RIOT",
+      "company_name": "Riot Platforms",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "RMBS",
+      "company_name": "Rambus",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "ROK",
+      "company_name": "Rockwell Automation",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "SANM",
+      "company_name": "Sanmina",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "SBGSY",
+      "company_name": "Schneider Electric (ADR)",
+      "source": "Final Supplement"
+    },
+    {
+      "ticker": "SLAB",
+      "company_name": "Silicon Labs",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "SMCI",
+      "company_name": "Super Micro Computer",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "SMR",
+      "company_name": "NuScale Power",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "SMTC",
+      "company_name": "Semtech",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "SNDK",
+      "company_name": "SanDisk",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "SNOW",
+      "company_name": "Snowflake",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "SNPS",
+      "company_name": "Synopsys",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "SPXC",
+      "company_name": "SPX Technologies",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "STRL",
+      "company_name": "Sterling Infrastructure",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "STX",
+      "company_name": "Seagate Technology",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "TEL",
+      "company_name": "TE Connectivity",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "TER",
+      "company_name": "Teradyne",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "TLN",
+      "company_name": "Talen Energy",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "TSM",
+      "company_name": "Taiwan Semiconductor Manufacturing",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "TT",
+      "company_name": "Trane Technologies",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "TTMI",
+      "company_name": "TTM Technologies",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "UCTT",
+      "company_name": "Ultra Clean Holdings",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "UEC",
+      "company_name": "Uranium Energy Corp",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "UMC",
+      "company_name": "United Microelectronics",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "USAR",
+      "company_name": "USA Rare Earth",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "UUUU",
+      "company_name": "Energy Fuels",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "VECO",
+      "company_name": "Veeco Instruments",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "VICR",
+      "company_name": "Vicor Corporation",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "VRT",
+      "company_name": "Vertiv Holdings",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "VST",
+      "company_name": "Vistra",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "WCC",
+      "company_name": "WESCO International",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "WDC",
+      "company_name": "Western Digital",
+      "source": "Combined v2"
+    },
+    {
+      "ticker": "WULF",
+      "company_name": "TeraWulf",
+      "source": "COMPLETE"
+    },
+    {
+      "ticker": "ZS",
+      "company_name": "Zscaler",
+      "source": "COMPLETE"
+    }
+  ]
+}

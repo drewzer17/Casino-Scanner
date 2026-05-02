@@ -70,6 +70,27 @@ if _assets_dir.exists():
     app.mount("/assets", StaticFiles(directory=str(_assets_dir)), name="assets")
 
 
+# ── AI Overview standalone page ────────────────────────────────────────────────
+# Must be registered BEFORE the catch-all so /{full_path:path} doesn't swallow it.
+_TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
+
+
+@app.get("/ai-overview", include_in_schema=False, response_model=None)
+async def serve_ai_overview() -> FileResponse | dict:
+    html = _TEMPLATES_DIR / "ai_overview.html"
+    if html.exists():
+        return FileResponse(
+            str(html),
+            media_type="text/html",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
+            },
+        )
+    return {"error": "AI overview template not found"}
+
+
 # ── SPA catch-all ──────────────────────────────────────────────────────────────
 # Any path that didn't match /api/* or /assets/* returns index.html so that
 # React Router can handle client-side navigation.

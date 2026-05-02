@@ -1349,11 +1349,39 @@ body {
   max-width: 160px;
 }
 
+.search-and-overview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
 .search-wrap {
   position: relative;
   display: flex;
   align-items: center;
-  margin-top: 8px;
+}
+
+.ai-overview-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid #a855f7;
+  border-radius: 6px;
+  color: #a855f7;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1.4;
+}
+.ai-overview-btn:hover {
+  background: #7e22ce;
+  color: #fff;
+  border-color: #7e22ce;
 }
 
 .search-input {

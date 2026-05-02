@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Buildout Universe — 177 Tickers</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f0f13;
+      --surface:   #18181f;
+      --border:    #2a2a35;
+      --text:      #e2e2e8;
+      --muted:     #8888a0;
+      --accent:    #a855f7;
+      --accent-dk: #7e22ce;
+      --green:     #22c55e;
+      --row-hover: #1e1e28;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────────── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 28px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .page-header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      background: transparent;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+    }
+    .back-btn:hover { background: var(--accent-dk); color: #fff; }
+
+    .page-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .ticker-count-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      background: #2e1065;
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* ── Controls bar ────────────────────────────── */
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 28px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 220px;
+      max-width: 400px;
+      padding: 8px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .search-input::placeholder { color: var(--muted); }
+    .search-input:focus { border-color: var(--accent); }
+
+    .source-filter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .source-filter label {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .source-select {
+      padding: 7px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+    .source-select:focus { border-color: var(--accent); }
+
+    .result-count {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    /* ── Table ───────────────────────────────────── */
+    .table-wrap {
+      overflow-x: auto;
+      padding: 0 28px 40px;
+      margin-top: 4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+
+    thead tr {
+      border-bottom: 2px solid var(--border);
+    }
+
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      white-space: nowrap;
+      user-select: none;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    th:hover { color: var(--text); }
+
+    th .sort-icon {
+      display: inline-block;
+      margin-left: 4px;
+      opacity: 0.35;
+      font-size: 10px;
+    }
+    th.sorted .sort-icon { opacity: 1; color: var(--accent); }
+    th.sorted { color: var(--accent); }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s;
+    }
+    tbody tr:hover { background: var(--row-hover); }
+
+    td {
+      padding: 10px 14px;
+      font-size: 13px;
+    }
+
+    .td-num {
+      color: var(--muted);
+      font-size: 12px;
+      width: 48px;
+    }
+
+    .td-ticker {
+      font-weight: 700;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 14px;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+      width: 80px;
+    }
+
+    .td-company {
+      color: var(--text);
+    }
+
+    .source-badge {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .source-badge.combined  { background: #1e3a5f; color: #60a5fa; border: 1px solid #3b82f6; }
+    .source-badge.complete  { background: #14532d; color: #4ade80; border: 1px solid #22c55e; }
+    .source-badge.supplement { background: #4a1d96; color: #c084fc; border: 1px solid #a855f7; }
+
+    /* ── Empty / loading state ───────────────────── */
+    .state-row td {
+      text-align: center;
+      padding: 48px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* ── Error banner ────────────────────────────── */
+    .error-banner {
+      margin: 20px 28px;
+      padding: 14px 18px;
+      background: #3b0000;
+      border: 1px solid #ef4444;
+      border-radius: 8px;
+      color: #fca5a5;
+      font-size: 13px;
+      display: none;
+    }
+    .error-banner.visible { display: block; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <a class="back-btn" href="/">← Back to Scanner</a>
+      <h1 class="page-title">AI Buildout Universe</h1>
+      <span class="ticker-count-badge" id="badge">177 Tickers</span>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-bar">
+    <input
+      id="search"
+      class="search-input"
+      type="text"
+      placeholder="Filter by ticker or company…"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <div class="source-filter">
+      <label for="source-select">Source:</label>
+      <select id="source-select" class="source-select">
+        <option value="">All Sources</option>
+        <option value="Combined v2">Combined v2 (77)</option>
+        <option value="COMPLETE">COMPLETE (93)</option>
+        <option value="Final Supplement">Final Supplement (7)</option>
+      </select>
+    </div>
+    <span class="result-count" id="result-count"></span>
+  </div>
+
+  <!-- Error banner -->
+  <div class="error-banner" id="error-banner"></div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table id="ticker-table">
+      <thead>
+        <tr>
+          <th class="td-num" data-col="idx"># <span class="sort-icon">↕</span></th>
+          <th data-col="ticker" class="sorted">Ticker <span class="sort-icon">↑</span></th>
+          <th data-col="company_name">Company <span class="sort-icon">↕</span></th>
+          <th data-col="source">Source <span class="sort-icon">↕</span></th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <tr class="state-row"><td colspan="4">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // ── State ───────────────────────────────────────────────────────────────────
+    let allTickers  = [];
+    let sortCol     = "ticker";
+    let sortDir     = 1;   // 1 = asc, -1 = desc
+    let filterText  = "";
+    let filterSource = "";
+
+    // ── Fetch data ──────────────────────────────────────────────────────────────
+    async function loadTickers() {
+      try {
+        const res = await fetch("/api/ai-overview/tickers");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        allTickers = data.tickers || data;
+        document.getElementById("badge").textContent = allTickers.length + " Tickers";
+        render();
+      } catch (err) {
+        const banner = document.getElementById("error-banner");
+        banner.textContent = "Failed to load tickers: " + err.message;
+        banner.classList.add("visible");
+        document.getElementById("table-body").innerHTML =
+          '<tr class="state-row"><td colspan="4">Error loading data.</td></tr>';
+      }
+    }
+
+    // ── Sort ────────────────────────────────────────────────────────────────────
+    function sortedFiltered() {
+      let rows = allTickers.map((t, i) => ({ ...t, idx: i + 1 }));
+
+      if (filterText) {
+        const q = filterText.toLowerCase();
+        rows = rows.filter(r =>
+          r.ticker.toLowerCase().includes(q) ||
+          r.company_name.toLowerCase().includes(q)
+        );
+      }
+
+      if (filterSource) {
+        rows = rows.filter(r => r.source === filterSource);
+      }
+
+      rows.sort((a, b) => {
+        const av = a[sortCol] ?? "";
+        const bv = b[sortCol] ?? "";
+        if (typeof av === "number" && typeof bv === "number") return sortDir * (av - bv);
+        return sortDir * String(av).localeCompare(String(bv), undefined, { numeric: true });
+      });
+
+      return rows;
+    }
+
+    // ── Source badge ────────────────────────────────────────────────────────────
+    function sourceBadge(source) {
+      if (source === "Combined v2")      return `<span class="source-badge combined">Combined v2</span>`;
+      if (source === "COMPLETE")         return `<span class="source-badge complete">COMPLETE</span>`;
+      if (source === "Final Supplement") return `<span class="source-badge supplement">Final Supplement</span>`;
+      return `<span class="source-badge">${source}</span>`;
+    }
+
+    // ── Render ──────────────────────────────────────────────────────────────────
+    function render() {
+      const rows = sortedFiltered();
+      const tbody = document.getElementById("table-body");
+
+      document.getElementById("result-count").textContent =
+        rows.length === allTickers.length
+          ? `${rows.length} tickers`
+          : `${rows.length} of ${allTickers.length} tickers`;
+
+      if (rows.length === 0) {
+        tbody.innerHTML = '<tr class="state-row"><td colspan="4">No tickers match your filter.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td class="td-num">${r.idx}</td>
+          <td class="td-ticker">${r.ticker}</td>
+          <td class="td-company">${r.company_name}</td>
+          <td>${sourceBadge(r.source)}</td>
+        </tr>
+      `).join("");
+    }
+
+    // ── Sort click ──────────────────────────────────────────────────────────────
+    document.querySelectorAll("th[data-col]").forEach(th => {
+      th.addEventListener("click", () => {
+        const col = th.dataset.col;
+        if (sortCol === col) {
+          sortDir = -sortDir;
+        } else {
+          sortCol = col;
+          sortDir = 1;
+        }
+
+        // Update header icons
+        document.querySelectorAll("th[data-col]").forEach(h => {
+          h.classList.remove("sorted");
+          h.querySelector(".sort-icon").textContent = "↕";
+        });
+        th.classList.add("sorted");
+        th.querySelector(".sort-icon").textContent = sortDir === 1 ? "↑" : "↓";
+
+        render();
+      });
+    });
+
+    // ── Filter inputs ───────────────────────────────────────────────────────────
+    document.getElementById("search").addEventListener("input", e => {
+      filterText = e.target.value.trim();
+      render();
+    });
+
+    document.getElementById("source-select").addEventListener("change", e => {
+      filterSource = e.target.value;
+      render();
+    });
+
+    // ── Kick off ────────────────────────────────────────────────────────────────
+    loadTickers();
+  </script>
+</body>
+</html>
