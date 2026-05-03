@@ -23,6 +23,10 @@
       --pill-active-bg:     #ffcc33;
       --pill-active-border: #ffcc33;
       --pill-active-text:   #111;
+      /* subcategory pill colors — teal accent */
+      --subpill-active-bg:     #0891b2;
+      --subpill-active-border: #0891b2;
+      --subpill-active-text:   #fff;
     }
 
     body {
@@ -191,6 +195,49 @@
       background: rgba(0,0,0,0.15);
     }
 
+    /* ── Category pill collapse animation ───────── */
+    /* Direct "All" pill needs a right margin when gap is 0 */
+    #cat-pill-all { margin-right: 4px; }
+
+    /* Container uses margin instead of gap so 0-width wrappers leave no ghost space */
+    #cat-pills { gap: 0; }
+
+    /* Wrapper around each non-All category pill */
+    .cat-pill-wrap {
+      display: inline-flex;
+      overflow: hidden;
+      max-width: 350px;
+      margin-right: 4px;
+      transition: max-width 0.18s ease, opacity 0.18s ease, margin-right 0.18s ease;
+    }
+    .cat-pill-wrap.collapsed {
+      max-width: 0;
+      opacity: 0;
+      pointer-events: none;
+      margin-right: 0;
+    }
+
+    /* ── Subcategory pills — smaller + teal accent ── */
+    .pill-btn.sub-pill {
+      padding: 2px 7px;
+      font-size: 11px;
+    }
+    .pill-btn.sub-pill.active {
+      background: var(--subpill-active-bg);
+      border-color: var(--subpill-active-border);
+      color: var(--subpill-active-text);
+    }
+    .pill-btn.sub-pill .pill-count {
+      font-size: 9px;
+      padding: 0 4px;
+      min-width: 14px;
+    }
+    /* Subcategory label — slightly smaller to match the sub-pills */
+    .pill-label.sub-label {
+      font-size: 9px;
+      padding-top: 4px;
+    }
+
     /* ── Table ───────────────────────────────────── */
     .table-wrap {
       overflow-x: auto;
@@ -325,7 +372,7 @@
     </div>
     <!-- Subcategory row: shown only when a category is active -->
     <div class="pill-row" id="subcat-row" style="display:none">
-      <span class="pill-label">Subcategory</span>
+      <span class="pill-label sub-label">Subcategory</span>
       <div class="pill-group" id="subcat-pills"></div>
     </div>
   </div>
@@ -416,7 +463,7 @@
       const container = document.getElementById("cat-pills");
       container.innerHTML = "";
 
-      // "All" pill
+      // "All" pill — placed directly (not wrapped) so it's always visible
       const allBtn = makePill("All", allTickers.length, true, () => {
         filterCat = "";
         filterSubcat = "";
@@ -444,15 +491,37 @@
           render();
         });
         btn.dataset.cat = cat;
-        container.appendChild(btn);
+
+        // Wrap in a collapsible wrapper so inactive pills can animate out
+        const wrap = document.createElement("span");
+        wrap.className = "cat-pill-wrap";
+        wrap.dataset.cat = cat;
+        wrap.appendChild(btn);
+        container.appendChild(wrap);
       });
     }
 
     function refreshCatPills() {
-      document.querySelectorAll("#cat-pills .pill-btn").forEach(btn => {
-        const isAll = btn.id === "cat-pill-all";
-        const active = isAll ? filterCat === "" : btn.dataset.cat === filterCat;
-        btn.classList.toggle("active", active);
+      // "All" pill active state
+      const allBtn = document.getElementById("cat-pill-all");
+      if (allBtn) allBtn.classList.toggle("active", filterCat === "");
+
+      // Each wrapped category pill: active state + collapse/expand
+      document.querySelectorAll("#cat-pills .cat-pill-wrap").forEach(wrap => {
+        const cat = wrap.dataset.cat;
+        const isActive = cat === filterCat;
+
+        // Active state on the button inside
+        const btn = wrap.querySelector(".pill-btn");
+        if (btn) btn.classList.toggle("active", isActive);
+
+        // Collapse all non-active pills when a category is selected;
+        // expand all when returning to "All"
+        if (filterCat === "") {
+          wrap.classList.remove("collapsed");
+        } else {
+          wrap.classList.toggle("collapsed", !isActive);
+        }
       });
     }
 
@@ -475,7 +544,7 @@
         filterSubcat = "";
         refreshSubcatPills();
         render();
-      });
+      }, true /* isSubcat */);
       allBtn.id = "subcat-pill-all";
       container.appendChild(allBtn);
 
@@ -488,7 +557,7 @@
           }
           refreshSubcatPills();
           render();
-        });
+        }, true /* isSubcat */);
         btn.dataset.sub = sub;
         container.appendChild(btn);
       });
@@ -505,9 +574,12 @@
     }
 
     // ── Pill factory ─────────────────────────────────────────────────────────
-    function makePill(label, count, isActive, onClick) {
+    function makePill(label, count, isActive, onClick, isSubcat) {
       const btn = document.createElement("button");
-      btn.className = "pill-btn" + (isActive ? " active" : "");
+      let cls = "pill-btn";
+      if (isSubcat) cls += " sub-pill";
+      if (isActive)  cls += " active";
+      btn.className = cls;
       btn.innerHTML =
         escHtml(label) +
         '<span class="pill-count">' + count + '</span>';
