@@ -33,6 +33,7 @@ export const api = {
     return get(`/api/ticker/${encodeURIComponent(ticker)}/wheel${qs ? "?" + qs : ""}`);
   },
   chains: (ticker) => get(`/api/ticker/${encodeURIComponent(ticker)}/chains`),
+  sitrep: (ticker) => get(`/api/sitrep/${encodeURIComponent(ticker)}`),
   reloadUniverse: () => post("/api/universe/reload"),
   stopScan: () => post("/api/scan/stop"),
   resetScan: () => post("/api/scan/reset"),

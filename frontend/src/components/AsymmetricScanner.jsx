@@ -428,7 +428,7 @@ const COLS = [
   { key: "why",           label: "WHY",         align: "left",  noSort: true },
 ];
 
-function cellValue(row, key, evalOtmLevel = 0) {
+function cellValue(row, key, evalOtmLevel = 0, onResearch) {
   const lv    = row._evalLevel ?? evalOtmLevel;
   const price = row.price;
   const nmType = row._nearMissInfo?.setupType;
@@ -438,7 +438,7 @@ function cellValue(row, key, evalOtmLevel = 0) {
     case "ticker": return (
       <span>
         {row.sma_golden_cross === true && row.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
-        <ResearchAsterisk ticker={row.ticker} hasSitrep={row.has_sitrep} />
+        <ResearchAsterisk ticker={row.ticker} hasSitrep={row.has_sitrep} onResearch={onResearch} />
         {row.ticker}
         {row.company_name && (
           <span className="company-name company-name-table">{row.company_name}</span>
@@ -591,7 +591,7 @@ const SETUP_MODES = [
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export default function AsymmetricScanner({ rows, onRowClick }) {
+export default function AsymmetricScanner({ rows, onRowClick, onResearch }) {
   const [setupMode, setSetupMode]       = useState("all");
   const [dteSelected, setDteSelected]   = useState(new Set());
   const [evalOtmLevel, setEvalOtmLevel] = useState(0);
@@ -748,7 +748,7 @@ export default function AsymmetricScanner({ rows, onRowClick }) {
               onClick={col.key === "ticker" ? (e) => { e.stopPropagation(); onRowClick && onRowClick(row); } : undefined}
               style={{ ...(col.key === "ticker" ? { cursor: "pointer" } : {}), ...(col.groupEnd ? { borderRight: "1px solid rgba(255,255,255,0.15)" } : {}) }}
             >
-              {cellValue(row, col.key)}
+              {cellValue(row, col.key, 0, onResearch)}
             </td>
           ))}
         </tr>

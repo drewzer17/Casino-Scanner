@@ -243,7 +243,7 @@ const BUCKET_TAG = {
   watchlist: { label: "Watchlist", cls: "bucket-tag-watch" },
 };
 
-export default function ScoreCard({ row, onClick, showBucket = false }) {
+export default function ScoreCard({ row, onClick, showBucket = false, onResearch }) {
   const [premExpanded, setPremExpanded] = useState(false);
   const b = row.breakdown || {};
   const bucketTag = BUCKET_TAG[row.bucket];
@@ -253,7 +253,7 @@ export default function ScoreCard({ row, onClick, showBucket = false }) {
         <div className="card-ticker-info">
           <div className="ticker">
             {row.sma_golden_cross === true && row.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
-            <ResearchAsterisk ticker={row.ticker} hasSitrep={row.has_sitrep} />
+            <ResearchAsterisk ticker={row.ticker} hasSitrep={row.has_sitrep} onResearch={onResearch} />
             {row.ticker}
             {showBucket && bucketTag && (
               <span className={`bucket-tag ${bucketTag.cls}`}>{bucketTag.label}</span>

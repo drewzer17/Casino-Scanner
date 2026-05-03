@@ -211,12 +211,12 @@ const COLS = [
   { key: "asymmetric", label: "ASYMMETRIC",  align: "center" },
 ];
 
-function cellValue(item, key) {
+function cellValue(item, key, onResearch) {
   switch (key) {
     case "ticker":     return (
       <span>
         {item.sma_golden_cross === true && item.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
-        <ResearchAsterisk ticker={item.ticker} hasSitrep={item.has_sitrep} />
+        <ResearchAsterisk ticker={item.ticker} hasSitrep={item.has_sitrep} onResearch={onResearch} />
         {item.ticker}
         {item.has_sitrep && item.primary_lens && (
           <span style={{
@@ -427,7 +427,7 @@ function ExclusionTable({ allExcluded }) {
 
 // ── Component ─────────────────────────────────────────────────────
 
-export default function PremiumScanner({ rows, onRowClick, allScanRows = [], excludedRows = [] }) {
+export default function PremiumScanner({ rows, onRowClick, allScanRows = [], excludedRows = [], onResearch }) {
   const [dteSelected, setDteSelected] = useState(new Set()); // empty = ALL
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [otmSelected, setOtmSelected] = useState(new Set()); // empty = ALL
@@ -641,7 +641,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                       className={`prem-scanner-td${col.align === "right" ? " right" : ""}${col.key === "ticker" ? " ticker-col" : ""}${col.key === "premium" ? " prem-col" : ""}${col.compact ? " compact-col" : ""}`}
                       style={col.groupEnd ? { borderRight: "1px solid rgba(255,255,255,0.15)" } : undefined}
                     >
-                      {cellValue(item, col.key)}
+                      {cellValue(item, col.key, onResearch)}
                     </td>
                   ))}
                 </tr>

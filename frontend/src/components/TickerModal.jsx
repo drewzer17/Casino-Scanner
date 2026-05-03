@@ -190,7 +190,7 @@ function ChainsTable({ expirations, price }) {
   );
 }
 
-export default function TickerModal({ row, onClose }) {
+export default function TickerModal({ row, onClose, onResearch }) {
   const [wheel, setWheel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -353,7 +353,7 @@ export default function TickerModal({ row, onClose }) {
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-            <ResearchButton ticker={row.ticker} hasSitrep={row.has_sitrep} />
+            <ResearchButton ticker={row.ticker} hasSitrep={row.has_sitrep} onResearch={onResearch} />
             <button className="modal-close" onClick={onClose}>✕</button>
           </div>
         </div>

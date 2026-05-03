@@ -106,6 +106,7 @@ import PremiumScanner from "./PremiumScanner.jsx";
 import RangeScanner from "./RangeScanner.jsx";
 import ScoreCard from "./ScoreCard.jsx";
 import TickerModal from "./TickerModal.jsx";
+import ResearchPanel from "./ResearchPanel.jsx";
 // TODO: MarketHealth side-tabled — feature unfinished, restore when ready
 // import MarketHealth from "./MarketHealth/index.jsx";
 
@@ -207,6 +208,7 @@ export default function Dashboard() {
 
   // Ticker detail modal
   const [selectedRow, setSelectedRow] = useState(null);
+  const [panelTicker, setPanelTicker] = useState(null);
 
   // Search
   const [searchQuery, setSearchQuery] = useState("");
@@ -988,13 +990,13 @@ export default function Dashboard() {
 
       {view === "premium" ? (
         <PremiumScanner rows={viewRows} onRowClick={setSelectedRow}
-          allScanRows={allRows} excludedRows={excludedRows} />
+          allScanRows={allRows} excludedRows={excludedRows} onResearch={setPanelTicker} />
       ) : view === "range" ? (
-        <RangeScanner rows={viewRows} onRowClick={setSelectedRow} />
+        <RangeScanner rows={viewRows} onRowClick={setSelectedRow} onResearch={setPanelTicker} />
       ) : view === "ivramp" ? (
-        <IvRampScanner rows={viewRows} onRowClick={setSelectedRow} />
+        <IvRampScanner rows={viewRows} onRowClick={setSelectedRow} onResearch={setPanelTicker} />
       ) : view === "asymmetric" ? (
-        <AsymmetricScanner rows={viewRows} onRowClick={setSelectedRow} />
+        <AsymmetricScanner rows={viewRows} onRowClick={setSelectedRow} onResearch={setPanelTicker} />
       ) : /* TODO: MarketHealth side-tabled — render branch removed until feature is ready */ (
         <>
           <div className="tabs-row">
@@ -1018,15 +1020,16 @@ export default function Dashboard() {
           ) : (
             <div className="grid">
               {rows.filter(r => !asymOnly || r.asymmetric_any_flag).map((r) => (
-                <ScoreCard key={r.ticker} row={r} showBucket={showAll} onClick={() => setSelectedRow(r)} />
+                <ScoreCard key={r.ticker} row={r} showBucket={showAll} onClick={() => setSelectedRow(r)} onResearch={setPanelTicker} />
               ))}
             </div>
           )}
         </>
       )}
       {selectedRow && (
-        <TickerModal row={selectedRow} onClose={() => setSelectedRow(null)} />
+        <TickerModal row={selectedRow} onClose={() => setSelectedRow(null)} onResearch={setPanelTicker} />
       )}
+      <ResearchPanel ticker={panelTicker} onClose={() => setPanelTicker(null)} />
     </>
   );
 }

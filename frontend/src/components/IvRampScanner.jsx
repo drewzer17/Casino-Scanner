@@ -27,11 +27,11 @@ const COLS = [
   { key: "cc_score",        label: "CC SCORE",    align: "right" },
 ];
 
-function cellValue(row, key) {
+function cellValue(row, key, onResearch) {
   switch (key) {
     case "ticker": return (
       <span>
-        <ResearchAsterisk ticker={row.ticker} hasSitrep={row.has_sitrep} />
+        <ResearchAsterisk ticker={row.ticker} hasSitrep={row.has_sitrep} onResearch={onResearch} />
         {row.ticker}
         {row.company_name && (
           <span className="company-name company-name-table">{row.company_name}</span>
@@ -81,7 +81,7 @@ function sortValue(row, key) {
   }
 }
 
-export default function IvRampScanner({ rows, onRowClick }) {
+export default function IvRampScanner({ rows, onRowClick, onResearch }) {
   const [sortCol, setSortCol] = useState("iv_ramp_score");
   const [sortAsc, setSortAsc] = useState(false);
   const [flaggedOnly, setFlaggedOnly] = useState(true);
@@ -162,7 +162,7 @@ export default function IvRampScanner({ rows, onRowClick }) {
                       key={col.key}
                       className={`prem-scanner-td${col.align === "right" ? " right" : col.align === "center" ? " center" : ""}${col.key === "ticker" ? " ticker-col" : ""}`}
                     >
-                      {cellValue(row, col.key)}
+                      {cellValue(row, col.key, onResearch)}
                     </td>
                   ))}
                 </tr>

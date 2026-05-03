@@ -27,14 +27,14 @@ const COLS = [
   { key: "csp_score",    label: "CSP Score",    align: "right" },
 ];
 
-function cellValue(row, key) {
+function cellValue(row, key, onResearch) {
   const rs = rangeScore(row);
   switch (key) {
     case "ticker":
       return (
         <span>
           {row.sma_golden_cross === true && row.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
-          <ResearchAsterisk ticker={row.ticker} hasSitrep={row.has_sitrep} />
+          <ResearchAsterisk ticker={row.ticker} hasSitrep={row.has_sitrep} onResearch={onResearch} />
           {row.ticker}
           {row.company_name && (
             <span className="company-name company-name-table">{row.company_name}</span>
@@ -93,7 +93,7 @@ function sortValue(row, key) {
   }
 }
 
-export default function RangeScanner({ rows, onRowClick }) {
+export default function RangeScanner({ rows, onRowClick, onResearch }) {
   const [sortCol, setSortCol] = useState("range_score");
   const [sortAsc, setSortAsc] = useState(true);
 
@@ -150,7 +150,7 @@ export default function RangeScanner({ rows, onRowClick }) {
                     key={col.key}
                     className={`prem-scanner-td${col.align === "right" ? " right" : col.align === "center" ? " center" : ""}${col.key === "ticker" ? " ticker-col" : ""}`}
                   >
-                    {cellValue(row, col.key)}
+                    {cellValue(row, col.key, onResearch)}
                   </td>
                 ))}
               </tr>

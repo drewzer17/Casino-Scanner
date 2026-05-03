@@ -1617,3 +1617,48 @@ def get_ai_overview_lenses():
         return {"lenses": []}
     with open(lenses_path) as f:
         return json.load(f)
+
+
+@router.get("/sitrep/{ticker}", include_in_schema=True)
+def get_sitrep_panel(ticker: str, db: Session = Depends(get_db)):
+    """Return the full parsed sitrep + AI metadata for the research side panel."""
+    ticker = ticker.upper()
+    row = db.execute(
+        text("SELECT * FROM sitreps WHERE ticker = :t"),
+        {"t": ticker},
+    ).fetchone()
+
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"No sitrep found for {ticker}")
+
+    data = dict(row._mapping)
+
+    # JSONB fields come back as Python objects from psycopg2; normalise any
+    # edge cases where they might arrive as a raw string.
+    for field in ("hidden_angles", "kill_components", "winners", "parse_warnings"):
+        val = data.get(field)
+        if isinstance(val, str):
+            try:
+                data[field] = json.loads(val)
+            except Exception:
+                data[field] = None
+
+    # Serialise non-JSON-native types
+    if data.get("last_updated") is not None:
+        data["last_updated"] = str(data["last_updated"])
+    if data.get("created_at") is not None:
+        data["created_at"] = data["created_at"].isoformat()
+    if data.get("updated_at") is not None:
+        data["updated_at"] = data["updated_at"].isoformat()
+
+    # Merge AI metadata (lens + category) into the response
+    meta = _build_ai_metadata().get(ticker, {})
+    data["primary_lens"] = meta.get("primary_lens")
+    data["lenses"] = meta.get("lenses") or []
+    # Prefer DB-stored category/subcategory; fall back to universe JSON
+    if not data.get("category"):
+        data["category"] = meta.get("category")
+    if not data.get("subcategory"):
+        data["subcategory"] = meta.get("subcategory")
+
+    return data
