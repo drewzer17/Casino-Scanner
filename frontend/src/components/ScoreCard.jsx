@@ -252,6 +252,24 @@ export default function ScoreCard({ row, onClick, showBucket = false }) {
         <div className="card-ticker-info">
           <div className="ticker">
             {row.sma_golden_cross === true && row.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
+            {row.has_sitrep && (
+              <a
+                href={`/ai-overview/${row.ticker}`}
+                title="View AI research"
+                onClick={e => e.stopPropagation()}
+                style={{
+                  color: "#8b5cf6",
+                  fontWeight: "bold",
+                  fontSize: "1.2em",
+                  marginRight: "6px",
+                  cursor: "pointer",
+                  textDecoration: "none",
+                  lineHeight: 1,
+                }}
+                onMouseEnter={e => { e.currentTarget.style.color = "#a78bfa"; }}
+                onMouseLeave={e => { e.currentTarget.style.color = "#8b5cf6"; }}
+              >*</a>
+            )}
             {row.ticker}
             {showBucket && bucketTag && (
               <span className={`bucket-tag ${bucketTag.cls}`}>{bucketTag.label}</span>

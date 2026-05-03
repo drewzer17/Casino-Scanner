@@ -133,6 +133,7 @@ def _to_out(
     row: models.ScanResult,
     history: list[TimeframeDelta] | None = None,
     sources: list[str] | None = None,
+    has_sitrep: bool = False,
 ) -> ScanResultOut:
     return ScanResultOut(
         ticker=row.ticker,
@@ -207,6 +208,8 @@ def _to_out(
         iv_velocity_20d=_san(row.iv_velocity_20d),
         iv_ramp_score=row.iv_ramp_score or 0,
         iv_ramp_flag=row.iv_ramp_flag or False,
+        # AI research sitrep flag
+        has_sitrep=has_sitrep,
     )
 
 
@@ -244,12 +247,25 @@ def scan_latest(db: Session = Depends(get_db)) -> ScanLatestOut:
     ticker_sources = ticker_sources_from_db(db)
     univ_size = universe_size_from_db(db)
 
+    # ONE batch query: which tickers in this result set have sitreps?
+    scan_tickers = [r.ticker for r in rows]
+    sitrep_rows = db.execute(
+        text("SELECT ticker FROM sitreps WHERE ticker = ANY(:tickers)"),
+        {"tickers": scan_tickers},
+    ).fetchall()
+    sitrep_set: set[str] = {r.ticker for r in sitrep_rows}
+
     sell_now: list[ScanResultOut] = []
     buy_sell_later: list[ScanResultOut] = []
     watchlist: list[ScanResultOut] = []
     for row in rows:
         hist = _compute_deltas(row.ticker, row.score, row.bucket, lookup)
-        out = _to_out(row, history=hist, sources=ticker_sources.get(row.ticker, []))
+        out = _to_out(
+            row,
+            history=hist,
+            sources=ticker_sources.get(row.ticker, []),
+            has_sitrep=row.ticker in sitrep_set,
+        )
         if row.bucket == "sell_now":
             sell_now.append(out)
         elif row.bucket == "buy_sell_later":

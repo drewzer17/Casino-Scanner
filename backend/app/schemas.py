@@ -118,6 +118,9 @@ class ScanResultOut(BaseModel):
     resistance_2: float | None = None
     resistance_2_strength: float | None = None
 
+    # AI research sitrep flag
+    has_sitrep: bool = False
+
 
 class ScanLatestOut(BaseModel):
     run_id: int
