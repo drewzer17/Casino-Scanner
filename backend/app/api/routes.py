@@ -1662,3 +1662,16 @@ def get_sitrep_panel(ticker: str, db: Session = Depends(get_db)):
         data["subcategory"] = meta.get("subcategory")
 
     return data
+
+
+@router.get("/winner-frequency", include_in_schema=True)
+def get_winner_frequency():
+    """Return pre-computed winner frequency data (from scripts/analyze_winners.py)."""
+    path = _DATA_DIR / "winner-frequency.json"
+    if not path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="winner-frequency.json not found — run scripts/analyze_winners.py first",
+        )
+    with open(path) as f:
+        return json.load(f)

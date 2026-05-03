@@ -1,0 +1,157 @@
+{
+  "generated_at": "2026-05-03T04:55:51.745589Z",
+  "total_sitreps_analyzed": 181,
+  "total_unique_winners": 252,
+  "top_5_overall": [
+    {
+      "ticker": "VRT",
+      "company_name": "Vertiv Holdings",
+      "mentions": 25
+    },
+    {
+      "ticker": "ETN",
+      "company_name": "Eaton Corporation",
+      "mentions": 20
+    },
+    {
+      "ticker": "AVGO",
+      "company_name": "Broadcom",
+      "mentions": 19
+    },
+    {
+      "ticker": "MSFT",
+      "company_name": "Microsoft",
+      "mentions": 15
+    },
+    {
+      "ticker": "COHR",
+      "company_name": "Coherent Corp",
+      "mentions": 13
+    }
+  ],
+  "cross_cutting_winners": [
+    {
+      "ticker": "AVGO",
+      "company_name": "Broadcom",
+      "mentions": 19,
+      "sectors_count": 7,
+      "sectors": [
+        "01. GPUs & Accelerators",
+        "02. Custom AI Silicon",
+        "03. Memory & Storage",
+        "05. Semiconductor Test & Inspection",
+        "07. Optical & Photonics",
+        "08. Networking & Switching",
+        "16. Hyperscalers & Mega-Cap Cloud"
+      ]
+    },
+    {
+      "ticker": "CSCO",
+      "company_name": "Cisco Systems",
+      "mentions": 12,
+      "sectors_count": 7,
+      "sectors": [
+        "01. GPUs & Accelerators",
+        "02. Custom AI Silicon",
+        "07. Optical & Photonics",
+        "08. Networking & Switching",
+        "09. Data Center Construction & EPC",
+        "17. AI Software & Cybersecurity",
+        "99. Uncategorized"
+      ]
+    },
+    {
+      "ticker": "VRT",
+      "company_name": "Vertiv Holdings",
+      "mentions": 25,
+      "sectors_count": 6,
+      "sectors": [
+        "03. Memory & Storage",
+        "09. Data Center Construction & EPC",
+        "10. Cooling & Thermal",
+        "11. Power Infrastructure & Equipment",
+        "12. Power Generation & Nuclear",
+        "99. Uncategorized"
+      ]
+    },
+    {
+      "ticker": "ETN",
+      "company_name": "Eaton Corporation",
+      "mentions": 20,
+      "sectors_count": 6,
+      "sectors": [
+        "03. Memory & Storage",
+        "09. Data Center Construction & EPC",
+        "10. Cooling & Thermal",
+        "11. Power Infrastructure & Equipment",
+        "12. Power Generation & Nuclear",
+        "99. Uncategorized"
+      ]
+    },
+    {
+      "ticker": "MSFT",
+      "company_name": "Microsoft",
+      "mentions": 15,
+      "sectors_count": 5,
+      "sectors": [
+        "01. GPUs & Accelerators",
+        "08. Networking & Switching",
+        "16. Hyperscalers & Mega-Cap Cloud",
+        "17. AI Software & Cybersecurity",
+        "99. Uncategorized"
+      ]
+    },
+    {
+      "ticker": "GOOGL",
+      "company_name": "Alphabet",
+      "mentions": 12,
+      "sectors_count": 5,
+      "sectors": [
+        "01. GPUs & Accelerators",
+        "02. Custom AI Silicon",
+        "13. Bitcoin Miners (Repurposed AI Compute)",
+        "16. Hyperscalers & Mega-Cap Cloud",
+        "17. AI Software & Cybersecurity"
+      ]
+    },
+    {
+      "ticker": "AMZN",
+      "company_name": "Amazon.com",
+      "mentions": 11,
+      "sectors_count": 5,
+      "sectors": [
+        "01. GPUs & Accelerators",
+        "02. Custom AI Silicon",
+        "13. Bitcoin Miners (Repurposed AI Compute)",
+        "16. Hyperscalers & Mega-Cap Cloud",
+        "17. AI Software & Cybersecurity"
+      ]
+    },
+    {
+      "ticker": "NVDA",
+      "company_name": "NVIDIA",
+      "mentions": 11,
+      "sectors_count": 5,
+      "sectors": [
+        "01. GPUs & Accelerators",
+        "02. Custom AI Silicon",
+        "03. Memory & Storage",
+        "13. Bitcoin Miners (Repurposed AI Compute)",
+        "16. Hyperscalers & Mega-Cap Cloud"
+      ]
+    },
+    {
+      "ticker": "CRWV",
+      "company_name": "CoreWeave",
+      "mentions": 7,
+      "sectors_count": 5,
+      "sectors": [
+        "07. Optical & Photonics",
+        "13. Bitcoin Miners (Repurposed AI Compute)",
+        "15. Neoclouds (AI Compute Pure-Play)",
+        "16. Hyperscalers & Mega-Cap Cloud",
+        "99. Uncategorized"
+      ]
+    }
+  ]
+}

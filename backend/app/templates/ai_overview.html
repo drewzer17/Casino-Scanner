@@ -88,6 +88,93 @@
       font-weight: 600;
     }
 
+    /* ── Convergence Winners Banner ─────────────── */
+    #winner-banner {
+      background: #1a1b1e;
+      border-bottom: 1px solid rgba(168, 85, 247, 0.3);
+      padding: 14px 28px;
+      display: none; /* shown by JS after load */
+    }
+    .wb-header {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .wb-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .wb-meta {
+      font-size: 11px;
+      color: #555568;
+    }
+    .wb-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(168, 85, 247, 0.7);
+      margin-bottom: 6px;
+    }
+    .wb-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .wb-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(168, 85, 247, 0.2);
+      border-radius: 6px;
+      padding: 6px 10px;
+      cursor: default;
+      min-width: 0;
+    }
+    .wb-chip-ticker {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.04em;
+    }
+    .wb-chip-company {
+      font-size: 11px;
+      color: #8888a0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 120px;
+    }
+    .wb-chip-count {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+    .wb-chip-sectors {
+      font-size: 10px;
+      color: #555568;
+      white-space: nowrap;
+    }
+    .wb-divider {
+      width: 1px;
+      height: 14px;
+      background: rgba(168, 85, 247, 0.25);
+      flex-shrink: 0;
+    }
+    .wb-error {
+      font-size: 12px;
+      color: #555568;
+      font-style: italic;
+    }
+
     /* ── Search bar ──────────────────────────────── */
     .search-bar {
       display: flex;
@@ -394,6 +481,18 @@
     </div>
   </div>
 
+  <!-- ── Convergence Winners Banner ───────────────── -->
+  <div id="winner-banner">
+    <div class="wb-header">
+      <span class="wb-title">Convergence Winners</span>
+      <span class="wb-meta" id="wb-meta"></span>
+    </div>
+    <div class="wb-section-label">Top 5 Overall</div>
+    <div class="wb-row" id="wb-top5"></div>
+    <div class="wb-section-label">Named Across 5+ Sectors</div>
+    <div class="wb-row" id="wb-cross"></div>
+  </div>
+
   <!-- ── Search bar ────────────────────────────────── -->
   <div class="search-bar">
     <input id="search" class="search-input" type="text"
@@ -449,6 +548,60 @@
   </div>
 
   <script>
+    // ── Convergence Winners Banner ────────────────────────────────────────────
+    (async function loadWinnerBanner() {
+      const banner  = document.getElementById("winner-banner");
+      const top5El  = document.getElementById("wb-top5");
+      const crossEl = document.getElementById("wb-cross");
+      const metaEl  = document.getElementById("wb-meta");
+
+      function chip(ticker, company, countLabel, subLabel) {
+        const el = document.createElement("div");
+        el.className = "wb-chip";
+        el.title = company || ticker;
+        el.innerHTML =
+          `<span class="wb-chip-ticker">${ticker}</span>` +
+          (company ? `<span class="wb-divider"></span><span class="wb-chip-company">${company}</span>` : "") +
+          `<span class="wb-divider"></span><span class="wb-chip-count">${countLabel}</span>` +
+          (subLabel ? `<span class="wb-chip-sectors">${subLabel}</span>` : "");
+        return el;
+      }
+
+      try {
+        const res = await fetch("/api/winner-frequency");
+        if (!res.ok) throw new Error("not found");
+        const d = await res.json();
+
+        metaEl.textContent =
+          `${d.total_sitreps_analyzed} sitreps · ${d.total_unique_winners} unique winners`;
+
+        (d.top_5_overall || []).forEach((w, i) => {
+          top5El.appendChild(chip(
+            w.ticker,
+            w.company_name,
+            `${w.mentions}×`,
+            `#${i + 1}`
+          ));
+        });
+
+        (d.cross_cutting_winners || []).forEach(w => {
+          crossEl.appendChild(chip(
+            w.ticker,
+            w.company_name,
+            `${w.mentions}×`,
+            `${w.sectors_count} sectors`
+          ));
+        });
+
+        banner.style.display = "block";
+      } catch (err) {
+        banner.style.display = "block";
+        top5El.innerHTML = `<span class="wb-error">Winner frequency data not available — run scripts/analyze_winners.py to generate.</span>`;
+        crossEl.remove();
+        document.querySelector(".wb-section-label:last-of-type") && document.querySelector(".wb-section-label:last-of-type").remove();
+      }
+    })();
+
     // ── State ────────────────────────────────────────────────────────────────
     let allTickers    = [];
     let sortCol       = "ticker";
