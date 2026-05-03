@@ -1,0 +1,159 @@
+{
+  "lenses": [
+    {
+      "id": "fab_equipment",
+      "name": "Fab Equipment",
+      "group": "Front-end (Chip Production)",
+      "tickers": ["ASML", "LRCX", "AMAT", "KLAC", "ACLS", "MKSI", "ICHR", "UCTT", "VECO", "TER"]
+    },
+    {
+      "id": "foundries",
+      "name": "Foundries",
+      "group": "Front-end (Chip Production)",
+      "tickers": ["TSM", "UMC", "GFS"]
+    },
+    {
+      "id": "lithography",
+      "name": "Lithography",
+      "group": "Front-end (Chip Production)",
+      "tickers": ["ASML", "VECO", "KLAC", "PLAB", "DD"]
+    },
+    {
+      "id": "etch_deposition",
+      "name": "Etch & Deposition",
+      "group": "Front-end (Chip Production)",
+      "tickers": ["LRCX", "AMAT", "ACLS", "MKSI", "ICHR", "UCTT"]
+    },
+    {
+      "id": "photomasks",
+      "name": "Photomasks",
+      "group": "Front-end (Chip Production)",
+      "tickers": ["PLAB", "KLAC"]
+    },
+    {
+      "id": "metrology_test",
+      "name": "Metrology / Inspection / Test",
+      "group": "Front-end (Chip Production)",
+      "tickers": ["KLAC", "NVMI", "ONTO", "CAMT", "AEHR", "TER", "KEYS"]
+    },
+    {
+      "id": "specialty_gases",
+      "name": "Specialty Gases",
+      "group": "Front-end (Chip Production)",
+      "tickers": ["APD", "LIN"]
+    },
+    {
+      "id": "specialty_chemicals",
+      "name": "Specialty Chemicals & Materials",
+      "group": "Front-end (Chip Production)",
+      "tickers": ["DD", "ENTG", "ESI", "MTRN"]
+    },
+    {
+      "id": "advanced_packaging",
+      "name": "Advanced Packaging / OSAT",
+      "group": "Back-end (Packaging + Chips)",
+      "tickers": ["KLIC", "AMKR", "ASX", "IMOS", "TSM"]
+    },
+    {
+      "id": "memory_hbm",
+      "name": "Memory & HBM",
+      "group": "Back-end (Packaging + Chips)",
+      "tickers": ["MU", "KLIC", "CAMT", "ONTO", "AEHR", "IMOS", "SNDK"]
+    },
+    {
+      "id": "gpu_ai_accelerators",
+      "name": "GPU & AI Accelerators",
+      "group": "Back-end (Packaging + Chips)",
+      "tickers": [
+        "NVDA", "AMD", "AVGO", "MRVL", "ALAB", "CRDO", "ARM", "AMBA",
+        "MPWR", "LSCC", "RMBS", "CDNS", "SNPS", "QCOM", "INTC", "SLAB",
+        "ADI", "MCHP", "SMTC", "VICR"
+      ]
+    },
+    {
+      "id": "ai_server_oems",
+      "name": "AI Server OEMs / Contract Manufacturers",
+      "group": "Back-end (Packaging + Chips)",
+      "tickers": ["DELL", "HPE", "SMCI", "JBL", "PLXS", "SANM", "FLEX", "BHE", "CLS", "TTMI"]
+    },
+    {
+      "id": "optical_networking",
+      "name": "Optical & Networking",
+      "group": "Infrastructure",
+      "tickers": [
+        "AAOI", "COHR", "LITE", "FN", "POET", "MTSI", "ANET", "CSCO",
+        "CIEN", "AVGO", "MRVL", "GLW", "GILT", "IPGP"
+      ]
+    },
+    {
+      "id": "power",
+      "name": "Power",
+      "group": "Infrastructure",
+      "tickers": [
+        "CMI", "CAT", "GNRC", "BE", "ETN", "ABB", "SBGSY", "VRT", "HUBB",
+        "EMR", "ROK", "NVT", "CEG", "VST", "NEE", "D", "TLN", "SMR",
+        "OKLO", "BWXT", "CCJ", "LEU", "UEC", "UUUU", "GEV", "GE", "FTV",
+        "DOV", "PH", "BKR", "GTLS", "HON"
+      ]
+    },
+    {
+      "id": "cooling_thermal",
+      "name": "Cooling & Thermal",
+      "group": "Infrastructure",
+      "tickers": [
+        "TT", "CARR", "JCI", "LII", "MOD", "AAON", "VRT", "PNR",
+        "GTES", "DOV", "FTV", "FLNC", "ECL"
+      ]
+    },
+    {
+      "id": "dc_reits",
+      "name": "Data Center REITs",
+      "group": "Infrastructure",
+      "tickers": ["DLR", "EQIX", "AMT", "IRM", "DBRG"]
+    },
+    {
+      "id": "storage",
+      "name": "Storage",
+      "group": "Demand & Adjacent",
+      "tickers": ["PSTG", "NTAP", "STX", "WDC", "SNDK", "MU"]
+    },
+    {
+      "id": "hyperscalers_software_cyber",
+      "name": "Hyperscalers + AI Software + Cybersecurity",
+      "group": "Demand & Adjacent",
+      "tickers": [
+        "MSFT", "AMZN", "GOOGL", "META", "ORCL", "IBM", "BABA", "BIDU",
+        "PLTR", "SNOW", "DDOG", "MDB", "CFLT", "ESTC", "GTLB", "AKAM",
+        "PENG", "CRWD", "PANW", "FTNT", "NET", "ZS", "S"
+      ]
+    },
+    {
+      "id": "construction_epc",
+      "name": "Construction & EPC",
+      "group": "Demand & Adjacent",
+      "tickers": [
+        "PWR", "MTZ", "EME", "FIX", "AGX", "FLR", "KBR", "PRIM", "STRL",
+        "IESC", "MYRG", "LMB", "AZZ", "DY", "POWL", "SPXC", "WCC", "TEL",
+        "APH", "J"
+      ]
+    },
+    {
+      "id": "bitcoin_miners",
+      "name": "Bitcoin Miners (Pivoted to AI)",
+      "group": "Demand & Adjacent",
+      "tickers": ["APLD", "IREN", "CIFR", "CORZ", "WULF", "HUT", "BITF", "RIOT", "BTDR", "GLXY"]
+    },
+    {
+      "id": "specialty_materials",
+      "name": "Specialty Materials & Rare Earths",
+      "group": "Demand & Adjacent",
+      "tickers": ["MP", "USAR", "UUUU", "MTRN"]
+    },
+    {
+      "id": "neoclouds",
+      "name": "Neoclouds / AI Compute Pure-Play",
+      "group": "Demand & Adjacent",
+      "tickers": ["CRWV", "NBIS"]
+    }
+  ]
+}

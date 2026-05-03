@@ -1536,3 +1536,13 @@ def get_ai_sitrep_detail(ticker: str, db: Session = Depends(get_db)):
         data["updated_at"] = data["updated_at"].isoformat()
 
     return data
+
+
+@router.get("/ai-overview/lenses", include_in_schema=True)
+def get_ai_overview_lenses():
+    """Return the lens definitions from data/ai_overview_lenses.json."""
+    lenses_path = Path(__file__).resolve().parent.parent.parent / "data" / "ai_overview_lenses.json"
+    if not lenses_path.exists():
+        return {"lenses": []}
+    with open(lenses_path) as f:
+        return json.load(f)

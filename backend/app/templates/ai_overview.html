@@ -238,6 +238,44 @@
       padding-top: 4px;
     }
 
+    /* ── Lens dropdown ───────────────────────────── */
+    .lens-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .lens-select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-size: 12px;
+      font-family: inherit;
+      padding: 3px 8px;
+      cursor: pointer;
+      outline: none;
+      min-width: 240px;
+      transition: border-color 0.15s;
+    }
+    .lens-select:focus, .lens-select:hover { border-color: var(--muted); }
+    .lens-badge {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 9px;
+      background: #2e1065;
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+    .lens-badge:hover { background: var(--accent-dk); color: #fff; }
+
     /* ── Table ───────────────────────────────────── */
     .table-wrap {
       overflow-x: auto;
@@ -365,6 +403,16 @@
 
   <!-- ── Pill filters ──────────────────────────────── -->
   <div class="pill-section">
+    <!-- Lens row: dropdown shortcut for pre-defined ticker sets -->
+    <div class="pill-row">
+      <span class="pill-label">Lens</span>
+      <div class="lens-controls">
+        <select id="lens-select" class="lens-select">
+          <option value="">None (use category / subcategory filters)</option>
+        </select>
+        <span id="lens-badge" class="lens-badge"></span>
+      </div>
+    </div>
     <!-- Category row: always visible -->
     <div class="pill-row">
       <span class="pill-label">Category</span>
@@ -402,22 +450,35 @@
 
   <script>
     // ── State ────────────────────────────────────────────────────────────────
-    let allTickers   = [];
-    let sortCol      = "ticker";
-    let sortDir      = 1;
-    let filterText   = "";
-    let filterCat    = "";
-    let filterSubcat = "";
+    let allTickers    = [];
+    let sortCol       = "ticker";
+    let sortDir       = 1;
+    let filterText    = "";
+    let activeCats    = new Set();   // multi-select categories
+    let activeSubcats = new Set();   // multi-select subcategories
+    let lensData      = [];          // [{id, name, group, tickers:[...]}]
+    let lensTickers   = null;        // Set of tickers for active lens (null = no lens)
+    let activeLensId  = "";
 
     const TOTAL = 181;
 
-    // ── Load data ────────────────────────────────────────────────────────────
+    // ── Load data (tickers + lenses in parallel) ─────────────────────────────
     async function loadTickers() {
       try {
-        const res = await fetch("/api/ai-overview/tickers");
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        const data = await res.json();
-        allTickers = data.tickers || data;
+        const [tickerRes, lensRes] = await Promise.all([
+          fetch("/api/ai-overview/tickers"),
+          fetch("/api/ai-overview/lenses"),
+        ]);
+        if (!tickerRes.ok) throw new Error("HTTP " + tickerRes.status);
+        const tickerData = await tickerRes.json();
+        allTickers = tickerData.tickers || tickerData;
+
+        if (lensRes.ok) {
+          const lensJson = await lensRes.json();
+          lensData = lensJson.lenses || [];
+          buildLensDropdown();
+        }
+
         buildCategoryPills();
         render();
       } catch (err) {
@@ -429,7 +490,7 @@
       }
     }
 
-    // ── Category counts (static — based on full dataset) ────────────────────
+    // ── Category / subcategory counts ────────────────────────────────────────
     function catCounts() {
       const m = {};
       allTickers.forEach(t => {
@@ -439,10 +500,11 @@
       return m;
     }
 
-    function subcatCounts(cat) {
+    // Union of subcategory counts across all currently active categories
+    function subcatCountsForActive() {
       const m = {};
       allTickers
-        .filter(t => t.category === cat)
+        .filter(t => activeCats.has(t.category))
         .forEach(t => {
           const s = t.subcategory || "";
           if (s) m[s] = (m[s] || 0) + 1;
@@ -450,10 +512,68 @@
       return m;
     }
 
+    // ── Lens dropdown ─────────────────────────────────────────────────────────
+    function buildLensDropdown() {
+      const sel = document.getElementById("lens-select");
+      if (!sel || lensData.length === 0) return;
+
+      const groupOrder = [
+        "Front-end (Chip Production)",
+        "Back-end (Packaging + Chips)",
+        "Infrastructure",
+        "Demand & Adjacent",
+      ];
+      const grouped = {};
+      lensData.forEach(l => {
+        const g = l.group || "Other";
+        if (!grouped[g]) grouped[g] = [];
+        grouped[g].push(l);
+      });
+
+      groupOrder.forEach(grp => {
+        if (!grouped[grp] || grouped[grp].length === 0) return;
+        const og = document.createElement("optgroup");
+        og.label = grp;
+        grouped[grp].forEach(l => {
+          const opt = document.createElement("option");
+          opt.value = l.id;
+          opt.textContent = l.name + "  (" + l.tickers.length + ")";
+          og.appendChild(opt);
+        });
+        sel.appendChild(og);
+      });
+
+      sel.addEventListener("change", () => {
+        const val = sel.value;
+        if (!val) { clearLens(); return; }
+        const lens = lensData.find(l => l.id === val);
+        if (lens) activateLens(lens);
+      });
+    }
+
+    function activateLens(lens) {
+      activeLensId = lens.id;
+      lensTickers  = new Set(lens.tickers);
+      const badge  = document.getElementById("lens-badge");
+      badge.textContent = "✕  " + lens.name;
+      badge.style.display = "inline-flex";
+      render();
+    }
+
+    function clearLens() {
+      activeLensId = "";
+      lensTickers  = null;
+      document.getElementById("lens-select").value = "";
+      const badge = document.getElementById("lens-badge");
+      badge.style.display = "none";
+      render();
+    }
+
+    document.getElementById("lens-badge").addEventListener("click", clearLens);
+
     // ── Build category pills (once after data loads) ─────────────────────────
     function buildCategoryPills() {
       const counts = catCounts();
-      // Sort categories: "01.", "02.", ..., "18.", "99." last
       const cats = Object.keys(counts).sort((a, b) => {
         const na = parseInt(a) || 999;
         const nb = parseInt(b) || 999;
@@ -463,10 +583,10 @@
       const container = document.getElementById("cat-pills");
       container.innerHTML = "";
 
-      // "All" pill — placed directly (not wrapped) so it's always visible
+      // "All" pill — always visible, clears all selections
       const allBtn = makePill("All", allTickers.length, true, () => {
-        filterCat = "";
-        filterSubcat = "";
+        activeCats.clear();
+        activeSubcats.clear();
         refreshCatPills();
         refreshSubcatRow();
         render();
@@ -476,23 +596,20 @@
 
       cats.forEach(cat => {
         const btn = makePill(cat, counts[cat], false, () => {
-          if (filterCat === cat) {
-            // Toggle off → back to All
-            filterCat = "";
-            filterSubcat = "";
-            refreshCatPills();
-            refreshSubcatRow();
+          // Multi-select toggle
+          if (activeCats.has(cat)) {
+            activeCats.delete(cat);
+            cleanOrphanedSubcats();
           } else {
-            filterCat = cat;
-            filterSubcat = "";
-            refreshCatPills();
-            refreshSubcatRow();
+            activeCats.add(cat);
           }
+          refreshCatPills();
+          refreshSubcatRow();
           render();
         });
         btn.dataset.cat = cat;
 
-        // Wrap in a collapsible wrapper so inactive pills can animate out
+        // Wrap in collapsible wrapper for animate-out on filter
         const wrap = document.createElement("span");
         wrap.className = "cat-pill-wrap";
         wrap.dataset.cat = cat;
@@ -501,23 +618,30 @@
       });
     }
 
+    // Remove subcats that no longer belong to any active category
+    function cleanOrphanedSubcats() {
+      if (activeCats.size === 0) { activeSubcats.clear(); return; }
+      const validSubcats = new Set(
+        allTickers
+          .filter(t => activeCats.has(t.category))
+          .map(t => t.subcategory)
+          .filter(Boolean)
+      );
+      activeSubcats.forEach(s => { if (!validSubcats.has(s)) activeSubcats.delete(s); });
+    }
+
     function refreshCatPills() {
-      // "All" pill active state
       const allBtn = document.getElementById("cat-pill-all");
-      if (allBtn) allBtn.classList.toggle("active", filterCat === "");
+      if (allBtn) allBtn.classList.toggle("active", activeCats.size === 0);
 
-      // Each wrapped category pill: active state + collapse/expand
       document.querySelectorAll("#cat-pills .cat-pill-wrap").forEach(wrap => {
-        const cat = wrap.dataset.cat;
-        const isActive = cat === filterCat;
-
-        // Active state on the button inside
-        const btn = wrap.querySelector(".pill-btn");
+        const cat     = wrap.dataset.cat;
+        const isActive = activeCats.has(cat);
+        const btn     = wrap.querySelector(".pill-btn");
         if (btn) btn.classList.toggle("active", isActive);
 
-        // Collapse all non-active pills when a category is selected;
-        // expand all when returning to "All"
-        if (filterCat === "") {
+        // Collapse non-active pills when any category is selected
+        if (activeCats.size === 0) {
           wrap.classList.remove("collapsed");
         } else {
           wrap.classList.toggle("collapsed", !isActive);
@@ -525,50 +649,50 @@
       });
     }
 
-    // ── Build / refresh subcategory pill row ─────────────────────────────────
+    // ── Subcategory pill row ──────────────────────────────────────────────────
     function refreshSubcatRow() {
       const row = document.getElementById("subcat-row");
-      if (!filterCat) {
+      if (activeCats.size === 0) {
         row.style.display = "none";
         return;
       }
       row.style.display = "";
 
-      const counts = subcatCounts(filterCat);
+      const counts  = subcatCountsForActive();
       const subcats = Object.keys(counts).sort();
       const container = document.getElementById("subcat-pills");
       container.innerHTML = "";
 
-      // "All" subcategory pill
-      const allBtn = makePill("All", Object.values(counts).reduce((a, b) => a + b, 0), true, () => {
-        filterSubcat = "";
+      // Count of tickers across all active categories (for "All" pill)
+      const totalInCats = allTickers.filter(t => activeCats.has(t.category)).length;
+
+      const allBtn = makePill("All", totalInCats, activeSubcats.size === 0, () => {
+        activeSubcats.clear();
         refreshSubcatPills();
         render();
-      }, true /* isSubcat */);
+      }, true);
       allBtn.id = "subcat-pill-all";
       container.appendChild(allBtn);
 
       subcats.forEach(sub => {
-        const btn = makePill(sub, counts[sub], false, () => {
-          if (filterSubcat === sub) {
-            filterSubcat = "";
+        const btn = makePill(sub, counts[sub], activeSubcats.has(sub), () => {
+          if (activeSubcats.has(sub)) {
+            activeSubcats.delete(sub);
           } else {
-            filterSubcat = sub;
+            activeSubcats.add(sub);
           }
           refreshSubcatPills();
           render();
-        }, true /* isSubcat */);
+        }, true);
         btn.dataset.sub = sub;
         container.appendChild(btn);
       });
-
-      refreshSubcatPills();
     }
 
     function refreshSubcatPills() {
       document.querySelectorAll("#subcat-pills .pill-btn").forEach(btn => {
-        const isAll = btn.id === "subcat-pill-all";
-        const active = isAll ? filterSubcat === "" : btn.dataset.sub === filterSubcat;
+        const isAll   = btn.id === "subcat-pill-all";
+        const active  = isAll ? activeSubcats.size === 0 : activeSubcats.has(btn.dataset.sub);
         btn.classList.toggle("active", active);
       });
     }
@@ -578,7 +702,7 @@
       const btn = document.createElement("button");
       let cls = "pill-btn";
       if (isSubcat) cls += " sub-pill";
-      if (isActive)  cls += " active";
+      if (isActive) cls += " active";
       btn.className = cls;
       btn.innerHTML =
         escHtml(label) +
@@ -591,6 +715,7 @@
     function sortedFiltered() {
       let rows = allTickers.map((t, i) => Object.assign({}, t, { _idx: i + 1 }));
 
+      // Text search
       if (filterText) {
         const q = filterText.toLowerCase();
         rows = rows.filter(r =>
@@ -598,11 +723,20 @@
           (r.company_name || "").toLowerCase().includes(q)
         );
       }
-      if (filterCat) {
-        rows = rows.filter(r => r.category === filterCat);
+
+      // Lens filter (independent — intersects with pills if both active)
+      if (lensTickers) {
+        rows = rows.filter(r => lensTickers.has(r.ticker));
       }
-      if (filterSubcat) {
-        rows = rows.filter(r => r.subcategory === filterSubcat);
+
+      // Category filter (union across active set)
+      if (activeCats.size > 0) {
+        rows = rows.filter(r => activeCats.has(r.category));
+      }
+
+      // Subcategory filter (further refines category results)
+      if (activeSubcats.size > 0) {
+        rows = rows.filter(r => activeSubcats.has(r.subcategory));
       }
 
       rows.sort((a, b) => {
@@ -623,7 +757,7 @@
       const rows  = sortedFiltered();
       const tbody = document.getElementById("table-body");
 
-      const filtered = (filterText || filterCat || filterSubcat);
+      const filtered = filterText || activeCats.size > 0 || activeSubcats.size > 0 || lensTickers;
       document.getElementById("badge").textContent =
         filtered ? rows.length + " of " + TOTAL + " Tickers" : TOTAL + " Tickers";
       document.getElementById("result-count").textContent =
