@@ -7,6 +7,12 @@ import { api } from "../api/client.js";
  * Props:
  *   ticker   {string|null}  — ticker to load; null/undefined = panel closed
  *   onClose  {function}     — called when user closes the panel
+ *
+ * Compact/Full toggle:
+ *   Default state on every open is COMPACT — shows header + What They Do only.
+ *   User can expand to FULL to see all sections.
+ *   State resets to COMPACT each time a new ticker opens (or the same ticker
+ *   re-opens after closing).
  */
 export default function ResearchPanel({ ticker, onClose }) {
   const isOpen = !!ticker;
@@ -14,11 +20,13 @@ export default function ResearchPanel({ ticker, onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastTicker, setLastTicker] = useState(null);
+  const [isCompact, setIsCompact] = useState(true);
 
-  // Fetch sitrep whenever ticker changes
+  // Fetch sitrep whenever ticker changes; reset to compact on every new open
   useEffect(() => {
     if (!ticker) return;
     setLastTicker(ticker);
+    setIsCompact(true);   // always reset to compact when panel opens/ticker changes
     setLoading(true);
     setError(null);
     setData(null);
@@ -46,6 +54,8 @@ export default function ResearchPanel({ ticker, onClose }) {
 
   // Keep showing the last loaded ticker's data while sliding closed
   const displayTicker = ticker || lastTicker;
+
+  // ── Style helpers ────────────────────────────────────────────────────────────
 
   const pillStyle = (bg, color = "#fff", extra = {}) => ({
     background: bg,
@@ -75,10 +85,10 @@ export default function ResearchPanel({ ticker, onClose }) {
     </div>
   );
 
-  const renderList = (items, emptyText) => {
-    if (!items || items.length === 0) return (
-      <div style={{ color: "rgba(255,255,255,0.35)", fontSize: "13px" }}>{emptyText || "None"}</div>
-    );
+  // Generic list renderer — handles string arrays and { label, text, ... } objects.
+  // NOT used for winners (which have their own card-grid renderer below).
+  const renderList = (items) => {
+    if (!items || items.length === 0) return null;
     return (
       <ul style={{ margin: 0, padding: "0 0 0 18px", listStyle: "disc" }}>
         {items.map((item, i) => {
@@ -89,9 +99,8 @@ export default function ResearchPanel({ ticker, onClose }) {
               </li>
             );
           }
-          // Object with label/text or title/body
           const title = item.label || item.title || item.name || item.component || "";
-          const body = item.text || item.body || item.detail || item.description || "";
+          const body  = item.text  || item.body  || item.detail || item.description || "";
           return (
             <li key={i} style={{ color: "rgba(255,255,255,0.82)", fontSize: "13px", lineHeight: 1.55, marginBottom: "6px" }}>
               {title && <strong style={{ color: "#fff" }}>{title}{body ? " — " : ""}</strong>}
@@ -102,6 +111,79 @@ export default function ResearchPanel({ ticker, onClose }) {
       </ul>
     );
   };
+
+  // Winners card grid — items are { ticker, rationale } objects.
+  const renderWinnersGrid = (winners) => {
+    if (!winners || winners.length === 0) return null;
+    return (
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(2, 1fr)",
+        gap: "8px",
+        marginTop: "2px",
+      }}>
+        {winners.map((w, i) => {
+          const t = w.ticker || String(w);
+          const r = w.rationale || w.text || "";
+          return (
+            <div key={i} style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(139,92,246,0.2)",
+              borderRadius: "6px",
+              padding: "10px 12px",
+            }}>
+              <div style={{
+                fontFamily: "'Courier New', Courier, monospace",
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "#a78bfa",
+                letterSpacing: "0.04em",
+              }}>
+                {t}
+              </div>
+              {r && (
+                <div style={{
+                  fontSize: "11px",
+                  color: "rgba(255,255,255,0.55)",
+                  marginTop: "4px",
+                  lineHeight: 1.5,
+                }}>
+                  {r}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // ── Toggle button ────────────────────────────────────────────────────────────
+
+  const ToggleButton = () => (
+    <div style={{ textAlign: "center", marginTop: "24px", marginBottom: "4px" }}>
+      <button
+        onClick={() => setIsCompact(v => !v)}
+        style={{
+          background: "#8b5cf6",
+          color: "#fff",
+          border: "none",
+          borderRadius: "6px",
+          padding: "10px 20px",
+          fontSize: "13px",
+          fontWeight: 600,
+          cursor: "pointer",
+          transition: "background 0.15s",
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "#a78bfa"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "#8b5cf6"; }}
+      >
+        {isCompact ? "Show full research ▾" : "Show compact view ▴"}
+      </button>
+    </div>
+  );
+
+  // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
     <>
@@ -137,7 +219,7 @@ export default function ResearchPanel({ ticker, onClose }) {
           boxShadow: "-6px 0 32px rgba(0,0,0,0.6)",
         }}
       >
-        {/* ── Panel header ── */}
+        {/* ── Panel header (always visible) ── */}
         <div style={{
           padding: "14px 18px 12px",
           borderBottom: "1px solid rgba(255,255,255,0.08)",
@@ -242,7 +324,7 @@ export default function ResearchPanel({ ticker, onClose }) {
           </div>
         </div>
 
-        {/* ── Panel body ── */}
+        {/* ── Panel body (scrollable) ── */}
         <div style={{ flex: 1, overflowY: "auto", padding: "4px 20px 24px" }}>
 
           {loading && (
@@ -259,7 +341,7 @@ export default function ResearchPanel({ ticker, onClose }) {
 
           {data && (
             <>
-              {/* What they do */}
+              {/* ── COMPACT VIEW: What They Do ── */}
               {data.what_they_do && (
                 <>
                   {sectionTitle("What They Do")}
@@ -269,46 +351,54 @@ export default function ResearchPanel({ ticker, onClose }) {
                 </>
               )}
 
-              {/* AI Exposure / Hidden angles */}
-              {data.hidden_angles && data.hidden_angles.length > 0 && (
+              {/* ── FULL VIEW: additional sections ── */}
+              {!isCompact && (
                 <>
-                  {sectionTitle("AI Exposure & Hidden Angles")}
-                  {renderList(data.hidden_angles)}
+                  {/* AI Exposure / Hidden Angles */}
+                  {data.hidden_angles && data.hidden_angles.length > 0 && (
+                    <>
+                      {sectionTitle("AI Exposure & Hidden Angles")}
+                      {renderList(data.hidden_angles)}
+                    </>
+                  )}
+
+                  {/* What Could Kill This */}
+                  {data.kill_components && data.kill_components.length > 0 && (
+                    <>
+                      {sectionTitle("What Could Kill This")}
+                      {renderList(data.kill_components)}
+                    </>
+                  )}
+
+                  {/* Who Wins — 2-column card grid using { ticker, rationale } */}
+                  {data.winners && data.winners.length > 0 && (
+                    <>
+                      {sectionTitle("Who Wins If This Works")}
+                      {renderWinnersGrid(data.winners)}
+                    </>
+                  )}
+
+                  {/* Parse warnings */}
+                  {data.parse_warnings && data.parse_warnings.length > 0 && (
+                    <>
+                      {sectionTitle("Parse Notes")}
+                      <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>
+                        {data.parse_warnings.join(" · ")}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Sections parsed */}
+                  {data.sections_parsed != null && (
+                    <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.2)", marginTop: "24px" }}>
+                      {data.sections_parsed} sections parsed
+                    </div>
+                  )}
                 </>
               )}
 
-              {/* Kill components */}
-              {data.kill_components && data.kill_components.length > 0 && (
-                <>
-                  {sectionTitle("What Could Kill This")}
-                  {renderList(data.kill_components)}
-                </>
-              )}
-
-              {/* Winners */}
-              {data.winners && data.winners.length > 0 && (
-                <>
-                  {sectionTitle("Who Wins If This Works")}
-                  {renderList(data.winners)}
-                </>
-              )}
-
-              {/* Parse warnings (dev info, show only if any) */}
-              {data.parse_warnings && data.parse_warnings.length > 0 && (
-                <>
-                  {sectionTitle("Parse Notes")}
-                  <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>
-                    {data.parse_warnings.join(" · ")}
-                  </div>
-                </>
-              )}
-
-              {/* Sections parsed indicator */}
-              {data.sections_parsed != null && (
-                <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.2)", marginTop: "24px" }}>
-                  {data.sections_parsed} sections parsed
-                </div>
-              )}
+              {/* ── Toggle button (always shown when data is loaded) ── */}
+              <ToggleButton />
             </>
           )}
         </div>
