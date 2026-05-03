@@ -126,6 +126,7 @@ class ScanResultOut(BaseModel):
     lenses: list[str] = []
     category: str | None = None
     subcategory: str | None = None
+    is_defense: bool = False   # True when primary_lens = "Defense & Aerospace"
 
 
 class ScanLatestOut(BaseModel):

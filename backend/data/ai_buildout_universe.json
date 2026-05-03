@@ -121,6 +121,13 @@
       "subcategory": "Semi-Custom HVAC"
     },
     {
+      "ticker": "AAPL",
+      "company_name": "Apple Inc.",
+      "source": "AI_Buildout_Tier1_Defense_v2.pdf",
+      "category": "16. Hyperscalers & Mega-Cap Cloud",
+      "subcategory": "Vertical AI Stack (Silicon + OS + Apps)"
+    },
+    {
       "ticker": "ABB",
       "company_name": "ABB Ltd",
       "source": "Final Supplement",
@@ -138,7 +145,7 @@
       "ticker": "ADI",
       "company_name": "Analog Devices",
       "source": "Combined v2",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "Analog & Mixed Signal (AI Server Power)"
     },
     {
@@ -147,6 +154,13 @@
       "source": "Combined v2",
       "category": "05. Semiconductor Test & Inspection",
       "subcategory": "Wafer-Level Burn-In Test"
+    },
+    {
+      "ticker": "AEP",
+      "company_name": "American Electric Power",
+      "source": "AI_Buildout_Tier1_Defense_v2.pdf",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Transmission Utility (Multi-State)"
     },
     {
       "ticker": "AGX",
@@ -166,7 +180,7 @@
       "ticker": "ALAB",
       "company_name": "Astera Labs",
       "source": "Combined v2",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "AI Connectivity (Retimers, PCIe/CXL)"
     },
     {
@@ -180,7 +194,7 @@
       "ticker": "AMBA",
       "company_name": "Ambarella",
       "source": "COMPLETE",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "Edge AI Vision Processor"
     },
     {
@@ -264,7 +278,7 @@
       "ticker": "AVGO",
       "company_name": "Broadcom",
       "source": "Combined v2",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "Hyperscaler Custom Silicon (TPU, MTIA, OpenAI)"
     },
     {
@@ -415,6 +429,13 @@
       "subcategory": "Optical Transceivers + Defense Lasers"
     },
     {
+      "ticker": "COHU",
+      "company_name": "Cohu Inc.",
+      "source": "AI_Buildout_Tier1_Defense_v2.pdf",
+      "category": "05. Semiconductor Test & Inspection",
+      "subcategory": "Test Handlers (Final Test Automation)"
+    },
+    {
       "ticker": "CORZ",
       "company_name": "Core Scientific",
       "source": "COMPLETE",
@@ -425,7 +446,7 @@
       "ticker": "CRDO",
       "company_name": "Credo Technology",
       "source": "Combined v2",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "AI Connectivity (Active Electrical Cables)"
     },
     {
@@ -499,6 +520,13 @@
       "subcategory": "Diversified Industrial Cooling"
     },
     {
+      "ticker": "DUK",
+      "company_name": "Duke Energy",
+      "source": "AI_Buildout_Tier1_Defense_v2.pdf",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Utility (Carolinas + Southeast)"
+    },
+    {
       "ticker": "DY",
       "company_name": "Dycom Industries",
       "source": "COMPLETE",
@@ -525,6 +553,13 @@
       "source": "COMPLETE",
       "category": "11. Power Infrastructure & Equipment",
       "subcategory": "Industrial Automation + Process"
+    },
+    {
+      "ticker": "ENR",
+      "company_name": "Siemens Energy AG",
+      "source": "AI_Buildout_Tier1_Defense_v2.pdf",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "Heavy Gas Turbines & Grid Tech"
     },
     {
       "ticker": "ENTG",
@@ -856,6 +891,13 @@
       "subcategory": "Mid-Market Mechanical"
     },
     {
+      "ticker": "LMT",
+      "company_name": "Lockheed Martin",
+      "source": "AI_Buildout_Tier1_Defense_v2.pdf",
+      "category": "19. Defense & Aerospace",
+      "subcategory": "Top-Tier Defense Prime (F-35 + Missiles + Space)"
+    },
+    {
       "ticker": "LRCX",
       "company_name": "Lam Research",
       "source": "Combined v2",
@@ -866,14 +908,21 @@
       "ticker": "LSCC",
       "company_name": "Lattice Semiconductor",
       "source": "Combined v2",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "Companion FPGA (Server Housekeeping)"
+    },
+    {
+      "ticker": "MARA",
+      "company_name": "Marathon Digital Holdings",
+      "source": "AI_Buildout_Tier1_Defense_v2.pdf",
+      "category": "13. Bitcoin Miners (Repurposed AI Compute)",
+      "subcategory": "Pure-Play Bitcoin (Slow AI Pivot)"
     },
     {
       "ticker": "MCHP",
       "company_name": "Microchip Technology",
       "source": "Combined v2",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "Microcontrollers + FPGA"
     },
     {
@@ -915,14 +964,14 @@
       "ticker": "MPWR",
       "company_name": "Monolithic Power Systems",
       "source": "COMPLETE",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "Power Management ICs (AI Server)"
     },
     {
       "ticker": "MRVL",
       "company_name": "Marvell Technology",
       "source": "Combined v2",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "Hyperscaler Custom Silicon (Trainium, Axion)"
     },
     {
@@ -943,7 +992,7 @@
       "ticker": "MTSI",
       "company_name": "MACOM Technology Solutions",
       "source": "Combined v2",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "RF & GaN Power Semiconductors"
     },
     {
@@ -989,6 +1038,13 @@
       "subcategory": "CDN + Edge + Zero Trust"
     },
     {
+      "ticker": "NOC",
+      "company_name": "Northrop Grumman",
+      "source": "AI_Buildout_Tier1_Defense_v2.pdf",
+      "category": "19. Defense & Aerospace",
+      "subcategory": "Defense Prime (B-21 + Space + Mission Systems)"
+    },
+    {
       "ticker": "NTAP",
       "company_name": "NetApp",
       "source": "Combined v2",
@@ -1015,6 +1071,13 @@
       "source": "Combined v2",
       "category": "99. Uncategorized",
       "subcategory": "Pending categorization"
+    },
+    {
+      "ticker": "NXPI",
+      "company_name": "NXP Semiconductors",
+      "source": "AI_Buildout_Tier1_Defense_v2.pdf",
+      "category": "02. AI Silicon & Analog",
+      "subcategory": "Automotive & Edge AI Semis"
     },
     {
       "ticker": "OKLO",
@@ -1090,7 +1153,7 @@
       "ticker": "POET",
       "company_name": "POET Technologies",
       "source": "COMPLETE",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "Photonic Integration (Pre-Revenue)"
     },
     {
@@ -1125,7 +1188,7 @@
       "ticker": "QCOM",
       "company_name": "Qualcomm",
       "source": "Combined v2",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "Mobile/Edge AI SoC"
     },
     {
@@ -1139,7 +1202,7 @@
       "ticker": "RMBS",
       "company_name": "Rambus",
       "source": "Combined v2",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "Memory Interface IP"
     },
     {
@@ -1148,6 +1211,13 @@
       "source": "COMPLETE",
       "category": "11. Power Infrastructure & Equipment",
       "subcategory": "Industrial Automation"
+    },
+    {
+      "ticker": "RTX",
+      "company_name": "RTX Corporation",
+      "source": "AI_Buildout_Tier1_Defense_v2.pdf",
+      "category": "19. Defense & Aerospace",
+      "subcategory": "Defense Conglomerate (Engines + Avionics + Missiles)"
     },
     {
       "ticker": "S",
@@ -1174,7 +1244,7 @@
       "ticker": "SLAB",
       "company_name": "Silicon Labs",
       "source": "COMPLETE",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "IoT Wireless SoC"
     },
     {
@@ -1195,7 +1265,7 @@
       "ticker": "SMTC",
       "company_name": "Semtech",
       "source": "COMPLETE",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "Analog & Connectivity"
     },
     {
@@ -1218,6 +1288,13 @@
       "source": "COMPLETE",
       "category": "06. Foundry & Advanced Packaging",
       "subcategory": "EDA Software (Chip Design Tools)"
+    },
+    {
+      "ticker": "SO",
+      "company_name": "Southern Company",
+      "source": "AI_Buildout_Tier1_Defense_v2.pdf",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Utility + New Nuclear (Vogtle)"
     },
     {
       "ticker": "SPXC",
@@ -1262,6 +1339,13 @@
       "subcategory": "Nuclear Operator (Susquehanna)"
     },
     {
+      "ticker": "TSLA",
+      "company_name": "Tesla Inc.",
+      "source": "AI_Buildout_Tier1_Defense_v2.pdf",
+      "category": "02. AI Silicon & Analog",
+      "subcategory": "Vertical AI Compute (Dojo + Inference)"
+    },
+    {
       "ticker": "TSM",
       "company_name": "Taiwan Semiconductor Manufacturing",
       "source": "COMPLETE",
@@ -1281,6 +1365,13 @@
       "source": "Combined v2",
       "category": "09. Data Center Construction & EPC",
       "subcategory": "PCB Manufacturing"
+    },
+    {
+      "ticker": "TXN",
+      "company_name": "Texas Instruments",
+      "source": "AI_Buildout_Tier1_Defense_v2.pdf",
+      "category": "02. AI Silicon & Analog",
+      "subcategory": "Analog & Mixed Signal (Industrial)"
     },
     {
       "ticker": "UCTT",
@@ -1328,7 +1419,7 @@
       "ticker": "VICR",
       "company_name": "Vicor Corporation",
       "source": "COMPLETE",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "High-Density Power Modules"
     },
     {
@@ -1358,6 +1449,13 @@
       "source": "Combined v2",
       "category": "03. Memory & Storage",
       "subcategory": "HDD + Storage Systems"
+    },
+    {
+      "ticker": "WTS",
+      "company_name": "Watts Water Technologies",
+      "source": "AI_Buildout_Tier1_Defense_v2.pdf",
+      "category": "10. Cooling & Thermal",
+      "subcategory": "Water Systems & Plumbing (Data Center)"
     },
     {
       "ticker": "WULF",

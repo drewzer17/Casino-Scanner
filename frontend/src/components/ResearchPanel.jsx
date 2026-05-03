@@ -271,7 +271,11 @@ export default function ResearchPanel({ ticker, onClose }) {
             {data && (data.primary_lens || (data.lenses && data.lenses.length > 0) || data.category) && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
                 {data.primary_lens && (
-                  <span style={pillStyle("#8b5cf6", "#fff", { fontWeight: 700 })}>
+                  <span style={pillStyle(
+                    data.primary_lens === "Defense & Aerospace" ? "#fbbf24" : "#8b5cf6",
+                    data.primary_lens === "Defense & Aerospace" ? "#000" : "#fff",
+                    { fontWeight: 700 }
+                  )}>
                     {data.primary_lens}
                   </span>
                 )}

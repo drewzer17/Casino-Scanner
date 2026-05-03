@@ -277,6 +277,7 @@ def _to_out(
         lenses=(ai_meta or {}).get("lenses") or [],
         category=(ai_meta or {}).get("category"),
         subcategory=(ai_meta or {}).get("subcategory"),
+        is_defense=(ai_meta or {}).get("primary_lens") == "Defense & Aerospace",
     )
 
 
@@ -1553,7 +1554,12 @@ def get_ai_overview_tickers(db: Session = Depends(get_db)):
         except Exception as import_exc:
             logger.warning("ai-overview: could not import fetch_quotes: %s", import_exc)
 
-    # Merge all fields into each ticker entry
+    # HARD EXCLUSION: Defense & Aerospace tickers never appear on /ai-overview.
+    # They have category "19. Defense & Aerospace". No toggle, no override.
+    _DEFENSE_CAT = "19. Defense & Aerospace"
+
+    # Merge all fields into each ticker entry, then filter
+    result_tickers = []
     for t in data.get("tickers", []):
         s = sitrep_map.get(t["ticker"], {})
         t["sections_parsed"]  = s.get("sections_parsed")
@@ -1570,6 +1576,12 @@ def get_ai_overview_tickers(db: Session = Depends(get_db)):
         else:
             t["change_pct"] = None
 
+        # Skip defense tickers on the universe page
+        if t.get("category") == _DEFENSE_CAT:
+            continue
+        result_tickers.append(t)
+
+    data["tickers"] = result_tickers
     return data
 
 
@@ -1611,12 +1623,19 @@ def get_ai_sitrep_detail(ticker: str, db: Session = Depends(get_db)):
 
 @router.get("/ai-overview/lenses", include_in_schema=True)
 def get_ai_overview_lenses():
-    """Return the lens definitions from data/ai_overview_lenses.json."""
+    """Return the lens definitions from data/ai_overview_lenses.json.
+    Defense & Aerospace lens is excluded — it has no visible rows on the universe page."""
     lenses_path = Path(__file__).resolve().parent.parent.parent / "data" / "ai_overview_lenses.json"
     if not lenses_path.exists():
         return {"lenses": []}
     with open(lenses_path) as f:
-        return json.load(f)
+        data = json.load(f)
+    # Hard-exclude Defense & Aerospace from the universe page lens dropdown
+    data["lenses"] = [
+        l for l in data.get("lenses", [])
+        if l.get("id") != "defense_aerospace"
+    ]
+    return data
 
 
 @router.get("/sitrep/{ticker}", include_in_schema=True)

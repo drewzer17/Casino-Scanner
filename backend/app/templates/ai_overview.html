@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Buildout Universe — 181 Tickers</title>
+  <title>AI Buildout Universe — 192 Tickers</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -819,7 +819,7 @@
     <div class="page-header-left">
       <a class="back-btn" href="/">← Back to Scanner</a>
       <h1 class="page-title">AI Buildout Universe</h1>
-      <span class="ticker-count-badge" id="badge">181 Tickers</span>
+      <span class="ticker-count-badge" id="badge">192 Tickers</span>
     </div>
   </div>
 
@@ -1370,7 +1370,7 @@
     let lensTickers   = null;        // Set of tickers for active lens (null = no lens)
     let activeLensId  = "";
 
-    const TOTAL = 181;
+    let TOTAL = 0;  // set from actual API response (non-defense tickers only)
 
     // ── Load data (tickers + lenses in parallel) ─────────────────────────────
     async function loadTickers() {
@@ -1382,6 +1382,7 @@
         if (!tickerRes.ok) throw new Error("HTTP " + tickerRes.status);
         const tickerData = await tickerRes.json();
         allTickers = tickerData.tickers || tickerData;
+        TOTAL = allTickers.length;
 
         if (lensRes.ok) {
           const lensJson = await lensRes.json();

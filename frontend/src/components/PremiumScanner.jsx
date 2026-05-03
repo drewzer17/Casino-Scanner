@@ -216,13 +216,13 @@ function cellValue(item, key, onResearch) {
     case "ticker":     return (
       <span>
         {item.sma_golden_cross === true && item.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
-        <ResearchAsterisk ticker={item.ticker} hasSitrep={item.has_sitrep} onResearch={onResearch} />
+        <ResearchAsterisk ticker={item.ticker} hasSitrep={item.has_sitrep} onResearch={onResearch} isDefense={item.is_defense} />
         {item.ticker}
         {item.has_sitrep && item.primary_lens && (
           <span style={{
             display: "inline-block",
-            background: "#8b5cf6",
-            color: "#fff",
+            background: item.is_defense ? "#fbbf24" : "#8b5cf6",
+            color: item.is_defense ? "#000" : "#fff",
             fontSize: "10px",
             fontWeight: 500,
             padding: "2px 6px",

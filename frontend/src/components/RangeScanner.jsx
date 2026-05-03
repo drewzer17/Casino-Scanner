@@ -34,7 +34,7 @@ function cellValue(row, key, onResearch) {
       return (
         <span>
           {row.sma_golden_cross === true && row.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
-          <ResearchAsterisk ticker={row.ticker} hasSitrep={row.has_sitrep} onResearch={onResearch} />
+          <ResearchAsterisk ticker={row.ticker} hasSitrep={row.has_sitrep} onResearch={onResearch} isDefense={row.is_defense} />
           {row.ticker}
           {row.company_name && (
             <span className="company-name company-name-table">{row.company_name}</span>

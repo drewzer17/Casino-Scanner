@@ -4,88 +4,219 @@
       "id": "fab_equipment",
       "name": "Fab Equipment",
       "group": "Front-end (Chip Production)",
-      "tickers": ["ASML", "LRCX", "AMAT", "KLAC", "ACLS", "MKSI", "ICHR", "UCTT", "VECO", "TER"],
-      "primary_for": ["AMAT", "UCTT", "VECO"]
+      "tickers": [
+        "ASML",
+        "LRCX",
+        "AMAT",
+        "KLAC",
+        "ACLS",
+        "MKSI",
+        "ICHR",
+        "UCTT",
+        "VECO",
+        "TER"
+      ],
+      "primary_for": [
+        "AMAT",
+        "UCTT",
+        "VECO"
+      ]
     },
     {
       "id": "foundries",
       "name": "Foundries",
       "group": "Front-end (Chip Production)",
-      "tickers": ["TSM", "UMC", "GFS"],
-      "primary_for": ["TSM"]
+      "tickers": [
+        "TSM",
+        "UMC",
+        "GFS"
+      ],
+      "primary_for": [
+        "TSM"
+      ]
     },
     {
       "id": "lithography",
       "name": "Lithography",
       "group": "Front-end (Chip Production)",
-      "tickers": ["ASML", "VECO", "KLAC", "PLAB", "DD"],
-      "primary_for": ["ASML"]
+      "tickers": [
+        "ASML",
+        "VECO",
+        "KLAC",
+        "PLAB",
+        "DD"
+      ],
+      "primary_for": [
+        "ASML"
+      ]
     },
     {
       "id": "etch_deposition",
       "name": "Etch & Deposition",
       "group": "Front-end (Chip Production)",
-      "tickers": ["LRCX", "AMAT", "ACLS", "MKSI", "ICHR", "UCTT"],
-      "primary_for": ["LRCX", "ACLS", "MKSI", "ICHR"]
+      "tickers": [
+        "LRCX",
+        "AMAT",
+        "ACLS",
+        "MKSI",
+        "ICHR",
+        "UCTT"
+      ],
+      "primary_for": [
+        "LRCX",
+        "ACLS",
+        "MKSI",
+        "ICHR"
+      ]
     },
     {
       "id": "photomasks",
       "name": "Photomasks",
       "group": "Front-end (Chip Production)",
-      "tickers": ["PLAB", "KLAC"],
-      "primary_for": ["PLAB"]
+      "tickers": [
+        "PLAB",
+        "KLAC"
+      ],
+      "primary_for": [
+        "PLAB"
+      ]
     },
     {
       "id": "metrology_test",
       "name": "Metrology / Inspection / Test",
       "group": "Front-end (Chip Production)",
-      "tickers": ["KLAC", "NVMI", "ONTO", "CAMT", "AEHR", "TER", "KEYS"],
-      "primary_for": ["KLAC", "CAMT", "ONTO", "AEHR", "TER"]
+      "tickers": [
+        "KLAC",
+        "NVMI",
+        "ONTO",
+        "CAMT",
+        "AEHR",
+        "TER",
+        "KEYS",
+        "COHU"
+      ],
+      "primary_for": [
+        "KLAC",
+        "CAMT",
+        "ONTO",
+        "AEHR",
+        "TER",
+        "COHU"
+      ]
     },
     {
       "id": "specialty_gases",
       "name": "Specialty Gases",
       "group": "Front-end (Chip Production)",
-      "tickers": ["APD", "LIN"],
+      "tickers": [
+        "APD",
+        "LIN"
+      ],
       "primary_for": []
     },
     {
       "id": "specialty_chemicals",
       "name": "Specialty Chemicals & Materials",
       "group": "Front-end (Chip Production)",
-      "tickers": ["DD", "ENTG", "ESI", "MTRN"],
-      "primary_for": ["DD"]
+      "tickers": [
+        "DD",
+        "ENTG",
+        "ESI",
+        "MTRN"
+      ],
+      "primary_for": [
+        "DD"
+      ]
     },
     {
       "id": "advanced_packaging",
       "name": "Advanced Packaging / OSAT",
       "group": "Back-end (Packaging + Chips)",
-      "tickers": ["KLIC", "AMKR", "ASX", "IMOS", "TSM"],
-      "primary_for": ["KLIC", "AMKR", "ASX", "IMOS"]
+      "tickers": [
+        "KLIC",
+        "AMKR",
+        "ASX",
+        "IMOS",
+        "TSM"
+      ],
+      "primary_for": [
+        "KLIC",
+        "AMKR",
+        "ASX",
+        "IMOS"
+      ]
     },
     {
       "id": "memory_hbm",
       "name": "Memory & HBM",
       "group": "Back-end (Packaging + Chips)",
-      "tickers": ["MU", "KLIC", "CAMT", "ONTO", "AEHR", "IMOS", "SNDK"],
-      "primary_for": ["MU"]
+      "tickers": [
+        "MU",
+        "KLIC",
+        "CAMT",
+        "ONTO",
+        "AEHR",
+        "IMOS",
+        "SNDK"
+      ],
+      "primary_for": [
+        "MU"
+      ]
     },
     {
       "id": "gpu_ai_accelerators",
       "name": "GPU & AI Accelerators",
       "group": "Back-end (Packaging + Chips)",
       "tickers": [
-        "NVDA", "AMD", "AVGO", "MRVL", "ALAB", "CRDO", "ARM", "AMBA",
-        "MPWR", "LSCC", "RMBS", "CDNS", "SNPS", "QCOM", "INTC", "SLAB",
-        "ADI", "MCHP", "SMTC", "VICR"
+        "NVDA",
+        "AMD",
+        "AVGO",
+        "MRVL",
+        "ALAB",
+        "CRDO",
+        "ARM",
+        "AMBA",
+        "MPWR",
+        "LSCC",
+        "RMBS",
+        "CDNS",
+        "SNPS",
+        "QCOM",
+        "INTC",
+        "SLAB",
+        "ADI",
+        "MCHP",
+        "SMTC",
+        "VICR",
+        "TSLA",
+        "TXN",
+        "NXPI"
       ],
-      "primary_for": ["AVGO", "MRVL", "VICR"]
+      "primary_for": [
+        "AVGO",
+        "MRVL",
+        "VICR",
+        "TSLA",
+        "TXN",
+        "NXPI"
+      ]
     },
     {
       "id": "ai_server_oems",
       "name": "AI Server OEMs / Contract Manufacturers",
       "group": "Back-end (Packaging + Chips)",
-      "tickers": ["DELL", "HPE", "SMCI", "JBL", "PLXS", "SANM", "FLEX", "BHE", "CLS", "TTMI"],
+      "tickers": [
+        "DELL",
+        "HPE",
+        "SMCI",
+        "JBL",
+        "PLXS",
+        "SANM",
+        "FLEX",
+        "BHE",
+        "CLS",
+        "TTMI"
+      ],
       "primary_for": []
     },
     {
@@ -93,8 +224,20 @@
       "name": "Optical & Networking",
       "group": "Infrastructure",
       "tickers": [
-        "AAOI", "COHR", "LITE", "FN", "POET", "MTSI", "ANET", "CSCO",
-        "CIEN", "AVGO", "MRVL", "GLW", "GILT", "IPGP"
+        "AAOI",
+        "COHR",
+        "LITE",
+        "FN",
+        "POET",
+        "MTSI",
+        "ANET",
+        "CSCO",
+        "CIEN",
+        "AVGO",
+        "MRVL",
+        "GLW",
+        "GILT",
+        "IPGP"
       ],
       "primary_for": []
     },
@@ -103,56 +246,166 @@
       "name": "Power",
       "group": "Infrastructure",
       "tickers": [
-        "CMI", "CAT", "GNRC", "BE", "ETN", "ABB", "SBGSY", "VRT", "HUBB",
-        "EMR", "ROK", "NVT", "CEG", "VST", "NEE", "D", "TLN", "SMR",
-        "OKLO", "BWXT", "CCJ", "LEU", "UEC", "UUUU", "GEV", "GE", "FTV",
-        "DOV", "PH", "BKR", "GTLS", "HON", "VICR"
+        "CMI",
+        "CAT",
+        "GNRC",
+        "BE",
+        "ETN",
+        "ABB",
+        "SBGSY",
+        "VRT",
+        "HUBB",
+        "EMR",
+        "ROK",
+        "NVT",
+        "CEG",
+        "VST",
+        "NEE",
+        "D",
+        "TLN",
+        "SMR",
+        "OKLO",
+        "BWXT",
+        "CCJ",
+        "LEU",
+        "UEC",
+        "UUUU",
+        "GEV",
+        "GE",
+        "FTV",
+        "DOV",
+        "PH",
+        "BKR",
+        "GTLS",
+        "HON",
+        "VICR",
+        "AEP",
+        "DUK",
+        "SO",
+        "ENR"
       ],
-      "primary_for": []
+      "primary_for": [
+        "AEP",
+        "DUK",
+        "SO",
+        "ENR"
+      ]
     },
     {
       "id": "cooling_thermal",
       "name": "Cooling & Thermal",
       "group": "Infrastructure",
       "tickers": [
-        "TT", "CARR", "JCI", "LII", "MOD", "AAON", "VRT", "PNR",
-        "GTES", "DOV", "FTV", "FLNC", "ECL"
+        "TT",
+        "CARR",
+        "JCI",
+        "LII",
+        "MOD",
+        "AAON",
+        "VRT",
+        "PNR",
+        "GTES",
+        "DOV",
+        "FTV",
+        "FLNC",
+        "ECL",
+        "WTS"
       ],
-      "primary_for": ["VRT", "DOV", "FTV"]
+      "primary_for": [
+        "VRT",
+        "DOV",
+        "FTV",
+        "WTS"
+      ]
     },
     {
       "id": "dc_reits",
       "name": "Data Center REITs",
       "group": "Infrastructure",
-      "tickers": ["DLR", "EQIX", "AMT", "IRM", "DBRG"],
+      "tickers": [
+        "DLR",
+        "EQIX",
+        "AMT",
+        "IRM",
+        "DBRG"
+      ],
       "primary_for": []
     },
     {
       "id": "storage",
       "name": "Storage",
       "group": "Demand & Adjacent",
-      "tickers": ["PSTG", "NTAP", "STX", "WDC", "SNDK", "MU"],
-      "primary_for": ["SNDK"]
+      "tickers": [
+        "PSTG",
+        "NTAP",
+        "STX",
+        "WDC",
+        "SNDK",
+        "MU"
+      ],
+      "primary_for": [
+        "SNDK"
+      ]
     },
     {
       "id": "hyperscalers_software_cyber",
       "name": "Hyperscalers + AI Software + Cybersecurity",
       "group": "Demand & Adjacent",
       "tickers": [
-        "MSFT", "AMZN", "GOOGL", "META", "ORCL", "IBM", "BABA", "BIDU",
-        "PLTR", "SNOW", "DDOG", "MDB", "CFLT", "ESTC", "GTLB", "AKAM",
-        "PENG", "CRWD", "PANW", "FTNT", "NET", "ZS", "S"
+        "MSFT",
+        "AMZN",
+        "GOOGL",
+        "META",
+        "ORCL",
+        "IBM",
+        "BABA",
+        "BIDU",
+        "PLTR",
+        "SNOW",
+        "DDOG",
+        "MDB",
+        "CFLT",
+        "ESTC",
+        "GTLB",
+        "AKAM",
+        "PENG",
+        "CRWD",
+        "PANW",
+        "FTNT",
+        "NET",
+        "ZS",
+        "S",
+        "AAPL"
       ],
-      "primary_for": []
+      "primary_for": [
+        "AAPL"
+      ]
     },
     {
       "id": "construction_epc",
       "name": "Construction & EPC",
       "group": "Demand & Adjacent",
       "tickers": [
-        "PWR", "MTZ", "EME", "FIX", "AGX", "FLR", "KBR", "PRIM", "STRL",
-        "IESC", "MYRG", "LMB", "AZZ", "DY", "POWL", "SPXC", "WCC", "TEL",
-        "APH", "J"
+        "PWR",
+        "MTZ",
+        "EME",
+        "FIX",
+        "AGX",
+        "FLR",
+        "KBR",
+        "PRIM",
+        "STRL",
+        "IESC",
+        "MYRG",
+        "LMB",
+        "AZZ",
+        "DY",
+        "POWL",
+        "SPXC",
+        "WCC",
+        "TEL",
+        "APH",
+        "J"
       ],
       "primary_for": []
     },
@@ -160,22 +413,62 @@
       "id": "bitcoin_miners",
       "name": "Bitcoin Miners (Pivoted to AI)",
       "group": "Demand & Adjacent",
-      "tickers": ["APLD", "IREN", "CIFR", "CORZ", "WULF", "HUT", "BITF", "RIOT", "BTDR", "GLXY"],
-      "primary_for": []
+      "tickers": [
+        "APLD",
+        "IREN",
+        "CIFR",
+        "CORZ",
+        "WULF",
+        "HUT",
+        "BITF",
+        "RIOT",
+        "BTDR",
+        "GLXY",
+        "MARA"
+      ],
+      "primary_for": [
+        "MARA"
+      ]
     },
     {
       "id": "specialty_materials",
       "name": "Specialty Materials & Rare Earths",
       "group": "Demand & Adjacent",
-      "tickers": ["MP", "USAR", "UUUU", "MTRN"],
-      "primary_for": ["MTRN", "UUUU"]
+      "tickers": [
+        "MP",
+        "USAR",
+        "UUUU",
+        "MTRN"
+      ],
+      "primary_for": [
+        "MTRN",
+        "UUUU"
+      ]
     },
     {
       "id": "neoclouds",
       "name": "Neoclouds / AI Compute Pure-Play",
       "group": "Demand & Adjacent",
-      "tickers": ["CRWV", "NBIS"],
+      "tickers": [
+        "CRWV",
+        "NBIS"
+      ],
       "primary_for": []
+    },
+    {
+      "id": "defense_aerospace",
+      "name": "Defense & Aerospace",
+      "group": "Demand & Adjacent",
+      "tickers": [
+        "RTX",
+        "LMT",
+        "NOC"
+      ],
+      "primary_for": [
+        "RTX",
+        "LMT",
+        "NOC"
+      ]
     }
   ]
 }

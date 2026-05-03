@@ -7,11 +7,18 @@ import React from "react";
  * When onResearch is provided it renders as a <button> that calls onResearch(ticker).
  * When onResearch is NOT provided it falls back to a link to /ai-overview/{ticker}.
  */
-export default function ResearchAsterisk({ ticker, hasSitrep, onResearch }) {
+export default function ResearchAsterisk({ ticker, hasSitrep, onResearch, isDefense }) {
   if (!hasSitrep) return null;
 
+  // Defense tickers use yellow; all others use purple
+  const baseColor  = isDefense ? "#fbbf24" : "#8b5cf6";
+  const hoverColor = isDefense ? "#fcd34d" : "#a78bfa";
+  const title      = isDefense
+    ? "Defense/Aerospace research (not pure AI play)"
+    : "View AI research";
+
   const sharedStyle = {
-    color: "#8b5cf6",
+    color: baseColor,
     fontWeight: "bold",
     fontSize: "1.2em",
     marginRight: "6px",
@@ -21,13 +28,13 @@ export default function ResearchAsterisk({ ticker, hasSitrep, onResearch }) {
     textDecoration: "none",
   };
 
-  const onEnter = (e) => { e.currentTarget.style.color = "#a78bfa"; };
-  const onLeave = (e) => { e.currentTarget.style.color = "#8b5cf6"; };
+  const onEnter = (e) => { e.currentTarget.style.color = hoverColor; };
+  const onLeave = (e) => { e.currentTarget.style.color = baseColor; };
 
   if (onResearch) {
     return (
       <button
-        title="View AI research"
+        title={title}
         onClick={(e) => {
           e.stopPropagation();
           onResearch(ticker);
@@ -49,7 +56,7 @@ export default function ResearchAsterisk({ ticker, hasSitrep, onResearch }) {
   return (
     <a
       href={`/ai-overview/${ticker}`}
-      title="View AI research"
+      title={title}
       onClick={(e) => {
         e.stopPropagation();
         sessionStorage.setItem("sitrep_return_to", window.location.href);

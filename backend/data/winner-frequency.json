@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-05-03T05:17:07.424675Z",
-  "total_sitreps_analyzed": 181,
-  "total_unique_winners": 252,
+  "generated_at": "2026-05-03T05:55:23.952873Z",
+  "total_sitreps_analyzed": 195,
+  "total_unique_winners": 261,
   "top_5_overall": [
     {
       "ticker": "VRT",
       "company_name": "Vertiv Holdings",
-      "mentions": 25,
+      "mentions": 26,
       "in_universe": true,
       "primary_lens": "Cooling & Thermal",
       "category": "10. Cooling & Thermal",
@@ -97,6 +97,13 @@
           "source_lens": "Cooling & Thermal",
           "source_category": "10. Cooling & Thermal",
           "rationale": "Carrier (CARR), Lennox (LII), Johnson Controls (JCI) on HVAC broadly. Vertiv (VRT), Modine (MOD) on data"
+        },
+        {
+          "source_ticker": "WTS",
+          "source_company": "Watts Water Technologies",
+          "source_lens": "Cooling & Thermal",
+          "source_category": "10. Cooling & Thermal",
+          "rationale": "Vertiv (VRT) and Modine (MOD) on integrated cooling at hyperscaler scale"
         },
         {
           "source_ticker": "MU",
@@ -195,6 +202,168 @@
           "source_lens": "Power",
           "source_category": "11. Power Infrastructure & Equipment",
           "rationale": "Vertiv (VRT) on US hyperscaler share at the integrated platform level \u2014 direct head-to-head competitor. Eaton"
+        }
+      ]
+    },
+    {
+      "ticker": "AVGO",
+      "company_name": "Broadcom",
+      "mentions": 20,
+      "in_universe": true,
+      "primary_lens": "GPU & AI Accelerators",
+      "category": "02. AI Silicon & Analog",
+      "subcategory": "Hyperscaler Custom Silicon (TPU, MTIA, OpenAI)",
+      "sectors_count": 8,
+      "sectors": [
+        "01. GPUs & Accelerators",
+        "02. AI Silicon & Analog",
+        "02. Custom AI Silicon",
+        "03. Memory & Storage",
+        "05. Semiconductor Test & Inspection",
+        "07. Optical & Photonics",
+        "08. Networking & Switching",
+        "16. Hyperscalers & Mega-Cap Cloud"
+      ],
+      "sources": [
+        {
+          "source_ticker": "ALAB",
+          "source_company": "Astera Labs",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "Broadcom (AVGO) is the dominant winner in any scenario where Scale-Up Ethernet wins the architecture battle,"
+        },
+        {
+          "source_ticker": "AMD",
+          "source_company": "Advanced Micro Devices",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "01. GPUs & Accelerators",
+          "rationale": "Broadcom (AVGO) and Marvell (MRVL) on custom silicon \u2014 if AMD does not credibly substitute for"
+        },
+        {
+          "source_ticker": "CRDO",
+          "source_company": "Credo Technology",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "Broadcom (AVGO) and Marvell (MRVL) absorb most of Credo's TAM if hyperscalers favor integrated"
+        },
+        {
+          "source_ticker": "INTC",
+          "source_company": "Intel",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "01. GPUs & Accelerators",
+          "rationale": "dominance if Gaudi remains irrelevant. Broadcom (AVGO) and Marvell (MRVL) on custom silicon designs that"
+        },
+        {
+          "source_ticker": "LSCC",
+          "source_company": "Lattice Semiconductor",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "Intel/AMD's exit as their growth lane, trades at fraction of LSCC's multiple. Broadcom (AVGO) as shadow winner if"
+        },
+        {
+          "source_ticker": "MRVL",
+          "source_company": "Marvell Technology",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "Broadcom (AVGO) is the dominant winner if Marvell loses Trainium \u2014 would absorb the design fees directly and"
+        },
+        {
+          "source_ticker": "NVDA",
+          "source_company": "NVIDIA",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "01. GPUs & Accelerators",
+          "rationale": "from NVIDIA goes either to custom silicon or to AMD MI300/MI350/MI400. Broadcom (AVGO) is the"
+        },
+        {
+          "source_ticker": "QCOM",
+          "source_company": "Qualcomm",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "AMD and Intel on PC if Snapdragon X stalls. Broadcom (AVGO) on smartphone RF and connectivity content."
+        },
+        {
+          "source_ticker": "SMTC",
+          "source_company": "Semtech",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "connectivity ICs. Marvell (MRVL) and Broadcom (AVGO) on broader high-speed interconnect. On optical"
+        },
+        {
+          "source_ticker": "TSLA",
+          "source_company": "Tesla Inc.",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "Specialty AI silicon competitors (AVGO, MRVL) on custom silicon if Dojo doesn't reach commercial scale and Tesla shifts to merchant alternatives."
+        },
+        {
+          "source_ticker": "MSFT",
+          "source_company": "Microsoft",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "the consumer segment. Broadcom (AVGO) wins regardless because Microsoft's Maia chips ship through"
+        },
+        {
+          "source_ticker": "ORCL",
+          "source_company": "Oracle",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "want to use Azure for political or pricing reasons. Broadcom (AVGO) wins regardless because OpenAI's"
+        },
+        {
+          "source_ticker": "MU",
+          "source_company": "Micron Technology",
+          "source_lens": "Memory & HBM",
+          "source_category": "03. Memory & Storage",
+          "rationale": "Broadcom (AVGO) wins regardless because hyperscaler-custom-silicon AI accelerators (Trainium, TPU,"
+        },
+        {
+          "source_ticker": "AEHR",
+          "source_company": "AEHR Test Systems",
+          "source_lens": "Metrology / Inspection / Test",
+          "source_category": "05. Semiconductor Test & Inspection",
+          "rationale": "equipment wins. Broadcom (AVGO) shadow winner on CPO transition because Broadcom designs the silicon"
+        },
+        {
+          "source_ticker": "AAOI",
+          "source_company": "Applied Optoelectronics",
+          "source_lens": "Optical & Networking",
+          "source_category": "07. Optical & Photonics",
+          "rationale": "price-sensitive markets if trusted-supply-chain mandates loosen. Broadcom (AVGO) on CPO transition"
+        },
+        {
+          "source_ticker": "ANET",
+          "source_company": "Arista Networks",
+          "source_lens": "Optical & Networking",
+          "source_category": "08. Networking & Switching",
+          "rationale": "(AVGO) wins regardless because they make the Tomahawk and Jericho ASICs that power Arista's switches"
+        },
+        {
+          "source_ticker": "CIEN",
+          "source_company": "Ciena Corporation",
+          "source_lens": "Optical & Networking",
+          "source_category": "07. Optical & Photonics",
+          "rationale": "system integration. Broadcom (AVGO) shadow winner via DSP and SerDes silicon that goes into all optical"
+        },
+        {
+          "source_ticker": "LITE",
+          "source_company": "Lumentum Holdings",
+          "source_lens": "Optical & Networking",
+          "source_category": "07. Optical & Photonics",
+          "rationale": "capture share if Apple diversifies. On silicon photonics displacement, Broadcom (AVGO) and Marvell"
+        },
+        {
+          "source_ticker": "MTSI",
+          "source_company": "MACOM Technology Solutions",
+          "source_lens": "Optical & Networking",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "Broadcom (AVGO) and Marvell (MRVL) on bundled analog-plus-DSP. Credo (CRDO) on retimer and DSP share."
+        },
+        {
+          "source_ticker": "POET",
+          "source_company": "POET Technologies",
+          "source_lens": "Optical & Networking",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "Broadcom (AVGO) is the most direct beneficiary \u2014 they are the dominant networking ASIC vendor and"
         }
       ]
     },
@@ -359,163 +528,140 @@
       ]
     },
     {
-      "ticker": "AVGO",
-      "company_name": "Broadcom",
-      "mentions": 19,
+      "ticker": "COHR",
+      "company_name": "Coherent Corp",
+      "mentions": 16,
       "in_universe": true,
-      "primary_lens": "GPU & AI Accelerators",
-      "category": "02. Custom AI Silicon",
-      "subcategory": "Hyperscaler Custom Silicon (TPU, MTIA, OpenAI)",
-      "sectors_count": 7,
+      "primary_lens": "Optical & Networking",
+      "category": "07. Optical & Photonics",
+      "subcategory": "Optical Transceivers + Defense Lasers",
+      "sectors_count": 5,
       "sectors": [
-        "01. GPUs & Accelerators",
         "02. Custom AI Silicon",
-        "03. Memory & Storage",
+        "04. Semiconductor Equipment",
         "05. Semiconductor Test & Inspection",
         "07. Optical & Photonics",
-        "08. Networking & Switching",
-        "16. Hyperscalers & Mega-Cap Cloud"
+        "19. Defense & Aerospace"
       ],
       "sources": [
         {
-          "source_ticker": "ALAB",
-          "source_company": "Astera Labs",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "02. Custom AI Silicon",
-          "rationale": "Broadcom (AVGO) is the dominant winner in any scenario where Scale-Up Ethernet wins the architecture battle,"
+          "source_ticker": "LMT",
+          "source_company": "Lockheed Martin",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins"
         },
         {
-          "source_ticker": "AMD",
-          "source_company": "Advanced Micro Devices",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "01. GPUs & Accelerators",
-          "rationale": "Broadcom (AVGO) and Marvell (MRVL) on custom silicon \u2014 if AMD does not credibly substitute for"
+          "source_ticker": "NOC",
+          "source_company": "Northrop Grumman",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins."
+        },
+        {
+          "source_ticker": "RTX",
+          "source_company": "Raytheon Technologies",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins"
+        },
+        {
+          "source_ticker": "MKSI",
+          "source_company": "MKS Instruments",
+          "source_lens": "Etch & Deposition",
+          "source_category": "04. Semiconductor Equipment",
+          "rationale": "(private) on smaller share. IPG Photonics (IPGP), Coherent (COHR), and Lumentum (LITE) on laser"
+        },
+        {
+          "source_ticker": "VECO",
+          "source_company": "Veeco Instruments",
+          "source_lens": "Fab Equipment",
+          "source_category": "04. Semiconductor Equipment",
+          "rationale": "(COHR) and broader compound semiconductor equipment specialists capture share. The shadow winner"
         },
         {
           "source_ticker": "CRDO",
           "source_company": "Credo Technology",
           "source_lens": "GPU & AI Accelerators",
           "source_category": "02. Custom AI Silicon",
-          "rationale": "Broadcom (AVGO) and Marvell (MRVL) absorb most of Credo's TAM if hyperscalers favor integrated"
-        },
-        {
-          "source_ticker": "INTC",
-          "source_company": "Intel",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "01. GPUs & Accelerators",
-          "rationale": "dominance if Gaudi remains irrelevant. Broadcom (AVGO) and Marvell (MRVL) on custom silicon designs that"
-        },
-        {
-          "source_ticker": "LSCC",
-          "source_company": "Lattice Semiconductor",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "02. Custom AI Silicon",
-          "rationale": "Intel/AMD's exit as their growth lane, trades at fraction of LSCC's multiple. Broadcom (AVGO) as shadow winner if"
-        },
-        {
-          "source_ticker": "MRVL",
-          "source_company": "Marvell Technology",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "02. Custom AI Silicon",
-          "rationale": "Broadcom (AVGO) is the dominant winner if Marvell loses Trainium \u2014 would absorb the design fees directly and"
-        },
-        {
-          "source_ticker": "NVDA",
-          "source_company": "NVIDIA",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "01. GPUs & Accelerators",
-          "rationale": "from NVIDIA goes either to custom silicon or to AMD MI300/MI350/MI400. Broadcom (AVGO) is the"
-        },
-        {
-          "source_ticker": "QCOM",
-          "source_company": "Qualcomm",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "02. Custom AI Silicon",
-          "rationale": "AMD and Intel on PC if Snapdragon X stalls. Broadcom (AVGO) on smartphone RF and connectivity content."
+          "rationale": "allocation. Coherent (COHR) on the same optical transition. Astera Labs (ALAB) on PCIe specifically \u2014 their"
         },
         {
           "source_ticker": "SMTC",
           "source_company": "Semtech",
           "source_lens": "GPU & AI Accelerators",
           "source_category": "02. Custom AI Silicon",
-          "rationale": "connectivity ICs. Marvell (MRVL) and Broadcom (AVGO) on broader high-speed interconnect. On optical"
-        },
-        {
-          "source_ticker": "MSFT",
-          "source_company": "Microsoft",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
-          "rationale": "the consumer segment. Broadcom (AVGO) wins regardless because Microsoft's Maia chips ship through"
-        },
-        {
-          "source_ticker": "ORCL",
-          "source_company": "Oracle",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
-          "rationale": "want to use Azure for political or pricing reasons. Broadcom (AVGO) wins regardless because OpenAI's"
-        },
-        {
-          "source_ticker": "MU",
-          "source_company": "Micron Technology",
-          "source_lens": "Memory & HBM",
-          "source_category": "03. Memory & Storage",
-          "rationale": "Broadcom (AVGO) wins regardless because hyperscaler-custom-silicon AI accelerators (Trainium, TPU,"
+          "rationale": "alternatives, Coherent (COHR) and Lumentum (LITE). On LoRa competition, Espressif and Nordic"
         },
         {
           "source_ticker": "AEHR",
           "source_company": "AEHR Test Systems",
           "source_lens": "Metrology / Inspection / Test",
           "source_category": "05. Semiconductor Test & Inspection",
-          "rationale": "equipment wins. Broadcom (AVGO) shadow winner on CPO transition because Broadcom designs the silicon"
+          "rationale": "Coherent (COHR) and Lumentum (LITE) on the optical components themselves regardless of which test"
         },
         {
           "source_ticker": "AAOI",
           "source_company": "Applied Optoelectronics",
           "source_lens": "Optical & Networking",
           "source_category": "07. Optical & Photonics",
-          "rationale": "price-sensitive markets if trusted-supply-chain mandates loosen. Broadcom (AVGO) on CPO transition"
-        },
-        {
-          "source_ticker": "ANET",
-          "source_company": "Arista Networks",
-          "source_lens": "Optical & Networking",
-          "source_category": "08. Networking & Switching",
-          "rationale": "(AVGO) wins regardless because they make the Tomahawk and Jericho ASICs that power Arista's switches"
+          "rationale": "Coherent (COHR) and Lumentum (LITE) on transceiver share regardless of who wins Microsoft. Fabrinet (FN) on"
         },
         {
           "source_ticker": "CIEN",
           "source_company": "Ciena Corporation",
           "source_lens": "Optical & Networking",
           "source_category": "07. Optical & Photonics",
-          "rationale": "system integration. Broadcom (AVGO) shadow winner via DSP and SerDes silicon that goes into all optical"
+          "rationale": "networking-plus-optical if Cisco expands into transport. Coherent (COHR) and Lumentum (LITE) on the optical"
+        },
+        {
+          "source_ticker": "FN",
+          "source_company": "Fabrinet",
+          "source_lens": "Optical & Networking",
+          "source_category": "07. Optical & Photonics",
+          "rationale": "different end markets. Coherent (COHR) and Lumentum (LITE) win directly if they vertically integrate and capture"
+        },
+        {
+          "source_ticker": "GLW",
+          "source_company": "Corning",
+          "source_lens": "Optical & Networking",
+          "source_category": "07. Optical & Photonics",
+          "rationale": "Furukawa Electric (foreign, Japan) on similar. Belden (BDC) on industrial cabling and adjacent. Coherent (COHR)"
+        },
+        {
+          "source_ticker": "IPGP",
+          "source_company": "IPG Photonics",
+          "source_lens": "Optical & Networking",
+          "source_category": "07. Optical & Photonics",
+          "rationale": "Coherent (COHR) on defense lasers and integrated photonics. Trumpf (private, German) on industrial cutting and"
         },
         {
           "source_ticker": "LITE",
           "source_company": "Lumentum Holdings",
           "source_lens": "Optical & Networking",
           "source_category": "07. Optical & Photonics",
-          "rationale": "capture share if Apple diversifies. On silicon photonics displacement, Broadcom (AVGO) and Marvell"
+          "rationale": "Coherent (COHR) is the most direct competitor and absorbs share. Innolight and Eoptolink (Chinese"
         },
         {
           "source_ticker": "MTSI",
           "source_company": "MACOM Technology Solutions",
           "source_lens": "Optical & Networking",
           "source_category": "02. Custom AI Silicon",
-          "rationale": "Broadcom (AVGO) and Marvell (MRVL) on bundled analog-plus-DSP. Credo (CRDO) on retimer and DSP share."
+          "rationale": "Coherent (COHR) and Lumentum (LITE) on full transceivers regardless of who supplies the analog chips. Qorvo"
         },
         {
           "source_ticker": "POET",
           "source_company": "POET Technologies",
           "source_lens": "Optical & Networking",
           "source_category": "02. Custom AI Silicon",
-          "rationale": "Broadcom (AVGO) is the most direct beneficiary \u2014 they are the dominant networking ASIC vendor and"
+          "rationale": "similar logic on optical DSP and electro-optics. Coherent (COHR) and Lumentum (LITE) capture share in"
         }
       ]
     },
     {
       "ticker": "MSFT",
       "company_name": "Microsoft",
-      "mentions": 15,
+      "mentions": 16,
       "in_universe": true,
       "primary_lens": "Hyperscalers + AI Software + Cybersecurity",
       "category": "16. Hyperscalers & Mega-Cap Cloud",
@@ -535,6 +681,13 @@
           "source_lens": "GPU & AI Accelerators",
           "source_category": "01. GPUs & Accelerators",
           "rationale": "Amazon (AMZN), Microsoft (MSFT), Meta (META) all benefit by reducing their NVIDIA bill. On the"
+        },
+        {
+          "source_ticker": "AAPL",
+          "source_company": "Apple Inc.",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "Microsoft (MSFT) on enterprise AI if Apple Intelligence fails to penetrate enterprise"
         },
         {
           "source_ticker": "AMZN",
@@ -635,129 +788,21 @@
           "rationale": "and service provider networking. Microsoft (MSFT) on bundled enterprise security plus collaboration if Splunk"
         }
       ]
-    },
-    {
-      "ticker": "COHR",
-      "company_name": "Coherent Corp",
-      "mentions": 13,
-      "in_universe": true,
-      "primary_lens": "Optical & Networking",
-      "category": "07. Optical & Photonics",
-      "subcategory": "Optical Transceivers + Defense Lasers",
-      "sectors_count": 4,
-      "sectors": [
-        "02. Custom AI Silicon",
-        "04. Semiconductor Equipment",
-        "05. Semiconductor Test & Inspection",
-        "07. Optical & Photonics"
-      ],
-      "sources": [
-        {
-          "source_ticker": "MKSI",
-          "source_company": "MKS Instruments",
-          "source_lens": "Etch & Deposition",
-          "source_category": "04. Semiconductor Equipment",
-          "rationale": "(private) on smaller share. IPG Photonics (IPGP), Coherent (COHR), and Lumentum (LITE) on laser"
-        },
-        {
-          "source_ticker": "VECO",
-          "source_company": "Veeco Instruments",
-          "source_lens": "Fab Equipment",
-          "source_category": "04. Semiconductor Equipment",
-          "rationale": "(COHR) and broader compound semiconductor equipment specialists capture share. The shadow winner"
-        },
-        {
-          "source_ticker": "CRDO",
-          "source_company": "Credo Technology",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "02. Custom AI Silicon",
-          "rationale": "allocation. Coherent (COHR) on the same optical transition. Astera Labs (ALAB) on PCIe specifically \u2014 their"
-        },
-        {
-          "source_ticker": "SMTC",
-          "source_company": "Semtech",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "02. Custom AI Silicon",
-          "rationale": "alternatives, Coherent (COHR) and Lumentum (LITE). On LoRa competition, Espressif and Nordic"
-        },
-        {
-          "source_ticker": "AEHR",
-          "source_company": "AEHR Test Systems",
-          "source_lens": "Metrology / Inspection / Test",
-          "source_category": "05. Semiconductor Test & Inspection",
-          "rationale": "Coherent (COHR) and Lumentum (LITE) on the optical components themselves regardless of which test"
-        },
-        {
-          "source_ticker": "AAOI",
-          "source_company": "Applied Optoelectronics",
-          "source_lens": "Optical & Networking",
-          "source_category": "07. Optical & Photonics",
-          "rationale": "Coherent (COHR) and Lumentum (LITE) on transceiver share regardless of who wins Microsoft. Fabrinet (FN) on"
-        },
-        {
-          "source_ticker": "CIEN",
-          "source_company": "Ciena Corporation",
-          "source_lens": "Optical & Networking",
-          "source_category": "07. Optical & Photonics",
-          "rationale": "networking-plus-optical if Cisco expands into transport. Coherent (COHR) and Lumentum (LITE) on the optical"
-        },
-        {
-          "source_ticker": "FN",
-          "source_company": "Fabrinet",
-          "source_lens": "Optical & Networking",
-          "source_category": "07. Optical & Photonics",
-          "rationale": "different end markets. Coherent (COHR) and Lumentum (LITE) win directly if they vertically integrate and capture"
-        },
-        {
-          "source_ticker": "GLW",
-          "source_company": "Corning",
-          "source_lens": "Optical & Networking",
-          "source_category": "07. Optical & Photonics",
-          "rationale": "Furukawa Electric (foreign, Japan) on similar. Belden (BDC) on industrial cabling and adjacent. Coherent (COHR)"
-        },
-        {
-          "source_ticker": "IPGP",
-          "source_company": "IPG Photonics",
-          "source_lens": "Optical & Networking",
-          "source_category": "07. Optical & Photonics",
-          "rationale": "Coherent (COHR) on defense lasers and integrated photonics. Trumpf (private, German) on industrial cutting and"
-        },
-        {
-          "source_ticker": "LITE",
-          "source_company": "Lumentum Holdings",
-          "source_lens": "Optical & Networking",
-          "source_category": "07. Optical & Photonics",
-          "rationale": "Coherent (COHR) is the most direct competitor and absorbs share. Innolight and Eoptolink (Chinese"
-        },
-        {
-          "source_ticker": "MTSI",
-          "source_company": "MACOM Technology Solutions",
-          "source_lens": "Optical & Networking",
-          "source_category": "02. Custom AI Silicon",
-          "rationale": "Coherent (COHR) and Lumentum (LITE) on full transceivers regardless of who supplies the analog chips. Qorvo"
-        },
-        {
-          "source_ticker": "POET",
-          "source_company": "POET Technologies",
-          "source_lens": "Optical & Networking",
-          "source_category": "02. Custom AI Silicon",
-          "rationale": "similar logic on optical DSP and electro-optics. Coherent (COHR) and Lumentum (LITE) capture share in"
-        }
-      ]
     }
   ],
   "cross_cutting_winners": [
     {
       "ticker": "AVGO",
       "company_name": "Broadcom",
-      "mentions": 19,
+      "mentions": 20,
       "in_universe": true,
       "primary_lens": "GPU & AI Accelerators",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "Hyperscaler Custom Silicon (TPU, MTIA, OpenAI)",
-      "sectors_count": 7,
+      "sectors_count": 8,
       "sectors": [
         "01. GPUs & Accelerators",
+        "02. AI Silicon & Analog",
         "02. Custom AI Silicon",
         "03. Memory & Storage",
         "05. Semiconductor Test & Inspection",
@@ -828,6 +873,13 @@
           "source_lens": "GPU & AI Accelerators",
           "source_category": "02. Custom AI Silicon",
           "rationale": "connectivity ICs. Marvell (MRVL) and Broadcom (AVGO) on broader high-speed interconnect. On optical"
+        },
+        {
+          "source_ticker": "TSLA",
+          "source_company": "Tesla Inc.",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "Specialty AI silicon competitors (AVGO, MRVL) on custom silicon if Dojo doesn't reach commercial scale and Tesla shifts to merchant alternatives."
         },
         {
           "source_ticker": "MSFT",
@@ -1009,7 +1061,7 @@
     {
       "ticker": "VRT",
       "company_name": "Vertiv Holdings",
-      "mentions": 25,
+      "mentions": 26,
       "in_universe": true,
       "primary_lens": "Cooling & Thermal",
       "category": "10. Cooling & Thermal",
@@ -1100,6 +1152,13 @@
           "source_lens": "Cooling & Thermal",
           "source_category": "10. Cooling & Thermal",
           "rationale": "Carrier (CARR), Lennox (LII), Johnson Controls (JCI) on HVAC broadly. Vertiv (VRT), Modine (MOD) on data"
+        },
+        {
+          "source_ticker": "WTS",
+          "source_company": "Watts Water Technologies",
+          "source_lens": "Cooling & Thermal",
+          "source_category": "10. Cooling & Thermal",
+          "rationale": "Vertiv (VRT) and Modine (MOD) on integrated cooling at hyperscaler scale"
         },
         {
           "source_ticker": "MU",
@@ -1362,9 +1421,244 @@
       ]
     },
     {
+      "ticker": "NVDA",
+      "company_name": "NVIDIA",
+      "mentions": 12,
+      "in_universe": true,
+      "primary_lens": "GPU & AI Accelerators",
+      "category": "01. GPUs & Accelerators",
+      "subcategory": "Merchant GPU (AI Training/Inference)",
+      "sectors_count": 6,
+      "sectors": [
+        "01. GPUs & Accelerators",
+        "02. AI Silicon & Analog",
+        "02. Custom AI Silicon",
+        "03. Memory & Storage",
+        "13. Bitcoin Miners (Repurposed AI Compute)",
+        "16. Hyperscalers & Mega-Cap Cloud"
+      ],
+      "sources": [
+        {
+          "source_ticker": "APLD",
+          "source_company": "Applied Digital",
+          "source_lens": "Bitcoin Miners (Pivoted to AI)",
+          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
+          "rationale": "hyperscalers need power from somewhere. NVIDIA (NVDA) wins regardless. Pattern: APLD downside"
+        },
+        {
+          "source_ticker": "AMBA",
+          "source_company": "Ambarella",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "(NVDA) on high-end autonomous driving compute. Texas Instruments (TXN) and STMicro (STM) on"
+        },
+        {
+          "source_ticker": "AMD",
+          "source_company": "Advanced Micro Devices",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "01. GPUs & Accelerators",
+          "rationale": "NVIDIA (NVDA) is the obvious direct beneficiary \u2014 every dollar AMD does not capture in AI accelerators"
+        },
+        {
+          "source_ticker": "AVGO",
+          "source_company": "Broadcom",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "silicon, smaller scale but identical thesis structure. NVIDIA (NVDA) wins on merchant share if hyperscalers default"
+        },
+        {
+          "source_ticker": "MPWR",
+          "source_company": "Monolithic Power Systems",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "some communications and automotive share. NVIDIA (NVDA) wins regardless because the GPU revenue"
+        },
+        {
+          "source_ticker": "TSLA",
+          "source_company": "Tesla Inc.",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "NVIDIA (NVDA) on AI training silicon if Dojo scales slower than expected \u2014 Tesla still buys H100s at scale"
+        },
+        {
+          "source_ticker": "VICR",
+          "source_company": "Vicor Corporation",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "Electronics (Taiwan-listed) on competitor power-module supply. NVIDIA (NVDA), AMD (AMD), and"
+        },
+        {
+          "source_ticker": "AMZN",
+          "source_company": "Amazon.com",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "Anthropic-on-AWS positioning erodes. NVIDIA (NVDA) on AI compute if Trainium fails. The shadow"
+        },
+        {
+          "source_ticker": "GOOGL",
+          "source_company": "Alphabet",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "Microsoft) on AI assistant displacement of search. NVIDIA (NVDA) if TPU strategic value compresses and"
+        },
+        {
+          "source_ticker": "MSFT",
+          "source_company": "Microsoft",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "Broadcom's design fees. NVIDIA (NVDA) wins regardless because every enterprise AI workload runs on their"
+        },
+        {
+          "source_ticker": "MU",
+          "source_company": "Micron Technology",
+          "source_lens": "Memory & HBM",
+          "source_category": "03. Memory & Storage",
+          "rationale": "NVIDIA (NVDA) wins regardless because they sit upstream of Micron and choose the qualified suppliers."
+        },
+        {
+          "source_ticker": "POET",
+          "source_company": "POET Technologies",
+          "source_lens": "Optical & Networking",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "volume. NVIDIA (NVDA) wins indirectly because their dominant position in AI cluster networking is"
+        }
+      ]
+    },
+    {
+      "ticker": "COHR",
+      "company_name": "Coherent Corp",
+      "mentions": 16,
+      "in_universe": true,
+      "primary_lens": "Optical & Networking",
+      "category": "07. Optical & Photonics",
+      "subcategory": "Optical Transceivers + Defense Lasers",
+      "sectors_count": 5,
+      "sectors": [
+        "02. Custom AI Silicon",
+        "04. Semiconductor Equipment",
+        "05. Semiconductor Test & Inspection",
+        "07. Optical & Photonics",
+        "19. Defense & Aerospace"
+      ],
+      "sources": [
+        {
+          "source_ticker": "LMT",
+          "source_company": "Lockheed Martin",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins"
+        },
+        {
+          "source_ticker": "NOC",
+          "source_company": "Northrop Grumman",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins."
+        },
+        {
+          "source_ticker": "RTX",
+          "source_company": "Raytheon Technologies",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins"
+        },
+        {
+          "source_ticker": "MKSI",
+          "source_company": "MKS Instruments",
+          "source_lens": "Etch & Deposition",
+          "source_category": "04. Semiconductor Equipment",
+          "rationale": "(private) on smaller share. IPG Photonics (IPGP), Coherent (COHR), and Lumentum (LITE) on laser"
+        },
+        {
+          "source_ticker": "VECO",
+          "source_company": "Veeco Instruments",
+          "source_lens": "Fab Equipment",
+          "source_category": "04. Semiconductor Equipment",
+          "rationale": "(COHR) and broader compound semiconductor equipment specialists capture share. The shadow winner"
+        },
+        {
+          "source_ticker": "CRDO",
+          "source_company": "Credo Technology",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "allocation. Coherent (COHR) on the same optical transition. Astera Labs (ALAB) on PCIe specifically \u2014 their"
+        },
+        {
+          "source_ticker": "SMTC",
+          "source_company": "Semtech",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "alternatives, Coherent (COHR) and Lumentum (LITE). On LoRa competition, Espressif and Nordic"
+        },
+        {
+          "source_ticker": "AEHR",
+          "source_company": "AEHR Test Systems",
+          "source_lens": "Metrology / Inspection / Test",
+          "source_category": "05. Semiconductor Test & Inspection",
+          "rationale": "Coherent (COHR) and Lumentum (LITE) on the optical components themselves regardless of which test"
+        },
+        {
+          "source_ticker": "AAOI",
+          "source_company": "Applied Optoelectronics",
+          "source_lens": "Optical & Networking",
+          "source_category": "07. Optical & Photonics",
+          "rationale": "Coherent (COHR) and Lumentum (LITE) on transceiver share regardless of who wins Microsoft. Fabrinet (FN) on"
+        },
+        {
+          "source_ticker": "CIEN",
+          "source_company": "Ciena Corporation",
+          "source_lens": "Optical & Networking",
+          "source_category": "07. Optical & Photonics",
+          "rationale": "networking-plus-optical if Cisco expands into transport. Coherent (COHR) and Lumentum (LITE) on the optical"
+        },
+        {
+          "source_ticker": "FN",
+          "source_company": "Fabrinet",
+          "source_lens": "Optical & Networking",
+          "source_category": "07. Optical & Photonics",
+          "rationale": "different end markets. Coherent (COHR) and Lumentum (LITE) win directly if they vertically integrate and capture"
+        },
+        {
+          "source_ticker": "GLW",
+          "source_company": "Corning",
+          "source_lens": "Optical & Networking",
+          "source_category": "07. Optical & Photonics",
+          "rationale": "Furukawa Electric (foreign, Japan) on similar. Belden (BDC) on industrial cabling and adjacent. Coherent (COHR)"
+        },
+        {
+          "source_ticker": "IPGP",
+          "source_company": "IPG Photonics",
+          "source_lens": "Optical & Networking",
+          "source_category": "07. Optical & Photonics",
+          "rationale": "Coherent (COHR) on defense lasers and integrated photonics. Trumpf (private, German) on industrial cutting and"
+        },
+        {
+          "source_ticker": "LITE",
+          "source_company": "Lumentum Holdings",
+          "source_lens": "Optical & Networking",
+          "source_category": "07. Optical & Photonics",
+          "rationale": "Coherent (COHR) is the most direct competitor and absorbs share. Innolight and Eoptolink (Chinese"
+        },
+        {
+          "source_ticker": "MTSI",
+          "source_company": "MACOM Technology Solutions",
+          "source_lens": "Optical & Networking",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "Coherent (COHR) and Lumentum (LITE) on full transceivers regardless of who supplies the analog chips. Qorvo"
+        },
+        {
+          "source_ticker": "POET",
+          "source_company": "POET Technologies",
+          "source_lens": "Optical & Networking",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "similar logic on optical DSP and electro-optics. Coherent (COHR) and Lumentum (LITE) capture share in"
+        }
+      ]
+    },
+    {
       "ticker": "MSFT",
       "company_name": "Microsoft",
-      "mentions": 15,
+      "mentions": 16,
       "in_universe": true,
       "primary_lens": "Hyperscalers + AI Software + Cybersecurity",
       "category": "16. Hyperscalers & Mega-Cap Cloud",
@@ -1384,6 +1678,13 @@
           "source_lens": "GPU & AI Accelerators",
           "source_category": "01. GPUs & Accelerators",
           "rationale": "Amazon (AMZN), Microsoft (MSFT), Meta (META) all benefit by reducing their NVIDIA bill. On the"
+        },
+        {
+          "source_ticker": "AAPL",
+          "source_company": "Apple Inc.",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "Microsoft (MSFT) on enterprise AI if Apple Intelligence fails to penetrate enterprise"
         },
         {
           "source_ticker": "AMZN",
@@ -1488,7 +1789,7 @@
     {
       "ticker": "GOOGL",
       "company_name": "Alphabet",
-      "mentions": 12,
+      "mentions": 13,
       "in_universe": true,
       "primary_lens": "Hyperscalers + AI Software + Cybersecurity",
       "category": "16. Hyperscalers & Mega-Cap Cloud",
@@ -1522,6 +1823,13 @@
           "source_lens": "GPU & AI Accelerators",
           "source_category": "02. Custom AI Silicon",
           "rationale": "(AMZN), and Google (GOOGL) capture more value if they consolidate the smart home stack with"
+        },
+        {
+          "source_ticker": "AAPL",
+          "source_company": "Apple Inc.",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "Google (GOOGL) on Search default if antitrust forces unbundling"
         },
         {
           "source_ticker": "AMZN",
@@ -1685,102 +1993,6 @@
       ]
     },
     {
-      "ticker": "NVDA",
-      "company_name": "NVIDIA",
-      "mentions": 11,
-      "in_universe": true,
-      "primary_lens": "GPU & AI Accelerators",
-      "category": "01. GPUs & Accelerators",
-      "subcategory": "Merchant GPU (AI Training/Inference)",
-      "sectors_count": 5,
-      "sectors": [
-        "01. GPUs & Accelerators",
-        "02. Custom AI Silicon",
-        "03. Memory & Storage",
-        "13. Bitcoin Miners (Repurposed AI Compute)",
-        "16. Hyperscalers & Mega-Cap Cloud"
-      ],
-      "sources": [
-        {
-          "source_ticker": "APLD",
-          "source_company": "Applied Digital",
-          "source_lens": "Bitcoin Miners (Pivoted to AI)",
-          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
-          "rationale": "hyperscalers need power from somewhere. NVIDIA (NVDA) wins regardless. Pattern: APLD downside"
-        },
-        {
-          "source_ticker": "AMBA",
-          "source_company": "Ambarella",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "02. Custom AI Silicon",
-          "rationale": "(NVDA) on high-end autonomous driving compute. Texas Instruments (TXN) and STMicro (STM) on"
-        },
-        {
-          "source_ticker": "AMD",
-          "source_company": "Advanced Micro Devices",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "01. GPUs & Accelerators",
-          "rationale": "NVIDIA (NVDA) is the obvious direct beneficiary \u2014 every dollar AMD does not capture in AI accelerators"
-        },
-        {
-          "source_ticker": "AVGO",
-          "source_company": "Broadcom",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "02. Custom AI Silicon",
-          "rationale": "silicon, smaller scale but identical thesis structure. NVIDIA (NVDA) wins on merchant share if hyperscalers default"
-        },
-        {
-          "source_ticker": "MPWR",
-          "source_company": "Monolithic Power Systems",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "02. Custom AI Silicon",
-          "rationale": "some communications and automotive share. NVIDIA (NVDA) wins regardless because the GPU revenue"
-        },
-        {
-          "source_ticker": "VICR",
-          "source_company": "Vicor Corporation",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "02. Custom AI Silicon",
-          "rationale": "Electronics (Taiwan-listed) on competitor power-module supply. NVIDIA (NVDA), AMD (AMD), and"
-        },
-        {
-          "source_ticker": "AMZN",
-          "source_company": "Amazon.com",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
-          "rationale": "Anthropic-on-AWS positioning erodes. NVIDIA (NVDA) on AI compute if Trainium fails. The shadow"
-        },
-        {
-          "source_ticker": "GOOGL",
-          "source_company": "Alphabet",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
-          "rationale": "Microsoft) on AI assistant displacement of search. NVIDIA (NVDA) if TPU strategic value compresses and"
-        },
-        {
-          "source_ticker": "MSFT",
-          "source_company": "Microsoft",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
-          "rationale": "Broadcom's design fees. NVIDIA (NVDA) wins regardless because every enterprise AI workload runs on their"
-        },
-        {
-          "source_ticker": "MU",
-          "source_company": "Micron Technology",
-          "source_lens": "Memory & HBM",
-          "source_category": "03. Memory & Storage",
-          "rationale": "NVIDIA (NVDA) wins regardless because they sit upstream of Micron and choose the qualified suppliers."
-        },
-        {
-          "source_ticker": "POET",
-          "source_company": "POET Technologies",
-          "source_lens": "Optical & Networking",
-          "source_category": "02. Custom AI Silicon",
-          "rationale": "volume. NVIDIA (NVDA) wins indirectly because their dominant position in AI cluster networking is"
-        }
-      ]
-    },
-    {
       "ticker": "CRWV",
       "company_name": "CoreWeave",
       "mentions": 7,
@@ -1853,19 +2065,41 @@
     "COHR": {
       "ticker": "COHR",
       "company_name": "Coherent Corp",
-      "mentions": 13,
+      "mentions": 16,
       "in_universe": true,
       "primary_lens": "Optical & Networking",
       "category": "07. Optical & Photonics",
       "subcategory": "Optical Transceivers + Defense Lasers",
-      "sectors_count": 4,
+      "sectors_count": 5,
       "sectors": [
         "02. Custom AI Silicon",
         "04. Semiconductor Equipment",
         "05. Semiconductor Test & Inspection",
-        "07. Optical & Photonics"
+        "07. Optical & Photonics",
+        "19. Defense & Aerospace"
       ],
       "sources": [
+        {
+          "source_ticker": "LMT",
+          "source_company": "Lockheed Martin",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins"
+        },
+        {
+          "source_ticker": "NOC",
+          "source_company": "Northrop Grumman",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins."
+        },
+        {
+          "source_ticker": "RTX",
+          "source_company": "Raytheon Technologies",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins"
+        },
         {
           "source_ticker": "MKSI",
           "source_company": "MKS Instruments",
@@ -2086,14 +2320,15 @@
     "AVGO": {
       "ticker": "AVGO",
       "company_name": "Broadcom",
-      "mentions": 19,
+      "mentions": 20,
       "in_universe": true,
       "primary_lens": "GPU & AI Accelerators",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "Hyperscaler Custom Silicon (TPU, MTIA, OpenAI)",
-      "sectors_count": 7,
+      "sectors_count": 8,
       "sectors": [
         "01. GPUs & Accelerators",
+        "02. AI Silicon & Analog",
         "02. Custom AI Silicon",
         "03. Memory & Storage",
         "05. Semiconductor Test & Inspection",
@@ -2164,6 +2399,13 @@
           "source_lens": "GPU & AI Accelerators",
           "source_category": "02. Custom AI Silicon",
           "rationale": "connectivity ICs. Marvell (MRVL) and Broadcom (AVGO) on broader high-speed interconnect. On optical"
+        },
+        {
+          "source_ticker": "TSLA",
+          "source_company": "Tesla Inc.",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "Specialty AI silicon competitors (AVGO, MRVL) on custom silicon if Dojo doesn't reach commercial scale and Tesla shifts to merchant alternatives."
         },
         {
           "source_ticker": "MSFT",
@@ -2243,7 +2485,7 @@
       "mentions": 2,
       "in_universe": true,
       "primary_lens": "Optical & Networking",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "RF & GaN Power Semiconductors",
       "sectors_count": 2,
       "sectors": [
@@ -2464,7 +2706,7 @@
     "VRT": {
       "ticker": "VRT",
       "company_name": "Vertiv Holdings",
-      "mentions": 25,
+      "mentions": 26,
       "in_universe": true,
       "primary_lens": "Cooling & Thermal",
       "category": "10. Cooling & Thermal",
@@ -2555,6 +2797,13 @@
           "source_lens": "Cooling & Thermal",
           "source_category": "10. Cooling & Thermal",
           "rationale": "Carrier (CARR), Lennox (LII), Johnson Controls (JCI) on HVAC broadly. Vertiv (VRT), Modine (MOD) on data"
+        },
+        {
+          "source_ticker": "WTS",
+          "source_company": "Watts Water Technologies",
+          "source_lens": "Cooling & Thermal",
+          "source_category": "10. Cooling & Thermal",
+          "rationale": "Vertiv (VRT) and Modine (MOD) on integrated cooling at hyperscaler scale"
         },
         {
           "source_ticker": "MU",
@@ -2659,7 +2908,7 @@
     "MOD": {
       "ticker": "MOD",
       "company_name": "Modine Manufacturing",
-      "mentions": 9,
+      "mentions": 10,
       "in_universe": true,
       "primary_lens": "Cooling & Thermal",
       "category": "10. Cooling & Thermal",
@@ -2720,6 +2969,13 @@
           "rationale": "power specifically. Modine (MOD) on cooling. Carrier (CARR), Trane (TT), Johnson Controls (JCI) on adjacent"
         },
         {
+          "source_ticker": "WTS",
+          "source_company": "Watts Water Technologies",
+          "source_lens": "Cooling & Thermal",
+          "source_category": "10. Cooling & Thermal",
+          "rationale": "Vertiv (VRT) and Modine (MOD) on integrated cooling at hyperscaler scale"
+        },
+        {
           "source_ticker": "PH",
           "source_company": "Parker Hannifin",
           "source_lens": "Power",
@@ -2732,6 +2988,382 @@
           "source_lens": "Power",
           "source_category": "11. Power Infrastructure & Equipment",
           "rationale": "adjacent electrical products. Modine (MOD) on cooling specifically. Carrier (CARR), Trane (TT), Johnson Controls"
+        }
+      ]
+    },
+    "TSM": {
+      "ticker": "TSM",
+      "company_name": "Taiwan Semiconductor Manufacturing",
+      "mentions": 7,
+      "in_universe": true,
+      "primary_lens": "Foundries",
+      "category": "06. Foundry & Advanced Packaging",
+      "subcategory": "Leading-Edge Foundry Monopoly",
+      "sectors_count": 5,
+      "sectors": [
+        "01. GPUs & Accelerators",
+        "02. Custom AI Silicon",
+        "06. Foundry & Advanced Packaging",
+        "13. Bitcoin Miners (Repurposed AI Compute)",
+        "16. Hyperscalers & Mega-Cap Cloud"
+      ],
+      "sources": [
+        {
+          "source_ticker": "CIFR",
+          "source_company": "Cipher Digital",
+          "source_lens": "Bitcoin Miners (Pivoted to AI)",
+          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
+          "rationale": "but exposed to either Taiwan tail (TSM), cycle-end pattern (MU), or execution-timing slip (BWXT). (3) The"
+        },
+        {
+          "source_ticker": "GFS",
+          "source_company": "GlobalFoundries",
+          "source_lens": "Foundries",
+          "source_category": "06. Foundry & Advanced Packaging",
+          "rationale": "TSMC (TSM) on the leading-edge customers that might have considered GFS for some applications."
+        },
+        {
+          "source_ticker": "UMC",
+          "source_company": "United Microelectronics",
+          "source_lens": "Foundries",
+          "source_category": "06. Foundry & Advanced Packaging",
+          "rationale": "TSMC (TSM) on the customers that might have considered UMC for some applications. SMIC (981.HK)"
+        },
+        {
+          "source_ticker": "AVGO",
+          "source_company": "Broadcom",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "back to merchant GPUs after custom silicon programs disappoint. TSMC (TSM) fabs everything regardless of"
+        },
+        {
+          "source_ticker": "INTC",
+          "source_company": "Intel",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "01. GPUs & Accelerators",
+          "rationale": "TSMC (TSM) wins regardless because they keep the leading-edge fabrication share Intel was hoping to take \u2014"
+        },
+        {
+          "source_ticker": "MRVL",
+          "source_company": "Marvell Technology",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "CXL specifically. TSMC (TSM) fabs both Marvell and Broadcom designs regardless. MediaTek (foreign) on"
+        },
+        {
+          "source_ticker": "AAPL",
+          "source_company": "Apple Inc.",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "TSMC (TSM) on continued leading-edge production"
+        }
+      ]
+    },
+    "ARM": {
+      "ticker": "ARM",
+      "company_name": "ARM Holdings",
+      "mentions": 2,
+      "in_universe": true,
+      "primary_lens": "GPU & AI Accelerators",
+      "category": "01. GPUs & Accelerators",
+      "subcategory": "CPU IP Licensing",
+      "sectors_count": 2,
+      "sectors": [
+        "01. GPUs & Accelerators",
+        "16. Hyperscalers & Mega-Cap Cloud"
+      ],
+      "sources": [
+        {
+          "source_ticker": "AMD",
+          "source_company": "Advanced Micro Devices",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "01. GPUs & Accelerators",
+          "rationale": "NVIDIA, hyperscalers go harder on internal ASICs designed by Broadcom. ARM Holdings (ARM) \u2014"
+        },
+        {
+          "source_ticker": "AAPL",
+          "source_company": "Apple Inc.",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "ARM Holdings (ARM) on instruction set architecture licensing"
+        }
+      ]
+    },
+    "QCOM": {
+      "ticker": "QCOM",
+      "company_name": "Qualcomm",
+      "mentions": 3,
+      "in_universe": true,
+      "primary_lens": "GPU & AI Accelerators",
+      "category": "02. AI Silicon & Analog",
+      "subcategory": "Mobile/Edge AI SoC",
+      "sectors_count": 2,
+      "sectors": [
+        "02. Custom AI Silicon",
+        "16. Hyperscalers & Mega-Cap Cloud"
+      ],
+      "sources": [
+        {
+          "source_ticker": "AMBA",
+          "source_company": "Ambarella",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "Qualcomm (QCOM) on automotive ADAS share. Mobileye (MBLY) on legacy ADAS overlap. NVIDIA"
+        },
+        {
+          "source_ticker": "SLAB",
+          "source_company": "Silicon Labs",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "Chinese) on consumer IoT specifically. Qualcomm (QCOM) on premium IoT applications. Microchip"
+        },
+        {
+          "source_ticker": "AAPL",
+          "source_company": "Apple Inc.",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "Qualcomm (QCOM) on smartphone modem share if Apple's in-house modem stalls (currently in development). Samsung (foreign) on flagship Android share if iPhone upgrade cycle stalls"
+        }
+      ]
+    },
+    "GOOGL": {
+      "ticker": "GOOGL",
+      "company_name": "Alphabet",
+      "mentions": 13,
+      "in_universe": true,
+      "primary_lens": "Hyperscalers + AI Software + Cybersecurity",
+      "category": "16. Hyperscalers & Mega-Cap Cloud",
+      "subcategory": "Hyperscaler (DeepMind + TPU)",
+      "sectors_count": 5,
+      "sectors": [
+        "01. GPUs & Accelerators",
+        "02. Custom AI Silicon",
+        "13. Bitcoin Miners (Repurposed AI Compute)",
+        "16. Hyperscalers & Mega-Cap Cloud",
+        "17. AI Software & Cybersecurity"
+      ],
+      "sources": [
+        {
+          "source_ticker": "CIFR",
+          "source_company": "Cipher Digital",
+          "source_lens": "Bitcoin Miners (Pivoted to AI)",
+          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
+          "rationale": "site. Google (GOOGL) on the same logic. Talen Energy (TLN), Vistra (VST), Constellation (CEG) on the"
+        },
+        {
+          "source_ticker": "NVDA",
+          "source_company": "NVIDIA",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "01. GPUs & Accelerators",
+          "rationale": "silicon at hyperscalers shifts share away from NVIDIA on inference but not training \u2014 Google (GOOGL),"
+        },
+        {
+          "source_ticker": "SLAB",
+          "source_company": "Silicon Labs",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. Custom AI Silicon",
+          "rationale": "(AMZN), and Google (GOOGL) capture more value if they consolidate the smart home stack with"
+        },
+        {
+          "source_ticker": "AAPL",
+          "source_company": "Apple Inc.",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "Google (GOOGL) on Search default if antitrust forces unbundling"
+        },
+        {
+          "source_ticker": "AMZN",
+          "source_company": "Amazon.com",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "(GOOGL) on cloud share. Walmart (WMT) and Target (TGT) on retail share if Amazon antitrust remedy"
+        },
+        {
+          "source_ticker": "CFLT",
+          "source_company": "Confluent",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "17. AI Software & Cybersecurity",
+          "rationale": "Hyperscaler-native streaming services \u2014 MSK (AMZN), Event Hubs (MSFT), Pub/Sub (GOOGL) \u2014 on"
+        },
+        {
+          "source_ticker": "IBM",
+          "source_company": "IBM",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "Microsoft (MSFT), Amazon (AMZN), and Alphabet (GOOGL) on AI platform consolidation. Accenture"
+        },
+        {
+          "source_ticker": "MDB",
+          "source_company": "MongoDB",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "17. AI Software & Cybersecurity",
+          "rationale": "Amazon DocumentDB (AMZN), Microsoft CosmosDB (MSFT), and Google Firestore (GOOGL) on"
+        },
+        {
+          "source_ticker": "META",
+          "source_company": "Meta Platforms",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "Alphabet (GOOGL) on YouTube ad share and AI infrastructure positioning. Microsoft (MSFT) on AI"
+        },
+        {
+          "source_ticker": "MSFT",
+          "source_company": "Microsoft",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "Amazon (AMZN) on AWS share if Azure decelerates. Google (GOOGL) on Cloud share and on AI model"
+        },
+        {
+          "source_ticker": "NET",
+          "source_company": "Cloudflare",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "17. AI Software & Cybersecurity",
+          "rationale": "Microsoft (MSFT), and Google (GOOGL) on broader cloud platform consolidation. Zscaler (ZS) on"
+        },
+        {
+          "source_ticker": "ORCL",
+          "source_company": "Oracle",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "\u2014 they have the scale to pick up any customer that needs to migrate. Google Cloud (GOOGL) as the third-place"
+        },
+        {
+          "source_ticker": "SNOW",
+          "source_company": "Snowflake",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "17. AI Software & Cybersecurity",
+          "rationale": "Google (GOOGL) via BigQuery on AI workloads. Confluent (CFLT) on data streaming overlap. MongoDB"
+        }
+      ]
+    },
+    "MSFT": {
+      "ticker": "MSFT",
+      "company_name": "Microsoft",
+      "mentions": 16,
+      "in_universe": true,
+      "primary_lens": "Hyperscalers + AI Software + Cybersecurity",
+      "category": "16. Hyperscalers & Mega-Cap Cloud",
+      "subcategory": "Hyperscaler (OpenAI Partner)",
+      "sectors_count": 5,
+      "sectors": [
+        "01. GPUs & Accelerators",
+        "08. Networking & Switching",
+        "16. Hyperscalers & Mega-Cap Cloud",
+        "17. AI Software & Cybersecurity",
+        "99. Uncategorized"
+      ],
+      "sources": [
+        {
+          "source_ticker": "NVDA",
+          "source_company": "NVIDIA",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "01. GPUs & Accelerators",
+          "rationale": "Amazon (AMZN), Microsoft (MSFT), Meta (META) all benefit by reducing their NVIDIA bill. On the"
+        },
+        {
+          "source_ticker": "AAPL",
+          "source_company": "Apple Inc.",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "Microsoft (MSFT) on enterprise AI if Apple Intelligence fails to penetrate enterprise"
+        },
+        {
+          "source_ticker": "AMZN",
+          "source_company": "Amazon.com",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "Microsoft (MSFT) on AWS share \u2014 the most direct beneficiary on cloud share loss. Google Cloud"
+        },
+        {
+          "source_ticker": "CFLT",
+          "source_company": "Confluent",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "17. AI Software & Cybersecurity",
+          "rationale": "Hyperscaler-native streaming services \u2014 MSK (AMZN), Event Hubs (MSFT), Pub/Sub (GOOGL) \u2014 on"
+        },
+        {
+          "source_ticker": "CRWD",
+          "source_company": "CrowdStrike",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "17. AI Software & Cybersecurity",
+          "rationale": "Microsoft (MSFT) is the largest direct beneficiary on Defender share. Palo Alto Networks (PANW) on"
+        },
+        {
+          "source_ticker": "GOOGL",
+          "source_company": "Alphabet",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "Microsoft (MSFT) on AI search displacement (Bing + Copilot) and on Cloud. Amazon (AMZN) on Cloud"
+        },
+        {
+          "source_ticker": "IBM",
+          "source_company": "IBM",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "Microsoft (MSFT), Amazon (AMZN), and Alphabet (GOOGL) on AI platform consolidation. Accenture"
+        },
+        {
+          "source_ticker": "MDB",
+          "source_company": "MongoDB",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "17. AI Software & Cybersecurity",
+          "rationale": "Amazon DocumentDB (AMZN), Microsoft CosmosDB (MSFT), and Google Firestore (GOOGL) on"
+        },
+        {
+          "source_ticker": "META",
+          "source_company": "Meta Platforms",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "Alphabet (GOOGL) on YouTube ad share and AI infrastructure positioning. Microsoft (MSFT) on AI"
+        },
+        {
+          "source_ticker": "NET",
+          "source_company": "Cloudflare",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "17. AI Software & Cybersecurity",
+          "rationale": "Microsoft (MSFT), and Google (GOOGL) on broader cloud platform consolidation. Zscaler (ZS) on"
+        },
+        {
+          "source_ticker": "ORCL",
+          "source_company": "Oracle",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
+          "rationale": "Microsoft (MSFT) and Amazon (AWS, AMZN) absorb displaced AI workloads if Oracle's hyperscaler thesis stalls"
+        },
+        {
+          "source_ticker": "PLTR",
+          "source_company": "Palantir Technologies",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "17. AI Software & Cybersecurity",
+          "rationale": "Microsoft (MSFT) on enterprise AI platform share via Fabric, Azure AI, and Copilot. AWS (AMZN) on"
+        },
+        {
+          "source_ticker": "S",
+          "source_company": "SentinelOne",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "99. Uncategorized",
+          "rationale": "CrowdStrike (CRWD) is the most direct beneficiary on EDR market share. Microsoft (MSFT) via Defender"
+        },
+        {
+          "source_ticker": "SNOW",
+          "source_company": "Snowflake",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "17. AI Software & Cybersecurity",
+          "rationale": "Databricks (private) is the most direct competitor and absorbs share. Microsoft (MSFT) via Fabric and"
+        },
+        {
+          "source_ticker": "ZS",
+          "source_company": "Zscaler",
+          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
+          "source_category": "17. AI Software & Cybersecurity",
+          "rationale": "Palo Alto Networks (PANW) on platform consolidation. Microsoft (MSFT) on Defender + Entra bundle."
+        },
+        {
+          "source_ticker": "CSCO",
+          "source_company": "Cisco Systems",
+          "source_lens": "Optical & Networking",
+          "source_category": "08. Networking & Switching",
+          "rationale": "and service provider networking. Microsoft (MSFT) on bundled enterprise security plus collaboration if Splunk"
         }
       ]
     },
@@ -3159,16 +3791,17 @@
     "HON": {
       "ticker": "HON",
       "company_name": "Honeywell",
-      "mentions": 8,
+      "mentions": 9,
       "in_universe": true,
       "primary_lens": "Power",
       "category": "11. Power Infrastructure & Equipment",
       "subcategory": "Diversified Industrial + Quantum",
-      "sectors_count": 3,
+      "sectors_count": 4,
       "sectors": [
         "10. Cooling & Thermal",
         "11. Power Infrastructure & Equipment",
-        "18. Specialty Materials & Rare Earths"
+        "18. Specialty Materials & Rare Earths",
+        "19. Defense & Aerospace"
       ],
       "sources": [
         {
@@ -3184,6 +3817,13 @@
           "source_lens": "Cooling & Thermal",
           "source_category": "10. Cooling & Thermal",
           "rationale": "similar. Honeywell (HON) on building automation adjacent."
+        },
+        {
+          "source_ticker": "RTX",
+          "source_company": "Raytheon Technologies",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "Honeywell (HON) on aerospace systems adjacent"
         },
         {
           "source_ticker": "ABB",
@@ -3333,13 +3973,14 @@
     "ON": {
       "ticker": "ON",
       "company_name": "",
-      "mentions": 2,
+      "mentions": 4,
       "in_universe": false,
       "primary_lens": null,
       "category": null,
       "subcategory": null,
-      "sectors_count": 2,
+      "sectors_count": 3,
       "sectors": [
+        "02. AI Silicon & Analog",
         "02. Custom AI Silicon",
         "04. Semiconductor Equipment"
       ],
@@ -3357,19 +3998,34 @@
           "source_lens": "GPU & AI Accelerators",
           "source_category": "02. Custom AI Silicon",
           "rationale": "Texas Instruments (TXN) on broader analog. ON Semiconductor (ON) and NXP Semiconductors (NXPI) on"
+        },
+        {
+          "source_ticker": "NXPI",
+          "source_company": "NXP Semiconductors",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "ON Semiconductor (ON) on automotive power"
+        },
+        {
+          "source_ticker": "TXN",
+          "source_company": "Texas Instruments",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "ON Semiconductor (ON) on power semiconductors specifically."
         }
       ]
     },
     "TXN": {
       "ticker": "TXN",
-      "company_name": "",
-      "mentions": 6,
-      "in_universe": false,
-      "primary_lens": null,
-      "category": null,
-      "subcategory": null,
-      "sectors_count": 1,
+      "company_name": "Texas Instruments",
+      "mentions": 7,
+      "in_universe": true,
+      "primary_lens": "GPU & AI Accelerators",
+      "category": "02. AI Silicon & Analog",
+      "subcategory": "Analog & Mixed Signal (Industrial)",
+      "sectors_count": 2,
       "sectors": [
+        "02. AI Silicon & Analog",
         "02. Custom AI Silicon"
       ],
       "sources": [
@@ -3402,6 +4058,13 @@
           "rationale": "(TXN), Analog Devices (ADI), Microchip (MCHP) on the diversified end-market alternatives if MPS loses"
         },
         {
+          "source_ticker": "NXPI",
+          "source_company": "NXP Semiconductors",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "Texas Instruments (TXN) on broader analog at scale"
+        },
+        {
           "source_ticker": "SLAB",
           "source_company": "Silicon Labs",
           "source_lens": "GPU & AI Accelerators",
@@ -3419,14 +4082,15 @@
     },
     "NXPI": {
       "ticker": "NXPI",
-      "company_name": "",
-      "mentions": 3,
-      "in_universe": false,
-      "primary_lens": null,
-      "category": null,
-      "subcategory": null,
-      "sectors_count": 1,
+      "company_name": "NXP Semiconductors",
+      "mentions": 4,
+      "in_universe": true,
+      "primary_lens": "GPU & AI Accelerators",
+      "category": "02. AI Silicon & Analog",
+      "subcategory": "Automotive & Edge AI Semis",
+      "sectors_count": 2,
       "sectors": [
+        "02. AI Silicon & Analog",
         "02. Custom AI Silicon"
       ],
       "sources": [
@@ -3450,19 +4114,27 @@
           "source_lens": "GPU & AI Accelerators",
           "source_category": "02. Custom AI Silicon",
           "rationale": "(NXPI), STMicroelectronics (STM), and Texas Instruments (TXN) on broader IoT share. Espressif (private"
+        },
+        {
+          "source_ticker": "TXN",
+          "source_company": "Texas Instruments",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "NXP Semiconductors (NXPI) on automotive analog specifically"
         }
       ]
     },
     "MCHP": {
       "ticker": "MCHP",
       "company_name": "Microchip Technology",
-      "mentions": 6,
+      "mentions": 8,
       "in_universe": true,
       "primary_lens": "GPU & AI Accelerators",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "Microcontrollers + FPGA",
-      "sectors_count": 1,
+      "sectors_count": 2,
       "sectors": [
+        "02. AI Silicon & Analog",
         "02. Custom AI Silicon"
       ],
       "sources": [
@@ -3495,11 +4167,25 @@
           "rationale": "(TXN), Analog Devices (ADI), Microchip (MCHP) on the diversified end-market alternatives if MPS loses"
         },
         {
+          "source_ticker": "NXPI",
+          "source_company": "NXP Semiconductors",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "Microchip (MCHP) on adjacent embedded"
+        },
+        {
           "source_ticker": "SLAB",
           "source_company": "Silicon Labs",
           "source_lens": "GPU & AI Accelerators",
           "source_category": "02. Custom AI Silicon",
           "rationale": "(MCHP) on broader microcontroller share. On the smart home platform side, Apple (AAPL), Amazon"
+        },
+        {
+          "source_ticker": "TXN",
+          "source_company": "Texas Instruments",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "Microchip (MCHP) on embedded controllers and FPGA. STMicroelectronics (STM, foreign) on power and automotive"
         },
         {
           "source_ticker": "VICR",
@@ -3513,7 +4199,7 @@
     "TER": {
       "ticker": "TER",
       "company_name": "Teradyne",
-      "mentions": 3,
+      "mentions": 4,
       "in_universe": true,
       "primary_lens": "Metrology / Inspection / Test",
       "category": "04. Semiconductor Equipment",
@@ -3538,6 +4224,13 @@
           "rationale": "Teradyne (TER) on adjacent semiconductor test at scale. Cohu (COHU) on similar wafer-level test equipment."
         },
         {
+          "source_ticker": "COHU",
+          "source_company": "Cohu Inc.",
+          "source_lens": "Metrology / Inspection / Test",
+          "source_category": "05. Semiconductor Test & Inspection",
+          "rationale": "Teradyne (TER) on broader production ATE share"
+        },
+        {
           "source_ticker": "KEYS",
           "source_company": "Keysight Technologies",
           "source_lens": "Metrology / Inspection / Test",
@@ -3548,12 +4241,12 @@
     },
     "COHU": {
       "ticker": "COHU",
-      "company_name": "",
+      "company_name": "Cohu Inc.",
       "mentions": 3,
-      "in_universe": false,
-      "primary_lens": null,
-      "category": null,
-      "subcategory": null,
+      "in_universe": true,
+      "primary_lens": "Metrology / Inspection / Test",
+      "category": "05. Semiconductor Test & Inspection",
+      "subcategory": "Test Handlers (Final Test Automation)",
       "sectors_count": 2,
       "sectors": [
         "04. Semiconductor Equipment",
@@ -3586,7 +4279,7 @@
     "FORM": {
       "ticker": "FORM",
       "company_name": "",
-      "mentions": 2,
+      "mentions": 3,
       "in_universe": false,
       "primary_lens": null,
       "category": null,
@@ -3605,11 +4298,421 @@
           "rationale": "Advantest (foreign, Japan) on memory and logic test broadly. FormFactor (FORM) on probe cards adjacent."
         },
         {
+          "source_ticker": "COHU",
+          "source_company": "Cohu Inc.",
+          "source_lens": "Metrology / Inspection / Test",
+          "source_category": "05. Semiconductor Test & Inspection",
+          "rationale": "FormFactor (FORM, not in database) on probe cards"
+        },
+        {
           "source_ticker": "TER",
           "source_company": "Teradyne",
           "source_lens": "Metrology / Inspection / Test",
           "source_category": "04. Semiconductor Equipment",
           "rationale": "wafer-level test. AEHR Test Systems (AEHR) on specialty burn-in. FormFactor (FORM) on probe cards adjacent."
+        }
+      ]
+    },
+    "DUK": {
+      "ticker": "DUK",
+      "company_name": "Duke Energy",
+      "mentions": 4,
+      "in_universe": true,
+      "primary_lens": "Power",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Utility (Carolinas + Southeast)",
+      "sectors_count": 1,
+      "sectors": [
+        "12. Power Generation & Nuclear"
+      ],
+      "sources": [
+        {
+          "source_ticker": "AEP",
+          "source_company": "American Electric Power",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Duke Energy (DUK) on Charlotte and Atlanta-adjacent markets"
+        },
+        {
+          "source_ticker": "D",
+          "source_company": "Dominion Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Duke Energy (DUK) on Southeast data center markets. Southern Company (SO) on Georgia and Alabama data"
+        },
+        {
+          "source_ticker": "NEE",
+          "source_company": "NextEra Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "adjacent battery storage. AES Corporation (AES) on similar diversified power generation. Duke Energy (DUK)"
+        },
+        {
+          "source_ticker": "SO",
+          "source_company": "Southern Company",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Duke Energy (DUK) on Carolinas"
+        }
+      ]
+    },
+    "SO": {
+      "ticker": "SO",
+      "company_name": "Southern Company",
+      "mentions": 5,
+      "in_universe": true,
+      "primary_lens": "Power",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Utility + New Nuclear (Vogtle)",
+      "sectors_count": 1,
+      "sectors": [
+        "12. Power Generation & Nuclear"
+      ],
+      "sources": [
+        {
+          "source_ticker": "AEP",
+          "source_company": "American Electric Power",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Southern Company (SO) on Georgia"
+        },
+        {
+          "source_ticker": "D",
+          "source_company": "Dominion Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Duke Energy (DUK) on Southeast data center markets. Southern Company (SO) on Georgia and Alabama data"
+        },
+        {
+          "source_ticker": "DUK",
+          "source_company": "Duke Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Southern Company (SO) on Georgia data center markets"
+        },
+        {
+          "source_ticker": "NEE",
+          "source_company": "NextEra Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "and Southern Company (SO) on regulated utility share if FPL faces regulatory pushback."
+        },
+        {
+          "source_ticker": "VST",
+          "source_company": "Vistra",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "American Electric Power (AEP) and Southern Company (SO) are the boring beneficiaries \u2014 if merchant"
+        }
+      ]
+    },
+    "NEE": {
+      "ticker": "NEE",
+      "company_name": "NextEra Energy",
+      "mentions": 6,
+      "in_universe": true,
+      "primary_lens": "Power",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Renewable + Storage + Regulated Utility (FPL)",
+      "sectors_count": 2,
+      "sectors": [
+        "11. Power Infrastructure & Equipment",
+        "12. Power Generation & Nuclear"
+      ],
+      "sources": [
+        {
+          "source_ticker": "FLNC",
+          "source_company": "Fluence Energy",
+          "source_lens": "Cooling & Thermal",
+          "source_category": "11. Power Infrastructure & Equipment",
+          "rationale": "(NEE) and First Solar (FSLR) as project developers and integrators that would absorb storage attach"
+        },
+        {
+          "source_ticker": "AEP",
+          "source_company": "American Electric Power",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "NextEra Energy (NEE) on competitive renewable plus storage"
+        },
+        {
+          "source_ticker": "CEG",
+          "source_company": "Constellation Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Energy (NEE) on regulated utility plus renewables. Talen Energy (TLN) on nuclear-adjacent \u2014 Talen has the"
+        },
+        {
+          "source_ticker": "D",
+          "source_company": "Dominion Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "center markets. NextEra Energy (NEE) on competitive renewable plus storage. American Electric Power (AEP) on"
+        },
+        {
+          "source_ticker": "DUK",
+          "source_company": "Duke Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "NextEra Energy (NEE) on Florida if Duke loses share there"
+        },
+        {
+          "source_ticker": "SO",
+          "source_company": "Southern Company",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "NextEra Energy (NEE) on Florida adjacent"
+        }
+      ]
+    },
+    "EXC": {
+      "ticker": "EXC",
+      "company_name": "",
+      "mentions": 1,
+      "in_universe": false,
+      "primary_lens": null,
+      "category": null,
+      "subcategory": null,
+      "sectors_count": 1,
+      "sectors": [
+        "12. Power Generation & Nuclear"
+      ],
+      "sources": [
+        {
+          "source_ticker": "AEP",
+          "source_company": "American Electric Power",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Exelon (EXC, not in database) on PJM transmission and Maryland/Pennsylvania DC markets"
+        }
+      ]
+    },
+    "VST": {
+      "ticker": "VST",
+      "company_name": "Vistra",
+      "mentions": 14,
+      "in_universe": true,
+      "primary_lens": "Power",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Competitive Generation (Nuclear + Gas)",
+      "sectors_count": 3,
+      "sectors": [
+        "11. Power Infrastructure & Equipment",
+        "12. Power Generation & Nuclear",
+        "13. Bitcoin Miners (Repurposed AI Compute)"
+      ],
+      "sources": [
+        {
+          "source_ticker": "APLD",
+          "source_company": "Applied Digital",
+          "source_lens": "Bitcoin Miners (Pivoted to AI)",
+          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
+          "rationale": "Vistra (VST), and Constellation (CEG) on the power-supply side \u2014 winning regardless because"
+        },
+        {
+          "source_ticker": "CIFR",
+          "source_company": "Cipher Digital",
+          "source_lens": "Bitcoin Miners (Pivoted to AI)",
+          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
+          "rationale": "site. Google (GOOGL) on the same logic. Talen Energy (TLN), Vistra (VST), Constellation (CEG) on the"
+        },
+        {
+          "source_ticker": "AEP",
+          "source_company": "American Electric Power",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Vistra (VST), Constellation Energy (CEG) on competitive generation if hyperscalers shift to dedicated PPAs"
+        },
+        {
+          "source_ticker": "BE",
+          "source_company": "Bloom Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "at smaller scale. On the nuclear-displacement side: Talen (TLN), Constellation (CEG), and Vistra (VST) all"
+        },
+        {
+          "source_ticker": "BWXT",
+          "source_company": "BWX Technologies",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "historically supplied many of the same components at lower cost. Constellation (CEG), Vistra (VST), Talen"
+        },
+        {
+          "source_ticker": "CEG",
+          "source_company": "Constellation Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Vistra (VST) on competitive generation specifically \u2014 direct head-to-head AI-power-thesis comparable. NextEra"
+        },
+        {
+          "source_ticker": "D",
+          "source_company": "Dominion Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Texas and Ohio data center markets. Constellation Energy (CEG) and Vistra (VST) on competitive generation if"
+        },
+        {
+          "source_ticker": "DUK",
+          "source_company": "Duke Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Constellation Energy (CEG) and Vistra (VST) on competitive nuclear generation if hyperscalers shift to direct PPAs"
+        },
+        {
+          "source_ticker": "GEV",
+          "source_company": "GE Vernova",
+          "source_lens": "Power",
+          "source_category": "11. Power Infrastructure & Equipment",
+          "rationale": "design wins. Constellation Energy (CEG), Vistra (VST), Talen Energy (TLN) on existing nuclear capacity if SMR"
+        },
+        {
+          "source_ticker": "NEE",
+          "source_company": "NextEra Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Vistra (VST), Constellation Energy (CEG), Talen Energy (TLN) on competitive nuclear generation if hyperscalers"
+        },
+        {
+          "source_ticker": "OKLO",
+          "source_company": "Oklo",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Vistra (VST), and TLN as the existing-fleet operators that benefit if SMR deployment slips and"
+        },
+        {
+          "source_ticker": "SMR",
+          "source_company": "NuScale Power",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "project commitment. Constellation Energy (CEG) and Vistra (VST) on existing nuclear capacity restart and life"
+        },
+        {
+          "source_ticker": "SO",
+          "source_company": "Southern Company",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Constellation Energy (CEG), Vistra (VST), Talen Energy (TLN) on competitive nuclear generation if hyperscalers shift to direct PPAs"
+        },
+        {
+          "source_ticker": "TLN",
+          "source_company": "Talen Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "model with Microsoft) becomes the default, and CEG benefits from being first on that pattern. Vistra (VST)"
+        }
+      ]
+    },
+    "CEG": {
+      "ticker": "CEG",
+      "company_name": "Constellation Energy",
+      "mentions": 14,
+      "in_universe": true,
+      "primary_lens": "Power",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Nuclear Operator (Largest US)",
+      "sectors_count": 3,
+      "sectors": [
+        "11. Power Infrastructure & Equipment",
+        "12. Power Generation & Nuclear",
+        "13. Bitcoin Miners (Repurposed AI Compute)"
+      ],
+      "sources": [
+        {
+          "source_ticker": "APLD",
+          "source_company": "Applied Digital",
+          "source_lens": "Bitcoin Miners (Pivoted to AI)",
+          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
+          "rationale": "Vistra (VST), and Constellation (CEG) on the power-supply side \u2014 winning regardless because"
+        },
+        {
+          "source_ticker": "CIFR",
+          "source_company": "Cipher Digital",
+          "source_lens": "Bitcoin Miners (Pivoted to AI)",
+          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
+          "rationale": "site. Google (GOOGL) on the same logic. Talen Energy (TLN), Vistra (VST), Constellation (CEG) on the"
+        },
+        {
+          "source_ticker": "AEP",
+          "source_company": "American Electric Power",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Vistra (VST), Constellation Energy (CEG) on competitive generation if hyperscalers shift to dedicated PPAs"
+        },
+        {
+          "source_ticker": "BE",
+          "source_company": "Bloom Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "at smaller scale. On the nuclear-displacement side: Talen (TLN), Constellation (CEG), and Vistra (VST) all"
+        },
+        {
+          "source_ticker": "BWXT",
+          "source_company": "BWX Technologies",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "historically supplied many of the same components at lower cost. Constellation (CEG), Vistra (VST), Talen"
+        },
+        {
+          "source_ticker": "D",
+          "source_company": "Dominion Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Texas and Ohio data center markets. Constellation Energy (CEG) and Vistra (VST) on competitive generation if"
+        },
+        {
+          "source_ticker": "DUK",
+          "source_company": "Duke Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Constellation Energy (CEG) and Vistra (VST) on competitive nuclear generation if hyperscalers shift to direct PPAs"
+        },
+        {
+          "source_ticker": "GEV",
+          "source_company": "GE Vernova",
+          "source_lens": "Power",
+          "source_category": "11. Power Infrastructure & Equipment",
+          "rationale": "design wins. Constellation Energy (CEG), Vistra (VST), Talen Energy (TLN) on existing nuclear capacity if SMR"
+        },
+        {
+          "source_ticker": "NEE",
+          "source_company": "NextEra Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Vistra (VST), Constellation Energy (CEG), Talen Energy (TLN) on competitive nuclear generation if hyperscalers"
+        },
+        {
+          "source_ticker": "OKLO",
+          "source_company": "Oklo",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "win regardless of which SMR developer wins because all SMR designs require fuel. Constellation (CEG),"
+        },
+        {
+          "source_ticker": "SMR",
+          "source_company": "NuScale Power",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "project commitment. Constellation Energy (CEG) and Vistra (VST) on existing nuclear capacity restart and life"
+        },
+        {
+          "source_ticker": "SO",
+          "source_company": "Southern Company",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Constellation Energy (CEG), Vistra (VST), Talen Energy (TLN) on competitive nuclear generation if hyperscalers shift to direct PPAs"
+        },
+        {
+          "source_ticker": "TLN",
+          "source_company": "Talen Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Constellation Energy (CEG) \u2014 if behind-the-meter is restricted, the on-grid contracted PPA model (CEG's"
+        },
+        {
+          "source_ticker": "VST",
+          "source_company": "Vistra",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Constellation Energy (CEG) is the closest direct comparable and benefits from any narrative that"
         }
       ]
     },
@@ -3738,12 +4841,12 @@
     },
     "TSLA": {
       "ticker": "TSLA",
-      "company_name": "",
+      "company_name": "Tesla Inc.",
       "mentions": 3,
-      "in_universe": false,
-      "primary_lens": null,
-      "category": null,
-      "subcategory": null,
+      "in_universe": true,
+      "primary_lens": "GPU & AI Accelerators",
+      "category": "02. AI Silicon & Analog",
+      "subcategory": "Vertical AI Compute (Dojo + Inference)",
       "sectors_count": 3,
       "sectors": [
         "09. Data Center Construction & EPC",
@@ -3777,13 +4880,14 @@
     "FLNC": {
       "ticker": "FLNC",
       "company_name": "Fluence Energy",
-      "mentions": 1,
+      "mentions": 2,
       "in_universe": true,
       "primary_lens": "Cooling & Thermal",
       "category": "11. Power Infrastructure & Equipment",
       "subcategory": "Battery Storage Systems",
-      "sectors_count": 1,
+      "sectors_count": 2,
       "sectors": [
+        "02. AI Silicon & Analog",
         "09. Data Center Construction & EPC"
       ],
       "sources": [
@@ -3793,6 +4897,13 @@
           "source_lens": "Construction & EPC",
           "source_category": "09. Data Center Construction & EPC",
           "rationale": "substitute for gas, Tesla (TSLA), Fluence (FLNC), and other battery integrators capture share. On the"
+        },
+        {
+          "source_ticker": "TSLA",
+          "source_company": "Tesla Inc.",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "Fluence Energy (FLNC) on battery storage share"
         }
       ]
     },
@@ -3853,7 +4964,7 @@
       "mentions": 12,
       "in_universe": true,
       "primary_lens": "GPU & AI Accelerators",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "Hyperscaler Custom Silicon (Trainium, Axion)",
       "sectors_count": 4,
       "sectors": [
@@ -3955,7 +5066,7 @@
       "mentions": 3,
       "in_universe": true,
       "primary_lens": "GPU & AI Accelerators",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "AI Connectivity (Active Electrical Cables)",
       "sectors_count": 1,
       "sectors": [
@@ -4320,16 +5431,17 @@
         }
       ]
     },
-    "QCOM": {
-      "ticker": "QCOM",
-      "company_name": "Qualcomm",
+    "MBLY": {
+      "ticker": "MBLY",
+      "company_name": "",
       "mentions": 2,
-      "in_universe": true,
-      "primary_lens": "GPU & AI Accelerators",
-      "category": "02. Custom AI Silicon",
-      "subcategory": "Mobile/Edge AI SoC",
-      "sectors_count": 1,
+      "in_universe": false,
+      "primary_lens": null,
+      "category": null,
+      "subcategory": null,
+      "sectors_count": 2,
       "sectors": [
+        "02. AI Silicon & Analog",
         "02. Custom AI Silicon"
       ],
       "sources": [
@@ -4341,47 +5453,26 @@
           "rationale": "Qualcomm (QCOM) on automotive ADAS share. Mobileye (MBLY) on legacy ADAS overlap. NVIDIA"
         },
         {
-          "source_ticker": "SLAB",
-          "source_company": "Silicon Labs",
+          "source_ticker": "NXPI",
+          "source_company": "NXP Semiconductors",
           "source_lens": "GPU & AI Accelerators",
-          "source_category": "02. Custom AI Silicon",
-          "rationale": "Chinese) on consumer IoT specifically. Qualcomm (QCOM) on premium IoT applications. Microchip"
-        }
-      ]
-    },
-    "MBLY": {
-      "ticker": "MBLY",
-      "company_name": "",
-      "mentions": 1,
-      "in_universe": false,
-      "primary_lens": null,
-      "category": null,
-      "subcategory": null,
-      "sectors_count": 1,
-      "sectors": [
-        "02. Custom AI Silicon"
-      ],
-      "sources": [
-        {
-          "source_ticker": "AMBA",
-          "source_company": "Ambarella",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "02. Custom AI Silicon",
-          "rationale": "Qualcomm (QCOM) on automotive ADAS share. Mobileye (MBLY) on legacy ADAS overlap. NVIDIA"
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "Mobileye (MBLY, not in database) on ADAS-specific silicon."
         }
       ]
     },
     "NVDA": {
       "ticker": "NVDA",
       "company_name": "NVIDIA",
-      "mentions": 11,
+      "mentions": 12,
       "in_universe": true,
       "primary_lens": "GPU & AI Accelerators",
       "category": "01. GPUs & Accelerators",
       "subcategory": "Merchant GPU (AI Training/Inference)",
-      "sectors_count": 5,
+      "sectors_count": 6,
       "sectors": [
         "01. GPUs & Accelerators",
+        "02. AI Silicon & Analog",
         "02. Custom AI Silicon",
         "03. Memory & Storage",
         "13. Bitcoin Miners (Repurposed AI Compute)",
@@ -4422,6 +5513,13 @@
           "source_lens": "GPU & AI Accelerators",
           "source_category": "02. Custom AI Silicon",
           "rationale": "some communications and automotive share. NVIDIA (NVDA) wins regardless because the GPU revenue"
+        },
+        {
+          "source_ticker": "TSLA",
+          "source_company": "Tesla Inc.",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "NVIDIA (NVDA) on AI training silicon if Dojo scales slower than expected \u2014 Tesla still buys H100s at scale"
         },
         {
           "source_ticker": "VICR",
@@ -4470,13 +5568,14 @@
     "STM": {
       "ticker": "STM",
       "company_name": "",
-      "mentions": 3,
+      "mentions": 5,
       "in_universe": false,
       "primary_lens": null,
       "category": null,
       "subcategory": null,
-      "sectors_count": 2,
+      "sectors_count": 3,
       "sectors": [
+        "02. AI Silicon & Analog",
         "02. Custom AI Silicon",
         "07. Optical & Photonics"
       ],
@@ -4489,11 +5588,25 @@
           "rationale": "(NVDA) on high-end autonomous driving compute. Texas Instruments (TXN) and STMicro (STM) on"
         },
         {
+          "source_ticker": "NXPI",
+          "source_company": "NXP Semiconductors",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "STMicroelectronics (STM, foreign) on automotive analog directly"
+        },
+        {
           "source_ticker": "SLAB",
           "source_company": "Silicon Labs",
           "source_lens": "GPU & AI Accelerators",
           "source_category": "02. Custom AI Silicon",
           "rationale": "(NXPI), STMicroelectronics (STM), and Texas Instruments (TXN) on broader IoT share. Espressif (private"
+        },
+        {
+          "source_ticker": "TXN",
+          "source_company": "Texas Instruments",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "Microchip (MCHP) on embedded controllers and FPGA. STMicroelectronics (STM, foreign) on power and automotive"
         },
         {
           "source_ticker": "COHR",
@@ -4545,28 +5658,6 @@
           "source_lens": "GPU & AI Accelerators",
           "source_category": "01. GPUs & Accelerators",
           "rationale": "US-investor perspective and face their own geopolitical issues. On the conventional path, Intel (INTC)"
-        }
-      ]
-    },
-    "ARM": {
-      "ticker": "ARM",
-      "company_name": "ARM Holdings",
-      "mentions": 1,
-      "in_universe": true,
-      "primary_lens": "GPU & AI Accelerators",
-      "category": "01. GPUs & Accelerators",
-      "subcategory": "CPU IP Licensing",
-      "sectors_count": 1,
-      "sectors": [
-        "01. GPUs & Accelerators"
-      ],
-      "sources": [
-        {
-          "source_ticker": "AMD",
-          "source_company": "Advanced Micro Devices",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "01. GPUs & Accelerators",
-          "rationale": "NVIDIA, hyperscalers go harder on internal ASICs designed by Broadcom. ARM Holdings (ARM) \u2014"
         }
       ]
     },
@@ -4705,233 +5796,6 @@
           "source_lens": "Data Center REITs",
           "source_category": "14. Data Center REITs & Colocation",
           "rationale": "(WELL), and Prologis (PLD) absorb capital. The shadow winner across most IRM kill scenarios is EQIX"
-        }
-      ]
-    },
-    "MSFT": {
-      "ticker": "MSFT",
-      "company_name": "Microsoft",
-      "mentions": 15,
-      "in_universe": true,
-      "primary_lens": "Hyperscalers + AI Software + Cybersecurity",
-      "category": "16. Hyperscalers & Mega-Cap Cloud",
-      "subcategory": "Hyperscaler (OpenAI Partner)",
-      "sectors_count": 5,
-      "sectors": [
-        "01. GPUs & Accelerators",
-        "08. Networking & Switching",
-        "16. Hyperscalers & Mega-Cap Cloud",
-        "17. AI Software & Cybersecurity",
-        "99. Uncategorized"
-      ],
-      "sources": [
-        {
-          "source_ticker": "NVDA",
-          "source_company": "NVIDIA",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "01. GPUs & Accelerators",
-          "rationale": "Amazon (AMZN), Microsoft (MSFT), Meta (META) all benefit by reducing their NVIDIA bill. On the"
-        },
-        {
-          "source_ticker": "AMZN",
-          "source_company": "Amazon.com",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
-          "rationale": "Microsoft (MSFT) on AWS share \u2014 the most direct beneficiary on cloud share loss. Google Cloud"
-        },
-        {
-          "source_ticker": "CFLT",
-          "source_company": "Confluent",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "17. AI Software & Cybersecurity",
-          "rationale": "Hyperscaler-native streaming services \u2014 MSK (AMZN), Event Hubs (MSFT), Pub/Sub (GOOGL) \u2014 on"
-        },
-        {
-          "source_ticker": "CRWD",
-          "source_company": "CrowdStrike",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "17. AI Software & Cybersecurity",
-          "rationale": "Microsoft (MSFT) is the largest direct beneficiary on Defender share. Palo Alto Networks (PANW) on"
-        },
-        {
-          "source_ticker": "GOOGL",
-          "source_company": "Alphabet",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
-          "rationale": "Microsoft (MSFT) on AI search displacement (Bing + Copilot) and on Cloud. Amazon (AMZN) on Cloud"
-        },
-        {
-          "source_ticker": "IBM",
-          "source_company": "IBM",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
-          "rationale": "Microsoft (MSFT), Amazon (AMZN), and Alphabet (GOOGL) on AI platform consolidation. Accenture"
-        },
-        {
-          "source_ticker": "MDB",
-          "source_company": "MongoDB",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "17. AI Software & Cybersecurity",
-          "rationale": "Amazon DocumentDB (AMZN), Microsoft CosmosDB (MSFT), and Google Firestore (GOOGL) on"
-        },
-        {
-          "source_ticker": "META",
-          "source_company": "Meta Platforms",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
-          "rationale": "Alphabet (GOOGL) on YouTube ad share and AI infrastructure positioning. Microsoft (MSFT) on AI"
-        },
-        {
-          "source_ticker": "NET",
-          "source_company": "Cloudflare",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "17. AI Software & Cybersecurity",
-          "rationale": "Microsoft (MSFT), and Google (GOOGL) on broader cloud platform consolidation. Zscaler (ZS) on"
-        },
-        {
-          "source_ticker": "ORCL",
-          "source_company": "Oracle",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
-          "rationale": "Microsoft (MSFT) and Amazon (AWS, AMZN) absorb displaced AI workloads if Oracle's hyperscaler thesis stalls"
-        },
-        {
-          "source_ticker": "PLTR",
-          "source_company": "Palantir Technologies",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "17. AI Software & Cybersecurity",
-          "rationale": "Microsoft (MSFT) on enterprise AI platform share via Fabric, Azure AI, and Copilot. AWS (AMZN) on"
-        },
-        {
-          "source_ticker": "S",
-          "source_company": "SentinelOne",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "99. Uncategorized",
-          "rationale": "CrowdStrike (CRWD) is the most direct beneficiary on EDR market share. Microsoft (MSFT) via Defender"
-        },
-        {
-          "source_ticker": "SNOW",
-          "source_company": "Snowflake",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "17. AI Software & Cybersecurity",
-          "rationale": "Databricks (private) is the most direct competitor and absorbs share. Microsoft (MSFT) via Fabric and"
-        },
-        {
-          "source_ticker": "ZS",
-          "source_company": "Zscaler",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "17. AI Software & Cybersecurity",
-          "rationale": "Palo Alto Networks (PANW) on platform consolidation. Microsoft (MSFT) on Defender + Entra bundle."
-        },
-        {
-          "source_ticker": "CSCO",
-          "source_company": "Cisco Systems",
-          "source_lens": "Optical & Networking",
-          "source_category": "08. Networking & Switching",
-          "rationale": "and service provider networking. Microsoft (MSFT) on bundled enterprise security plus collaboration if Splunk"
-        }
-      ]
-    },
-    "GOOGL": {
-      "ticker": "GOOGL",
-      "company_name": "Alphabet",
-      "mentions": 12,
-      "in_universe": true,
-      "primary_lens": "Hyperscalers + AI Software + Cybersecurity",
-      "category": "16. Hyperscalers & Mega-Cap Cloud",
-      "subcategory": "Hyperscaler (DeepMind + TPU)",
-      "sectors_count": 5,
-      "sectors": [
-        "01. GPUs & Accelerators",
-        "02. Custom AI Silicon",
-        "13. Bitcoin Miners (Repurposed AI Compute)",
-        "16. Hyperscalers & Mega-Cap Cloud",
-        "17. AI Software & Cybersecurity"
-      ],
-      "sources": [
-        {
-          "source_ticker": "CIFR",
-          "source_company": "Cipher Digital",
-          "source_lens": "Bitcoin Miners (Pivoted to AI)",
-          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
-          "rationale": "site. Google (GOOGL) on the same logic. Talen Energy (TLN), Vistra (VST), Constellation (CEG) on the"
-        },
-        {
-          "source_ticker": "NVDA",
-          "source_company": "NVIDIA",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "01. GPUs & Accelerators",
-          "rationale": "silicon at hyperscalers shifts share away from NVIDIA on inference but not training \u2014 Google (GOOGL),"
-        },
-        {
-          "source_ticker": "SLAB",
-          "source_company": "Silicon Labs",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "02. Custom AI Silicon",
-          "rationale": "(AMZN), and Google (GOOGL) capture more value if they consolidate the smart home stack with"
-        },
-        {
-          "source_ticker": "AMZN",
-          "source_company": "Amazon.com",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
-          "rationale": "(GOOGL) on cloud share. Walmart (WMT) and Target (TGT) on retail share if Amazon antitrust remedy"
-        },
-        {
-          "source_ticker": "CFLT",
-          "source_company": "Confluent",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "17. AI Software & Cybersecurity",
-          "rationale": "Hyperscaler-native streaming services \u2014 MSK (AMZN), Event Hubs (MSFT), Pub/Sub (GOOGL) \u2014 on"
-        },
-        {
-          "source_ticker": "IBM",
-          "source_company": "IBM",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
-          "rationale": "Microsoft (MSFT), Amazon (AMZN), and Alphabet (GOOGL) on AI platform consolidation. Accenture"
-        },
-        {
-          "source_ticker": "MDB",
-          "source_company": "MongoDB",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "17. AI Software & Cybersecurity",
-          "rationale": "Amazon DocumentDB (AMZN), Microsoft CosmosDB (MSFT), and Google Firestore (GOOGL) on"
-        },
-        {
-          "source_ticker": "META",
-          "source_company": "Meta Platforms",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
-          "rationale": "Alphabet (GOOGL) on YouTube ad share and AI infrastructure positioning. Microsoft (MSFT) on AI"
-        },
-        {
-          "source_ticker": "MSFT",
-          "source_company": "Microsoft",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
-          "rationale": "Amazon (AMZN) on AWS share if Azure decelerates. Google (GOOGL) on Cloud share and on AI model"
-        },
-        {
-          "source_ticker": "NET",
-          "source_company": "Cloudflare",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "17. AI Software & Cybersecurity",
-          "rationale": "Microsoft (MSFT), and Google (GOOGL) on broader cloud platform consolidation. Zscaler (ZS) on"
-        },
-        {
-          "source_ticker": "ORCL",
-          "source_company": "Oracle",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "16. Hyperscalers & Mega-Cap Cloud",
-          "rationale": "\u2014 they have the scale to pick up any customer that needs to migrate. Google Cloud (GOOGL) as the third-place"
-        },
-        {
-          "source_ticker": "SNOW",
-          "source_company": "Snowflake",
-          "source_lens": "Hyperscalers + AI Software + Cybersecurity",
-          "source_category": "17. AI Software & Cybersecurity",
-          "rationale": "Google (GOOGL) via BigQuery on AI workloads. Confluent (CFLT) on data streaming overlap. MongoDB"
         }
       ]
     },
@@ -5436,7 +6300,7 @@
     "CIFR": {
       "ticker": "CIFR",
       "company_name": "Cipher Digital",
-      "mentions": 1,
+      "mentions": 2,
       "in_universe": true,
       "primary_lens": "Bitcoin Miners (Pivoted to AI)",
       "category": "13. Bitcoin Miners (Repurposed AI Compute)",
@@ -5452,6 +6316,13 @@
           "source_lens": "Bitcoin Miners (Pivoted to AI)",
           "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
           "rationale": "slips. Cipher Digital (CIFR) and Iris Energy (IREN) on the alternative-listed crypto-pivoted-to-AI"
+        },
+        {
+          "source_ticker": "MARA",
+          "source_company": "Marathon Digital Holdings",
+          "source_lens": "Bitcoin Miners (Pivoted to AI)",
+          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
+          "rationale": "Cipher Mining (CIFR, in database) on similar"
         }
       ]
     },
@@ -5495,7 +6366,7 @@
     "TLN": {
       "ticker": "TLN",
       "company_name": "Talen Energy",
-      "mentions": 9,
+      "mentions": 11,
       "in_universe": true,
       "primary_lens": "Power",
       "category": "12. Power Generation & Nuclear",
@@ -5550,6 +6421,13 @@
           "rationale": "Energy (NEE) on regulated utility plus renewables. Talen Energy (TLN) on nuclear-adjacent \u2014 Talen has the"
         },
         {
+          "source_ticker": "DUK",
+          "source_company": "Duke Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Talen Energy (TLN) on similar competitive nuclear"
+        },
+        {
           "source_ticker": "GEV",
           "source_company": "GE Vernova",
           "source_lens": "Power",
@@ -5562,6 +6440,13 @@
           "source_lens": "Power",
           "source_category": "12. Power Generation & Nuclear",
           "rationale": "Vistra (VST), Constellation Energy (CEG), Talen Energy (TLN) on competitive nuclear generation if hyperscalers"
+        },
+        {
+          "source_ticker": "SO",
+          "source_company": "Southern Company",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "Constellation Energy (CEG), Vistra (VST), Talen Energy (TLN) on competitive nuclear generation if hyperscalers shift to direct PPAs"
         },
         {
           "source_ticker": "VST",
@@ -5569,194 +6454,6 @@
           "source_lens": "Power",
           "source_category": "12. Power Generation & Nuclear",
           "rationale": "Talen (TLN). On the data center side, if Texas grid economics worsen, hyperscalers shift more capacity to"
-        }
-      ]
-    },
-    "VST": {
-      "ticker": "VST",
-      "company_name": "Vistra",
-      "mentions": 11,
-      "in_universe": true,
-      "primary_lens": "Power",
-      "category": "12. Power Generation & Nuclear",
-      "subcategory": "Competitive Generation (Nuclear + Gas)",
-      "sectors_count": 3,
-      "sectors": [
-        "11. Power Infrastructure & Equipment",
-        "12. Power Generation & Nuclear",
-        "13. Bitcoin Miners (Repurposed AI Compute)"
-      ],
-      "sources": [
-        {
-          "source_ticker": "APLD",
-          "source_company": "Applied Digital",
-          "source_lens": "Bitcoin Miners (Pivoted to AI)",
-          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
-          "rationale": "Vistra (VST), and Constellation (CEG) on the power-supply side \u2014 winning regardless because"
-        },
-        {
-          "source_ticker": "CIFR",
-          "source_company": "Cipher Digital",
-          "source_lens": "Bitcoin Miners (Pivoted to AI)",
-          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
-          "rationale": "site. Google (GOOGL) on the same logic. Talen Energy (TLN), Vistra (VST), Constellation (CEG) on the"
-        },
-        {
-          "source_ticker": "BE",
-          "source_company": "Bloom Energy",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "at smaller scale. On the nuclear-displacement side: Talen (TLN), Constellation (CEG), and Vistra (VST) all"
-        },
-        {
-          "source_ticker": "BWXT",
-          "source_company": "BWX Technologies",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "historically supplied many of the same components at lower cost. Constellation (CEG), Vistra (VST), Talen"
-        },
-        {
-          "source_ticker": "CEG",
-          "source_company": "Constellation Energy",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "Vistra (VST) on competitive generation specifically \u2014 direct head-to-head AI-power-thesis comparable. NextEra"
-        },
-        {
-          "source_ticker": "D",
-          "source_company": "Dominion Energy",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "Texas and Ohio data center markets. Constellation Energy (CEG) and Vistra (VST) on competitive generation if"
-        },
-        {
-          "source_ticker": "GEV",
-          "source_company": "GE Vernova",
-          "source_lens": "Power",
-          "source_category": "11. Power Infrastructure & Equipment",
-          "rationale": "design wins. Constellation Energy (CEG), Vistra (VST), Talen Energy (TLN) on existing nuclear capacity if SMR"
-        },
-        {
-          "source_ticker": "NEE",
-          "source_company": "NextEra Energy",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "Vistra (VST), Constellation Energy (CEG), Talen Energy (TLN) on competitive nuclear generation if hyperscalers"
-        },
-        {
-          "source_ticker": "OKLO",
-          "source_company": "Oklo",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "Vistra (VST), and TLN as the existing-fleet operators that benefit if SMR deployment slips and"
-        },
-        {
-          "source_ticker": "SMR",
-          "source_company": "NuScale Power",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "project commitment. Constellation Energy (CEG) and Vistra (VST) on existing nuclear capacity restart and life"
-        },
-        {
-          "source_ticker": "TLN",
-          "source_company": "Talen Energy",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "model with Microsoft) becomes the default, and CEG benefits from being first on that pattern. Vistra (VST)"
-        }
-      ]
-    },
-    "CEG": {
-      "ticker": "CEG",
-      "company_name": "Constellation Energy",
-      "mentions": 11,
-      "in_universe": true,
-      "primary_lens": "Power",
-      "category": "12. Power Generation & Nuclear",
-      "subcategory": "Nuclear Operator (Largest US)",
-      "sectors_count": 3,
-      "sectors": [
-        "11. Power Infrastructure & Equipment",
-        "12. Power Generation & Nuclear",
-        "13. Bitcoin Miners (Repurposed AI Compute)"
-      ],
-      "sources": [
-        {
-          "source_ticker": "APLD",
-          "source_company": "Applied Digital",
-          "source_lens": "Bitcoin Miners (Pivoted to AI)",
-          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
-          "rationale": "Vistra (VST), and Constellation (CEG) on the power-supply side \u2014 winning regardless because"
-        },
-        {
-          "source_ticker": "CIFR",
-          "source_company": "Cipher Digital",
-          "source_lens": "Bitcoin Miners (Pivoted to AI)",
-          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
-          "rationale": "site. Google (GOOGL) on the same logic. Talen Energy (TLN), Vistra (VST), Constellation (CEG) on the"
-        },
-        {
-          "source_ticker": "BE",
-          "source_company": "Bloom Energy",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "at smaller scale. On the nuclear-displacement side: Talen (TLN), Constellation (CEG), and Vistra (VST) all"
-        },
-        {
-          "source_ticker": "BWXT",
-          "source_company": "BWX Technologies",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "historically supplied many of the same components at lower cost. Constellation (CEG), Vistra (VST), Talen"
-        },
-        {
-          "source_ticker": "D",
-          "source_company": "Dominion Energy",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "Texas and Ohio data center markets. Constellation Energy (CEG) and Vistra (VST) on competitive generation if"
-        },
-        {
-          "source_ticker": "GEV",
-          "source_company": "GE Vernova",
-          "source_lens": "Power",
-          "source_category": "11. Power Infrastructure & Equipment",
-          "rationale": "design wins. Constellation Energy (CEG), Vistra (VST), Talen Energy (TLN) on existing nuclear capacity if SMR"
-        },
-        {
-          "source_ticker": "NEE",
-          "source_company": "NextEra Energy",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "Vistra (VST), Constellation Energy (CEG), Talen Energy (TLN) on competitive nuclear generation if hyperscalers"
-        },
-        {
-          "source_ticker": "OKLO",
-          "source_company": "Oklo",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "win regardless of which SMR developer wins because all SMR designs require fuel. Constellation (CEG),"
-        },
-        {
-          "source_ticker": "SMR",
-          "source_company": "NuScale Power",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "project commitment. Constellation Energy (CEG) and Vistra (VST) on existing nuclear capacity restart and life"
-        },
-        {
-          "source_ticker": "TLN",
-          "source_company": "Talen Energy",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "Constellation Energy (CEG) \u2014 if behind-the-meter is restricted, the on-grid contracted PPA model (CEG's"
-        },
-        {
-          "source_ticker": "VST",
-          "source_company": "Vistra",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "Constellation Energy (CEG) is the closest direct comparable and benefits from any narrative that"
         }
       ]
     },
@@ -5789,73 +6486,13 @@
         }
       ]
     },
-    "TSM": {
-      "ticker": "TSM",
-      "company_name": "Taiwan Semiconductor Manufacturing",
-      "mentions": 6,
-      "in_universe": true,
-      "primary_lens": "Foundries",
-      "category": "06. Foundry & Advanced Packaging",
-      "subcategory": "Leading-Edge Foundry Monopoly",
-      "sectors_count": 4,
-      "sectors": [
-        "01. GPUs & Accelerators",
-        "02. Custom AI Silicon",
-        "06. Foundry & Advanced Packaging",
-        "13. Bitcoin Miners (Repurposed AI Compute)"
-      ],
-      "sources": [
-        {
-          "source_ticker": "CIFR",
-          "source_company": "Cipher Digital",
-          "source_lens": "Bitcoin Miners (Pivoted to AI)",
-          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
-          "rationale": "but exposed to either Taiwan tail (TSM), cycle-end pattern (MU), or execution-timing slip (BWXT). (3) The"
-        },
-        {
-          "source_ticker": "GFS",
-          "source_company": "GlobalFoundries",
-          "source_lens": "Foundries",
-          "source_category": "06. Foundry & Advanced Packaging",
-          "rationale": "TSMC (TSM) on the leading-edge customers that might have considered GFS for some applications."
-        },
-        {
-          "source_ticker": "UMC",
-          "source_company": "United Microelectronics",
-          "source_lens": "Foundries",
-          "source_category": "06. Foundry & Advanced Packaging",
-          "rationale": "TSMC (TSM) on the customers that might have considered UMC for some applications. SMIC (981.HK)"
-        },
-        {
-          "source_ticker": "AVGO",
-          "source_company": "Broadcom",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "02. Custom AI Silicon",
-          "rationale": "back to merchant GPUs after custom silicon programs disappoint. TSMC (TSM) fabs everything regardless of"
-        },
-        {
-          "source_ticker": "INTC",
-          "source_company": "Intel",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "01. GPUs & Accelerators",
-          "rationale": "TSMC (TSM) wins regardless because they keep the leading-edge fabrication share Intel was hoping to take \u2014"
-        },
-        {
-          "source_ticker": "MRVL",
-          "source_company": "Marvell Technology",
-          "source_lens": "GPU & AI Accelerators",
-          "source_category": "02. Custom AI Silicon",
-          "rationale": "CXL specifically. TSMC (TSM) fabs both Marvell and Broadcom designs regardless. MediaTek (foreign) on"
-        }
-      ]
-    },
     "ALAB": {
       "ticker": "ALAB",
       "company_name": "Astera Labs",
       "mentions": 5,
       "in_universe": true,
       "primary_lens": "GPU & AI Accelerators",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "AI Connectivity (Retimers, PCIe/CXL)",
       "sectors_count": 1,
       "sectors": [
@@ -6182,7 +6819,7 @@
     "GEV": {
       "ticker": "GEV",
       "company_name": "GE Vernova",
-      "mentions": 9,
+      "mentions": 10,
       "in_universe": true,
       "primary_lens": "Power",
       "category": "11. Power Infrastructure & Equipment",
@@ -6227,6 +6864,13 @@
           "source_lens": "Power",
           "source_category": "12. Power Generation & Nuclear",
           "rationale": "servicing. NuScale (SMR) and GE Vernova (GEV) on SMR-specific exposure if reactor restarts disappoint and the"
+        },
+        {
+          "source_ticker": "ENR",
+          "source_company": "Siemens Energy AG (ADR: SMNEY)",
+          "source_lens": "Power",
+          "source_category": "11. Power Infrastructure & Equipment",
+          "rationale": "GE Vernova (GEV) on heavy gas turbines and grid solutions \u2014 direct head-to-head competitor in the duopoly"
         },
         {
           "source_ticker": "GE",
@@ -6299,7 +6943,7 @@
     "CAT": {
       "ticker": "CAT",
       "company_name": "Caterpillar Inc.",
-      "mentions": 3,
+      "mentions": 4,
       "in_universe": true,
       "primary_lens": "Power",
       "category": "11. Power Infrastructure & Equipment",
@@ -6325,6 +6969,13 @@
           "rationale": "Caterpillar (CAT) is the direct head-to-head competitor \u2014 wins or loses with Cummins almost dollar for dollar at"
         },
         {
+          "source_ticker": "ENR",
+          "source_company": "Siemens Energy AG (ADR: SMNEY)",
+          "source_lens": "Power",
+          "source_category": "11. Power Infrastructure & Equipment",
+          "rationale": "Cummins (CMI), Caterpillar (CAT) on smaller gas gensets if peaking architecture shifts smaller"
+        },
+        {
           "source_ticker": "GNRC",
           "source_company": "Generac Holdings",
           "source_lens": "Power",
@@ -6336,7 +6987,7 @@
     "CMI": {
       "ticker": "CMI",
       "company_name": "Cummins Inc.",
-      "mentions": 3,
+      "mentions": 4,
       "in_universe": true,
       "primary_lens": "Power",
       "category": "11. Power Infrastructure & Equipment",
@@ -6360,6 +7011,13 @@
           "source_lens": "Power",
           "source_category": "11. Power Infrastructure & Equipment",
           "rationale": "Cummins (CMI) is the direct head-to-head competitor on backup power \u2014 wins or loses with Caterpillar almost"
+        },
+        {
+          "source_ticker": "ENR",
+          "source_company": "Siemens Energy AG (ADR: SMNEY)",
+          "source_lens": "Power",
+          "source_category": "11. Power Infrastructure & Equipment",
+          "rationale": "Cummins (CMI), Caterpillar (CAT) on smaller gas gensets if peaking architecture shifts smaller"
         },
         {
           "source_ticker": "GNRC",
@@ -6733,7 +7391,7 @@
     "CORZ": {
       "ticker": "CORZ",
       "company_name": "Core Scientific",
-      "mentions": 6,
+      "mentions": 7,
       "in_universe": true,
       "primary_lens": "Bitcoin Miners (Pivoted to AI)",
       "category": "13. Bitcoin Miners (Repurposed AI Compute)",
@@ -6770,6 +7428,13 @@
           "source_lens": "Bitcoin Miners (Pivoted to AI)",
           "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
           "rationale": "Core Scientific (CORZ) is the most direct beneficiary in the AI-pivot cluster \u2014 they have a more advanced"
+        },
+        {
+          "source_ticker": "MARA",
+          "source_company": "Marathon Digital Holdings",
+          "source_lens": "Bitcoin Miners (Pivoted to AI)",
+          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
+          "rationale": "Core Scientific (CORZ, in database) on Bitcoin-plus-AI compute hosting if MARA's pivot stalls"
         },
         {
           "source_ticker": "RIOT",
@@ -6911,7 +7576,7 @@
     "RIOT": {
       "ticker": "RIOT",
       "company_name": "Riot Platforms",
-      "mentions": 3,
+      "mentions": 4,
       "in_universe": true,
       "primary_lens": "Bitcoin Miners (Pivoted to AI)",
       "category": "13. Bitcoin Miners (Repurposed AI Compute)",
@@ -6941,17 +7606,24 @@
           "source_lens": "Bitcoin Miners (Pivoted to AI)",
           "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
           "rationale": "(RIOT) are the larger pure-play comparables that absorb BTC-mining share. On the AI HPC infrastructure"
+        },
+        {
+          "source_ticker": "MARA",
+          "source_company": "Marathon Digital Holdings",
+          "source_lens": "Bitcoin Miners (Pivoted to AI)",
+          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
+          "rationale": "Riot Platforms (RIOT, in database) on direct competition"
         }
       ]
     },
     "MARA": {
       "ticker": "MARA",
-      "company_name": "",
+      "company_name": "Marathon Digital Holdings",
       "mentions": 5,
-      "in_universe": false,
-      "primary_lens": null,
-      "category": null,
-      "subcategory": null,
+      "in_universe": true,
+      "primary_lens": "Bitcoin Miners (Pivoted to AI)",
+      "category": "13. Bitcoin Miners (Repurposed AI Compute)",
+      "subcategory": "Pure-Play Bitcoin (Slow AI Pivot)",
       "sectors_count": 1,
       "sectors": [
         "13. Bitcoin Miners (Repurposed AI Compute)"
@@ -7041,7 +7713,7 @@
     "CLSK": {
       "ticker": "CLSK",
       "company_name": "",
-      "mentions": 2,
+      "mentions": 3,
       "in_universe": false,
       "primary_lens": null,
       "category": null,
@@ -7057,6 +7729,13 @@
           "source_lens": "Bitcoin Miners (Pivoted to AI)",
           "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
           "rationale": "(RIOT), Hut 8 (HUT), and Cleanspark (CLSK) capture share. On the AI HPC pivot side, Core Scientific"
+        },
+        {
+          "source_ticker": "MARA",
+          "source_company": "Marathon Digital Holdings",
+          "source_lens": "Bitcoin Miners (Pivoted to AI)",
+          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
+          "rationale": "CleanSpark (CLSK, not in database) on Bitcoin mining share"
         },
         {
           "source_ticker": "RIOT",
@@ -7106,7 +7785,7 @@
     "ONTO": {
       "ticker": "ONTO",
       "company_name": "Onto Innovation",
-      "mentions": 5,
+      "mentions": 6,
       "in_universe": true,
       "primary_lens": "Metrology / Inspection / Test",
       "category": "05. Semiconductor Test & Inspection",
@@ -7137,6 +7816,13 @@
           "source_lens": "Metrology / Inspection / Test",
           "source_category": "05. Semiconductor Test & Inspection",
           "rationale": "Onto Innovation (ONTO) is the direct head-to-head winner in the duopoly. KLA (KLAC) on broader inspection if"
+        },
+        {
+          "source_ticker": "COHU",
+          "source_company": "Cohu Inc.",
+          "source_lens": "Metrology / Inspection / Test",
+          "source_category": "05. Semiconductor Test & Inspection",
+          "rationale": "Camtek (CAMT), Onto Innovation (ONTO) on inspection-side advanced packaging"
         },
         {
           "source_ticker": "KLAC",
@@ -7385,43 +8071,6 @@
           "source_lens": "Power",
           "source_category": "11. Power Infrastructure & Equipment",
           "rationale": "PTC (PTC), Autodesk (ADSK), Bentley (BSY) \u2014 they capture more software share regardless of which"
-        }
-      ]
-    },
-    "NEE": {
-      "ticker": "NEE",
-      "company_name": "NextEra Energy",
-      "mentions": 3,
-      "in_universe": true,
-      "primary_lens": "Power",
-      "category": "12. Power Generation & Nuclear",
-      "subcategory": "Renewable + Storage + Regulated Utility (FPL)",
-      "sectors_count": 2,
-      "sectors": [
-        "11. Power Infrastructure & Equipment",
-        "12. Power Generation & Nuclear"
-      ],
-      "sources": [
-        {
-          "source_ticker": "FLNC",
-          "source_company": "Fluence Energy",
-          "source_lens": "Cooling & Thermal",
-          "source_category": "11. Power Infrastructure & Equipment",
-          "rationale": "(NEE) and First Solar (FSLR) as project developers and integrators that would absorb storage attach"
-        },
-        {
-          "source_ticker": "CEG",
-          "source_company": "Constellation Energy",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "Energy (NEE) on regulated utility plus renewables. Talen Energy (TLN) on nuclear-adjacent \u2014 Talen has the"
-        },
-        {
-          "source_ticker": "D",
-          "source_company": "Dominion Energy",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "center markets. NextEra Energy (NEE) on competitive renewable plus storage. American Electric Power (AEP) on"
         }
       ]
     },
@@ -7909,7 +8558,7 @@
     "BE": {
       "ticker": "BE",
       "company_name": "Bloom Energy",
-      "mentions": 4,
+      "mentions": 5,
       "in_universe": true,
       "primary_lens": "Power",
       "category": "12. Power Generation & Nuclear",
@@ -7927,6 +8576,13 @@
           "source_lens": "Power",
           "source_category": "11. Power Infrastructure & Equipment",
           "rationale": "parent RYCEY) on regional share. Bloom Energy (BE) on fuel cell alternatives if the architecture shifts to fuel cell"
+        },
+        {
+          "source_ticker": "ENR",
+          "source_company": "Siemens Energy AG (ADR: SMNEY)",
+          "source_lens": "Power",
+          "source_category": "11. Power Infrastructure & Equipment",
+          "rationale": "Bloom Energy (BE) on fuel cell alternatives."
         },
         {
           "source_ticker": "GTLS",
@@ -7998,17 +8654,39 @@
     "IPGP": {
       "ticker": "IPGP",
       "company_name": "IPG Photonics",
-      "mentions": 2,
+      "mentions": 5,
       "in_universe": true,
       "primary_lens": "Optical & Networking",
       "category": "07. Optical & Photonics",
       "subcategory": "Industrial & Defense Fiber Lasers",
-      "sectors_count": 2,
+      "sectors_count": 3,
       "sectors": [
         "04. Semiconductor Equipment",
-        "07. Optical & Photonics"
+        "07. Optical & Photonics",
+        "19. Defense & Aerospace"
       ],
       "sources": [
+        {
+          "source_ticker": "LMT",
+          "source_company": "Lockheed Martin",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins"
+        },
+        {
+          "source_ticker": "NOC",
+          "source_company": "Northrop Grumman",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins."
+        },
+        {
+          "source_ticker": "RTX",
+          "source_company": "Raytheon Technologies",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins"
+        },
         {
           "source_ticker": "MKSI",
           "source_company": "MKS Instruments",
@@ -8022,6 +8700,73 @@
           "source_lens": "Optical & Networking",
           "source_category": "07. Optical & Photonics",
           "rationale": "MRVL, GlobalFoundries GFS) captures share. On industrial lasers, IPG Photonics (IPGP) and MKSI on"
+        }
+      ]
+    },
+    "AEHR": {
+      "ticker": "AEHR",
+      "company_name": "AEHR Test Systems",
+      "mentions": 2,
+      "in_universe": true,
+      "primary_lens": "Metrology / Inspection / Test",
+      "category": "05. Semiconductor Test & Inspection",
+      "subcategory": "Wafer-Level Burn-In Test",
+      "sectors_count": 2,
+      "sectors": [
+        "04. Semiconductor Equipment",
+        "05. Semiconductor Test & Inspection"
+      ],
+      "sources": [
+        {
+          "source_ticker": "COHU",
+          "source_company": "Cohu Inc.",
+          "source_lens": "Metrology / Inspection / Test",
+          "source_category": "05. Semiconductor Test & Inspection",
+          "rationale": "AEHR Test Systems (AEHR) on specialty burn-in"
+        },
+        {
+          "source_ticker": "TER",
+          "source_company": "Teradyne",
+          "source_lens": "Metrology / Inspection / Test",
+          "source_category": "04. Semiconductor Equipment",
+          "rationale": "wafer-level test. AEHR Test Systems (AEHR) on specialty burn-in. FormFactor (FORM) on probe cards adjacent."
+        }
+      ]
+    },
+    "CAMT": {
+      "ticker": "CAMT",
+      "company_name": "Camtek",
+      "mentions": 3,
+      "in_universe": true,
+      "primary_lens": "Metrology / Inspection / Test",
+      "category": "05. Semiconductor Test & Inspection",
+      "subcategory": "Advanced Packaging Inspection",
+      "sectors_count": 2,
+      "sectors": [
+        "04. Semiconductor Equipment",
+        "05. Semiconductor Test & Inspection"
+      ],
+      "sources": [
+        {
+          "source_ticker": "COHU",
+          "source_company": "Cohu Inc.",
+          "source_lens": "Metrology / Inspection / Test",
+          "source_category": "05. Semiconductor Test & Inspection",
+          "rationale": "Camtek (CAMT), Onto Innovation (ONTO) on inspection-side advanced packaging"
+        },
+        {
+          "source_ticker": "KLAC",
+          "source_company": "KLA Corporation",
+          "source_lens": "Metrology / Inspection / Test",
+          "source_category": "04. Semiconductor Equipment",
+          "rationale": "on adjacent process equipment. Onto Innovation (ONTO) and Camtek (CAMT) on niche advanced-packaging"
+        },
+        {
+          "source_ticker": "ONTO",
+          "source_company": "Onto Innovation",
+          "source_lens": "Metrology / Inspection / Test",
+          "source_category": "05. Semiconductor Test & Inspection",
+          "rationale": "Camtek (CAMT) is the direct head-to-head winner in the duopoly. KLA (KLAC) on broader inspection if it pushes"
         }
       ]
     },
@@ -8299,71 +9044,6 @@
         }
       ]
     },
-    "DUK": {
-      "ticker": "DUK",
-      "company_name": "",
-      "mentions": 2,
-      "in_universe": false,
-      "primary_lens": null,
-      "category": null,
-      "subcategory": null,
-      "sectors_count": 1,
-      "sectors": [
-        "12. Power Generation & Nuclear"
-      ],
-      "sources": [
-        {
-          "source_ticker": "D",
-          "source_company": "Dominion Energy",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "Duke Energy (DUK) on Southeast data center markets. Southern Company (SO) on Georgia and Alabama data"
-        },
-        {
-          "source_ticker": "NEE",
-          "source_company": "NextEra Energy",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "adjacent battery storage. AES Corporation (AES) on similar diversified power generation. Duke Energy (DUK)"
-        }
-      ]
-    },
-    "SO": {
-      "ticker": "SO",
-      "company_name": "",
-      "mentions": 3,
-      "in_universe": false,
-      "primary_lens": null,
-      "category": null,
-      "subcategory": null,
-      "sectors_count": 1,
-      "sectors": [
-        "12. Power Generation & Nuclear"
-      ],
-      "sources": [
-        {
-          "source_ticker": "D",
-          "source_company": "Dominion Energy",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "Duke Energy (DUK) on Southeast data center markets. Southern Company (SO) on Georgia and Alabama data"
-        },
-        {
-          "source_ticker": "NEE",
-          "source_company": "NextEra Energy",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "and Southern Company (SO) on regulated utility share if FPL faces regulatory pushback."
-        },
-        {
-          "source_ticker": "VST",
-          "source_company": "Vistra",
-          "source_lens": "Power",
-          "source_category": "12. Power Generation & Nuclear",
-          "rationale": "American Electric Power (AEP) and Southern Company (SO) are the boring beneficiaries \u2014 if merchant"
-        }
-      ]
-    },
     "BAM": {
       "ticker": "BAM",
       "company_name": "",
@@ -8498,7 +9178,7 @@
     "PNR": {
       "ticker": "PNR",
       "company_name": "Pentair",
-      "mentions": 2,
+      "mentions": 3,
       "in_universe": true,
       "primary_lens": "Cooling & Thermal",
       "category": "10. Cooling & Thermal",
@@ -8517,6 +9197,13 @@
           "rationale": "Pentair (PNR) on water treatment specifically. Watts Water Technologies (WTS) on plumbing-and-water. Veolia"
         },
         {
+          "source_ticker": "WTS",
+          "source_company": "Watts Water Technologies",
+          "source_lens": "Cooling & Thermal",
+          "source_category": "10. Cooling & Thermal",
+          "rationale": "Pentair (PNR) on water treatment specifically"
+        },
+        {
           "source_ticker": "DD",
           "source_company": "DuPont",
           "source_lens": "Specialty Chemicals & Materials",
@@ -8527,12 +9214,12 @@
     },
     "WTS": {
       "ticker": "WTS",
-      "company_name": "",
+      "company_name": "Watts Water Technologies",
       "mentions": 5,
-      "in_universe": false,
-      "primary_lens": null,
-      "category": null,
-      "subcategory": null,
+      "in_universe": true,
+      "primary_lens": "Cooling & Thermal",
+      "category": "10. Cooling & Thermal",
+      "subcategory": "Water Systems & Plumbing (Data Center)",
       "sectors_count": 3,
       "sectors": [
         "04. Semiconductor Equipment",
@@ -8580,16 +9267,24 @@
     "ECL": {
       "ticker": "ECL",
       "company_name": "Ecolab",
-      "mentions": 1,
+      "mentions": 2,
       "in_universe": true,
       "primary_lens": "Cooling & Thermal",
       "category": "10. Cooling & Thermal",
       "subcategory": "Industrial Water Treatment",
-      "sectors_count": 1,
+      "sectors_count": 2,
       "sectors": [
-        "04. Semiconductor Equipment"
+        "04. Semiconductor Equipment",
+        "10. Cooling & Thermal"
       ],
       "sources": [
+        {
+          "source_ticker": "WTS",
+          "source_company": "Watts Water Technologies",
+          "source_lens": "Cooling & Thermal",
+          "source_category": "10. Cooling & Thermal",
+          "rationale": "Ecolab (ECL) on industrial water at scale"
+        },
         {
           "source_ticker": "DD",
           "source_company": "DuPont",
@@ -8742,7 +9437,7 @@
     "ROP": {
       "ticker": "ROP",
       "company_name": "",
-      "mentions": 4,
+      "mentions": 5,
       "in_universe": false,
       "primary_lens": null,
       "category": null,
@@ -8780,13 +9475,49 @@
           "source_lens": "Cooling & Thermal",
           "source_category": "10. Cooling & Thermal",
           "rationale": "water and product quality. Roper Technologies (ROP) on adjacent niche water. Vertiv (VRT) and Modine (MOD)"
+        },
+        {
+          "source_ticker": "WTS",
+          "source_company": "Watts Water Technologies",
+          "source_lens": "Cooling & Thermal",
+          "source_category": "10. Cooling & Thermal",
+          "rationale": "Roper Technologies (ROP) on adjacent niche industrials"
+        }
+      ]
+    },
+    "AEP": {
+      "ticker": "AEP",
+      "company_name": "American Electric Power",
+      "mentions": 2,
+      "in_universe": true,
+      "primary_lens": "Power",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Transmission Utility (Multi-State)",
+      "sectors_count": 1,
+      "sectors": [
+        "12. Power Generation & Nuclear"
+      ],
+      "sources": [
+        {
+          "source_ticker": "DUK",
+          "source_company": "Duke Energy",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "American Electric Power (AEP) on adjacent Ohio and Indiana"
+        },
+        {
+          "source_ticker": "SO",
+          "source_company": "Southern Company",
+          "source_lens": "Power",
+          "source_category": "12. Power Generation & Nuclear",
+          "rationale": "American Electric Power (AEP) on Ohio and Texas"
         }
       ]
     },
     "VLTO": {
       "ticker": "VLTO",
       "company_name": "",
-      "mentions": 1,
+      "mentions": 2,
       "in_universe": false,
       "primary_lens": null,
       "category": null,
@@ -8802,6 +9533,13 @@
           "source_lens": "Cooling & Thermal",
           "source_category": "10. Cooling & Thermal",
           "rationale": "(foreign, France) on industrial water at global scale. Veralto (VLTO) on adjacent water and product quality. Roper"
+        },
+        {
+          "source_ticker": "WTS",
+          "source_company": "Watts Water Technologies",
+          "source_lens": "Cooling & Thermal",
+          "source_category": "10. Cooling & Thermal",
+          "rationale": "Veralto (VLTO, not in database) on adjacent water and product quality"
         }
       ]
     },
@@ -8946,6 +9684,36 @@
           "source_lens": "Power",
           "source_category": "11. Power Infrastructure & Equipment",
           "rationale": "Schneider Electric (private equivalents in US: ETN, ROK), Honeywell (HON), and Siemens (SIEGY)"
+        }
+      ]
+    },
+    "GE": {
+      "ticker": "GE",
+      "company_name": "General Electric (GE Aerospace)",
+      "mentions": 2,
+      "in_universe": true,
+      "primary_lens": "Power",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "Aerospace + Aero-Derivative Turbines",
+      "sectors_count": 2,
+      "sectors": [
+        "11. Power Infrastructure & Equipment",
+        "19. Defense & Aerospace"
+      ],
+      "sources": [
+        {
+          "source_ticker": "RTX",
+          "source_company": "Raytheon Technologies",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "General Electric (GE) on aero-derivative gas turbine competition and commercial aerospace engines"
+        },
+        {
+          "source_ticker": "ENR",
+          "source_company": "Siemens Energy AG (ADR: SMNEY)",
+          "source_lens": "Power",
+          "source_category": "11. Power Infrastructure & Equipment",
+          "rationale": "General Electric (GE) parent on aero-derivative gas turbines"
         }
       ]
     },
@@ -9236,17 +10004,18 @@
     },
     "RTX": {
       "ticker": "RTX",
-      "company_name": "",
-      "mentions": 4,
-      "in_universe": false,
-      "primary_lens": null,
-      "category": null,
-      "subcategory": null,
-      "sectors_count": 3,
+      "company_name": "RTX Corporation",
+      "mentions": 6,
+      "in_universe": true,
+      "primary_lens": "Defense & Aerospace",
+      "category": "19. Defense & Aerospace",
+      "subcategory": "Defense Conglomerate (Engines + Avionics + Missiles)",
+      "sectors_count": 4,
       "sectors": [
         "07. Optical & Photonics",
         "09. Data Center Construction & EPC",
-        "11. Power Infrastructure & Equipment"
+        "11. Power Infrastructure & Equipment",
+        "19. Defense & Aerospace"
       ],
       "sources": [
         {
@@ -9255,6 +10024,20 @@
           "source_lens": "Construction & EPC",
           "source_category": "09. Data Center Construction & EPC",
           "rationale": "share. Lockheed Martin (LMT), Raytheon (RTX), and Northrop Grumman (NOC) capture the larger"
+        },
+        {
+          "source_ticker": "LMT",
+          "source_company": "Lockheed Martin",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "Raytheon (RTX) on adjacent defense systems"
+        },
+        {
+          "source_ticker": "NOC",
+          "source_company": "Northrop Grumman",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "Raytheon (RTX) on adjacent defense systems"
         },
         {
           "source_ticker": "IPGP",
@@ -9282,16 +10065,38 @@
     "BA": {
       "ticker": "BA",
       "company_name": "",
-      "mentions": 1,
+      "mentions": 4,
       "in_universe": false,
       "primary_lens": null,
       "category": null,
       "subcategory": null,
-      "sectors_count": 1,
+      "sectors_count": 2,
       "sectors": [
-        "11. Power Infrastructure & Equipment"
+        "11. Power Infrastructure & Equipment",
+        "19. Defense & Aerospace"
       ],
       "sources": [
+        {
+          "source_ticker": "LMT",
+          "source_company": "Lockheed Martin",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "Boeing (BA) on F-15EX and adjacent fighter platforms"
+        },
+        {
+          "source_ticker": "NOC",
+          "source_company": "Northrop Grumman",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "Boeing (BA) on adjacent aircraft platforms"
+        },
+        {
+          "source_ticker": "RTX",
+          "source_company": "Raytheon Technologies",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "Boeing (BA), Airbus (foreign) on platform suppliers"
+        },
         {
           "source_ticker": "GE",
           "source_company": "General Electric (GE Aerospace)",
@@ -9326,16 +10131,24 @@
     "LHX": {
       "ticker": "LHX",
       "company_name": "",
-      "mentions": 1,
+      "mentions": 2,
       "in_universe": false,
       "primary_lens": null,
       "category": null,
       "subcategory": null,
-      "sectors_count": 1,
+      "sectors_count": 2,
       "sectors": [
-        "07. Optical & Photonics"
+        "07. Optical & Photonics",
+        "19. Defense & Aerospace"
       ],
       "sources": [
+        {
+          "source_ticker": "NOC",
+          "source_company": "Northrop Grumman",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "L3Harris Technologies (LHX, not in database) on adjacent defense electronics and space"
+        },
         {
           "source_ticker": "GILT",
           "source_company": "Gilat Satellite Networks",
@@ -9545,12 +10358,12 @@
     },
     "AAPL": {
       "ticker": "AAPL",
-      "company_name": "",
+      "company_name": "Apple Inc.",
       "mentions": 5,
-      "in_universe": false,
-      "primary_lens": null,
-      "category": null,
-      "subcategory": null,
+      "in_universe": true,
+      "primary_lens": "Hyperscalers + AI Software + Cybersecurity",
+      "category": "16. Hyperscalers & Mega-Cap Cloud",
+      "subcategory": "Vertical AI Stack (Silicon + OS + Apps)",
       "sectors_count": 2,
       "sectors": [
         "02. Custom AI Silicon",
@@ -9994,16 +10807,17 @@
     },
     "LMT": {
       "ticker": "LMT",
-      "company_name": "",
-      "mentions": 2,
-      "in_universe": false,
-      "primary_lens": null,
-      "category": null,
-      "subcategory": null,
-      "sectors_count": 2,
+      "company_name": "Lockheed Martin",
+      "mentions": 4,
+      "in_universe": true,
+      "primary_lens": "Defense & Aerospace",
+      "category": "19. Defense & Aerospace",
+      "subcategory": "Top-Tier Defense Prime (F-35 + Missiles + Space)",
+      "sectors_count": 3,
       "sectors": [
         "07. Optical & Photonics",
-        "09. Data Center Construction & EPC"
+        "09. Data Center Construction & EPC",
+        "19. Defense & Aerospace"
       ],
       "sources": [
         {
@@ -10012,6 +10826,20 @@
           "source_lens": "Construction & EPC",
           "source_category": "09. Data Center Construction & EPC",
           "rationale": "share. Lockheed Martin (LMT), Raytheon (RTX), and Northrop Grumman (NOC) capture the larger"
+        },
+        {
+          "source_ticker": "NOC",
+          "source_company": "Northrop Grumman",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "Lockheed Martin (LMT) on adjacent defense platforms \u2014 direct head-to-head competitor on space systems and aerospace"
+        },
+        {
+          "source_ticker": "RTX",
+          "source_company": "Raytheon Technologies",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "Lockheed Martin (LMT) on adjacent defense platforms"
         },
         {
           "source_ticker": "IPGP",
@@ -10300,36 +11128,6 @@
         }
       ]
     },
-    "CAMT": {
-      "ticker": "CAMT",
-      "company_name": "Camtek",
-      "mentions": 2,
-      "in_universe": true,
-      "primary_lens": "Metrology / Inspection / Test",
-      "category": "05. Semiconductor Test & Inspection",
-      "subcategory": "Advanced Packaging Inspection",
-      "sectors_count": 2,
-      "sectors": [
-        "04. Semiconductor Equipment",
-        "05. Semiconductor Test & Inspection"
-      ],
-      "sources": [
-        {
-          "source_ticker": "KLAC",
-          "source_company": "KLA Corporation",
-          "source_lens": "Metrology / Inspection / Test",
-          "source_category": "04. Semiconductor Equipment",
-          "rationale": "on adjacent process equipment. Onto Innovation (ONTO) and Camtek (CAMT) on niche advanced-packaging"
-        },
-        {
-          "source_ticker": "ONTO",
-          "source_company": "Onto Innovation",
-          "source_lens": "Metrology / Inspection / Test",
-          "source_category": "05. Semiconductor Test & Inspection",
-          "rationale": "Camtek (CAMT) is the direct head-to-head winner in the duopoly. KLA (KLAC) on broader inspection if it pushes"
-        }
-      ]
-    },
     "BESI": {
       "ticker": "BESI",
       "company_name": "",
@@ -10404,13 +11202,93 @@
         }
       ]
     },
+    "NOC": {
+      "ticker": "NOC",
+      "company_name": "Northrop Grumman",
+      "mentions": 2,
+      "in_universe": true,
+      "primary_lens": "Defense & Aerospace",
+      "category": "19. Defense & Aerospace",
+      "subcategory": "Defense Prime (B-21 + Space + Mission Systems)",
+      "sectors_count": 1,
+      "sectors": [
+        "19. Defense & Aerospace"
+      ],
+      "sources": [
+        {
+          "source_ticker": "LMT",
+          "source_company": "Lockheed Martin",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "Northrop Grumman (NOC) on adjacent defense platforms \u2014 direct head-to-head competitor on B-21 Raider, Sentinel ICBM, space systems"
+        },
+        {
+          "source_ticker": "RTX",
+          "source_company": "Raytheon Technologies",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "Northrop Grumman (NOC) on adjacent defense platforms"
+        }
+      ]
+    },
+    "GD": {
+      "ticker": "GD",
+      "company_name": "",
+      "mentions": 2,
+      "in_universe": false,
+      "primary_lens": null,
+      "category": null,
+      "subcategory": null,
+      "sectors_count": 1,
+      "sectors": [
+        "19. Defense & Aerospace"
+      ],
+      "sources": [
+        {
+          "source_ticker": "LMT",
+          "source_company": "Lockheed Martin",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "General Dynamics (GD, not in database) on adjacent defense platforms"
+        },
+        {
+          "source_ticker": "NOC",
+          "source_company": "Northrop Grumman",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "General Dynamics (GD, not in database) on adjacent defense platforms"
+        }
+      ]
+    },
+    "BITF": {
+      "ticker": "BITF",
+      "company_name": "Bitfarms",
+      "mentions": 1,
+      "in_universe": true,
+      "primary_lens": "Bitcoin Miners (Pivoted to AI)",
+      "category": "13. Bitcoin Miners (Repurposed AI Compute)",
+      "subcategory": "Bitcoin Mining",
+      "sectors_count": 1,
+      "sectors": [
+        "13. Bitcoin Miners (Repurposed AI Compute)"
+      ],
+      "sources": [
+        {
+          "source_ticker": "MARA",
+          "source_company": "Marathon Digital Holdings",
+          "source_lens": "Bitcoin Miners (Pivoted to AI)",
+          "source_category": "13. Bitcoin Miners (Repurposed AI Compute)",
+          "rationale": "Bitfarms (BITF, in database) on direct competition"
+        }
+      ]
+    },
     "LSCC": {
       "ticker": "LSCC",
       "company_name": "Lattice Semiconductor",
       "mentions": 1,
       "in_universe": true,
       "primary_lens": "GPU & AI Accelerators",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "Companion FPGA (Server Housekeeping)",
       "sectors_count": 1,
       "sectors": [
@@ -10429,13 +11307,14 @@
     "ADI": {
       "ticker": "ADI",
       "company_name": "Analog Devices",
-      "mentions": 4,
+      "mentions": 6,
       "in_universe": true,
       "primary_lens": "GPU & AI Accelerators",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "Analog & Mixed Signal (AI Server Power)",
-      "sectors_count": 1,
+      "sectors_count": 2,
       "sectors": [
+        "02. AI Silicon & Analog",
         "02. Custom AI Silicon"
       ],
       "sources": [
@@ -10452,6 +11331,20 @@
           "source_lens": "GPU & AI Accelerators",
           "source_category": "02. Custom AI Silicon",
           "rationale": "(TXN), Analog Devices (ADI), Microchip (MCHP) on the diversified end-market alternatives if MPS loses"
+        },
+        {
+          "source_ticker": "NXPI",
+          "source_company": "NXP Semiconductors",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "Analog Devices (ADI) on adjacent analog signal chain"
+        },
+        {
+          "source_ticker": "TXN",
+          "source_company": "Texas Instruments",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "Analog Devices (ADI) on broader analog signal chain at scale"
         },
         {
           "source_ticker": "VICR",
@@ -10585,7 +11478,7 @@
       "mentions": 1,
       "in_universe": true,
       "primary_lens": "GPU & AI Accelerators",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "High-Density Power Modules",
       "sectors_count": 1,
       "sectors": [
@@ -11142,6 +12035,28 @@
         }
       ]
     },
+    "BAE": {
+      "ticker": "BAE",
+      "company_name": "",
+      "mentions": 1,
+      "in_universe": false,
+      "primary_lens": null,
+      "category": null,
+      "subcategory": null,
+      "sectors_count": 1,
+      "sectors": [
+        "19. Defense & Aerospace"
+      ],
+      "sources": [
+        {
+          "source_ticker": "RTX",
+          "source_company": "Raytheon Technologies",
+          "source_lens": "Defense & Aerospace",
+          "source_category": "19. Defense & Aerospace",
+          "rationale": "Foreign defense competitors (BAE Systems UK, Thales France, Leonardo Italy) on global market share."
+        }
+      ]
+    },
     "DOV": {
       "ticker": "DOV",
       "company_name": "Dover Corporation",
@@ -11296,28 +12211,6 @@
         }
       ]
     },
-    "AEHR": {
-      "ticker": "AEHR",
-      "company_name": "AEHR Test Systems",
-      "mentions": 1,
-      "in_universe": true,
-      "primary_lens": "Metrology / Inspection / Test",
-      "category": "05. Semiconductor Test & Inspection",
-      "subcategory": "Wafer-Level Burn-In Test",
-      "sectors_count": 1,
-      "sectors": [
-        "04. Semiconductor Equipment"
-      ],
-      "sources": [
-        {
-          "source_ticker": "TER",
-          "source_company": "Teradyne",
-          "source_lens": "Metrology / Inspection / Test",
-          "source_category": "04. Semiconductor Equipment",
-          "rationale": "wafer-level test. AEHR Test Systems (AEHR) on specialty burn-in. FormFactor (FORM) on probe cards adjacent."
-        }
-      ]
-    },
     "PEG": {
       "ticker": "PEG",
       "company_name": "",
@@ -11337,6 +12230,50 @@
           "source_lens": "Power",
           "source_category": "12. Power Generation & Nuclear",
           "rationale": "easier alternative for the next round of hyperscaler deals. Public Service Enterprise Group (PEG) \u2014 has"
+        }
+      ]
+    },
+    "RIVN": {
+      "ticker": "RIVN",
+      "company_name": "",
+      "mentions": 1,
+      "in_universe": false,
+      "primary_lens": null,
+      "category": null,
+      "subcategory": null,
+      "sectors_count": 1,
+      "sectors": [
+        "02. AI Silicon & Analog"
+      ],
+      "sources": [
+        {
+          "source_ticker": "TSLA",
+          "source_company": "Tesla Inc.",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "Rivian (RIVN), Lucid (LCID) on US EV share if Tesla loses ground (limited but real). Boston Dynamics (private, Hyundai subsidiary) on humanoid robotics if Optimus disappoints"
+        }
+      ]
+    },
+    "LCID": {
+      "ticker": "LCID",
+      "company_name": "",
+      "mentions": 1,
+      "in_universe": false,
+      "primary_lens": null,
+      "category": null,
+      "subcategory": null,
+      "sectors_count": 1,
+      "sectors": [
+        "02. AI Silicon & Analog"
+      ],
+      "sources": [
+        {
+          "source_ticker": "TSLA",
+          "source_company": "Tesla Inc.",
+          "source_lens": "GPU & AI Accelerators",
+          "source_category": "02. AI Silicon & Analog",
+          "rationale": "Rivian (RIVN), Lucid (LCID) on US EV share if Tesla loses ground (limited but real). Boston Dynamics (private, Hyundai subsidiary) on humanoid robotics if Optimus disappoints"
         }
       ]
     },
@@ -11529,7 +12466,7 @@
       "mentions": 1,
       "in_universe": true,
       "primary_lens": "GPU & AI Accelerators",
-      "category": "02. Custom AI Silicon",
+      "category": "02. AI Silicon & Analog",
       "subcategory": "Power Management ICs (AI Server)",
       "sectors_count": 1,
       "sectors": [

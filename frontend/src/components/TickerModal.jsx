@@ -279,11 +279,11 @@ export default function TickerModal({ row, onClose, onResearch }) {
               {/* AI Universe metadata pills — only shown when ticker is in universe */}
               {(row.primary_lens || (row.lenses && row.lenses.length > 0) || row.category) && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", alignItems: "center" }}>
-                  {/* Primary lens — bold purple */}
+                  {/* Primary lens — yellow for defense, purple otherwise */}
                   {row.primary_lens && (
                     <span style={{
-                      background: "#8b5cf6",
-                      color: "#fff",
+                      background: row.is_defense ? "#fbbf24" : "#8b5cf6",
+                      color: row.is_defense ? "#000" : "#fff",
                       fontWeight: 700,
                       fontSize: "12px",
                       padding: "3px 9px",

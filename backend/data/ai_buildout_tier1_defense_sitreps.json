@@ -1,0 +1,1274 @@
+{
+  "metadata": {
+    "schema_version": "2.0",
+    "total_records": 14,
+    "generated": "2026-05-03",
+    "source_pdf": "AI_Buildout_Tier1_Defense_v2.pdf",
+    "purpose": "Tier 1 (12 names) + Defense Sleeve (2 names) sitrep additions to AI Buildout database",
+    "tier_1_names": [
+      "AAPL",
+      "TSLA",
+      "TXN",
+      "MARA",
+      "COHU",
+      "WTS",
+      "NXPI",
+      "AEP",
+      "DUK",
+      "SO",
+      "ENR",
+      "RTX"
+    ],
+    "defense_sleeve_names": [
+      "LMT",
+      "NOC"
+    ],
+    "sitrep_format": {
+      "what_they_do": "2-3 sentences in plain English",
+      "hidden_angles": "Array of {title, body} objects, typically 3 per ticker",
+      "bear_case": "Paragraph explaining why thesis could fail",
+      "contrarian_case": "Paragraph explaining why consensus might be wrong",
+      "what_kills_it": "Paragraph on specific failure modes",
+      "kill_probability": "Structured: {low, high, horizon_months, components[], raw_text}",
+      "winners": "Structured: {raw_text, parsed_tickers[]}"
+    }
+  },
+  "sitreps": [
+    {
+      "ticker": "AAPL",
+      "company_name": "Apple Inc.",
+      "what_they_do": "World's largest consumer technology company by market cap. Designs the iPhone, Mac, iPad, Watch, AirPods, plus the operating systems and increasingly the silicon that runs them. Apple Silicon (M-series and A-series chips) is among the most vertically integrated semiconductor design programs at scale globally \u2014 Apple designs the chips and TSMC manufactures them on the leading-edge nodes. Stock at $244.",
+      "hidden_angles": [
+        {
+          "title": "Apple Intelligence Private Cloud Compute is hyperscaler-class AI infrastructure",
+          "body": "Apple's Private Cloud Compute architecture for Apple Intelligence runs on Apple-designed silicon in Apple-operated data centers \u2014 a vertically integrated AI inference cloud that competes architecturally with what Microsoft Azure, Google Cloud, and AWS run for their own AI services. Apple disclosed multi-billion-dollar capex specifically for AI infrastructure in 2025 and is on a multi-year ramp. The deployment is structurally similar to Meta's MTIA-plus-data-center buildout but with the additional vertical integration of consumer device endpoints feeding the same inference fabric."
+        },
+        {
+          "title": "Largest single TSMC leading-edge customer",
+          "body": "Apple is structurally TSMC's largest customer at the most advanced nodes (currently 3nm, transitioning to 2nm). Apple Silicon order volume drives the leading-edge capacity utilization that benefits every name in the foundry, semicap, and packaging categories already in the database. When Apple commits to a node, TSMC commits the capacity. When Apple shifts production timing, the entire upstream supply chain feels it. The single largest indirect AI buildout exposure in the database is Apple's TSMC dependency."
+        },
+        {
+          "title": "Edge AI inference at scale via the device installed base",
+          "body": "2.2 billion active Apple devices globally, each with Neural Engine silicon capable of running on-device AI inference. The combined installed base is the largest distributed edge AI inference network in existence. Apple Intelligence pushes substantial inference workload to-device rather than to-cloud, which compresses cloud GPU demand at the consumer-AI tier but creates structural demand for next-generation edge AI silicon (M5, A19, future Neural Engine generations)."
+        }
+      ],
+      "bear_case": "Mature consumer hardware business with limited growth at the device level. Stock at $244 trades at premium multiple after multi-year run. Multiple expansion has done meaningful work on top of EPS growth. Services revenue growth is the marginal driver and has slowed. China revenue exposure is large and at risk from geopolitical tension and domestic competition (Huawei, Xiaomi). Apple Intelligence rollout has been delayed multiple times and the consumer reception of the AI features has been mixed. Antitrust pressure on the App Store and Search default deal with Google compresses Services margins. AI infrastructure capex is genuinely large but Apple's revenue is so big that the AI thesis is dilutive at the consolidated level rather than transformative.",
+      "contrarian_case": "If Apple Intelligence drives a multi-year iPhone upgrade cycle (the AI features require iPhone 15 Pro or later, which is structurally a forced upgrade for the largest installed base in consumer tech), the Services revenue plus device replacement combination produces multi-year compounding that the bear case ignores. Apple's vertical integration depth (chips, OS, services, retail, manufacturing relationships with TSMC) is genuinely irreplaceable and provides moat protection that no other consumer tech company has. The contrarian view is that Apple is being valued as a mature consumer hardware story when the AI infrastructure capex plus services growth plus forced upgrade cycle creates multiple growth vectors at a multiple that hasn't priced any of them.",
+      "what_kills_it": "Apple Intelligence consumer reception continuing to be mixed and failing to drive iPhone upgrade cycle. China revenue compression accelerating beyond current pace. Antitrust outcomes forcing structural changes to App Store or Google search default. AI infrastructure capex growing faster than revenue and compressing operating margins. Services growth deceleration continuing. Multiple compression on rotation out of premium consumer tech.",
+      "kill_probability": {
+        "low": 20,
+        "high": 25,
+        "horizon_months": 36,
+        "components": [
+          {
+            "description": "Apple Intelligence consumer disappointment",
+            "pct_low": 25,
+            "pct_high": 30
+          },
+          {
+            "description": "China revenue compression",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "antitrust structural changes",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "AI capex margin compression",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "services growth deceleration",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "multiple compression on rotation",
+            "pct_low": 25,
+            "pct_high": 30
+          }
+        ],
+        "raw_text": "20-25% over 36 months. Component breakdown: Apple Intelligence consumer disappointment ~25-30%; China revenue compression ~20-25%; antitrust structural changes ~20-25%; AI capex margin compression ~15-20%; services growth deceleration ~15-20%; multiple compression on rotation ~25-30%. Apple is among the most defensible names in the basket because the vertical integration and installed base provide structural floor that pure-play AI names don't have. The downside is bounded by consumer hardware revenue, which is genuinely durable."
+      },
+      "winners": {
+        "raw_text": "TSMC (TSM) on continued leading-edge production. ARM Holdings (ARM) on instruction set architecture licensing. Qualcomm (QCOM) on smartphone modem share if Apple's in-house modem stalls (currently in development). Samsung (foreign) on flagship Android share if iPhone upgrade cycle stalls. Google (GOOGL) on Search default if antitrust forces unbundling. Microsoft (MSFT) on enterprise AI if Apple Intelligence fails to penetrate enterprise. Foreign smartphone competitors (Xiaomi, Huawei, OPPO) on China consumer share. Specialty silicon vendors that benefit from Apple's modem/RF/sensor in-housing reversal (limited but real if specific in-house programs underperform).",
+        "parsed_tickers": [
+          {
+            "ticker": "TSM",
+            "context_sentence": "TSMC (TSM) on continued leading-edge production"
+          },
+          {
+            "ticker": "ARM",
+            "context_sentence": "ARM Holdings (ARM) on instruction set architecture licensing"
+          },
+          {
+            "ticker": "QCOM",
+            "context_sentence": "Qualcomm (QCOM) on smartphone modem share if Apple's in-house modem stalls (currently in development). Samsung (foreign) on flagship Android share if iPhone upgrade cycle stalls"
+          },
+          {
+            "ticker": "GOOGL",
+            "context_sentence": "Google (GOOGL) on Search default if antitrust forces unbundling"
+          },
+          {
+            "ticker": "MSFT",
+            "context_sentence": "Microsoft (MSFT) on enterprise AI if Apple Intelligence fails to penetrate enterprise"
+          }
+        ]
+      },
+      "source_pdf": "Tier 1 + Defense Sleeve v2",
+      "added_date": "2026-05-03"
+    },
+    {
+      "ticker": "TSLA",
+      "company_name": "Tesla Inc.",
+      "what_they_do": "Electric vehicle manufacturer and energy storage company that has positioned itself as one of the most vertically integrated AI infrastructure builders in the world. Beyond cars, Tesla designs custom AI training silicon (Dojo D1 chip), operates one of the largest single-site AI training clusters globally (Cortex at Giga Texas), runs the largest distributed edge AI inference fleet via FSD-equipped vehicles, manufactures utility-scale battery storage (Megapack), and produces 4680 battery cells at gigafactory scale. Stock at $363.",
+      "hidden_angles": [
+        {
+          "title": "Dojo custom AI training silicon",
+          "body": "Tesla's Dojo D1 is a custom AI training ASIC designed in-house \u2014 same architectural category as Google TPU, Meta MTIA, and the rumored OpenAI chip designed by Broadcom. Tesla owns the chip design, the interconnect (Tesla Transport Protocol over Ethernet), the system-level packaging, and the data centers running them. The Dojo program represents one of the few examples globally of a non-hyperscaler company building custom AI silicon at scale. Production deployments at Giga Texas plus Buffalo Dojo facility."
+        },
+        {
+          "title": "Cortex training cluster at Giga Texas",
+          "body": "Cortex is Tesla's main AI training cluster at the Texas gigafactory site, reportedly 50,000+ NVIDIA H100-equivalents plus the integrated Dojo capacity. This is among the largest single-site AI training deployments in the world. The campus combines training compute, on-site solar generation, Megapack battery storage, and direct grid interconnection with ERCOT \u2014 a vertically integrated AI infrastructure that no other company in the database matches at the campus level."
+        },
+        {
+          "title": "Megapack utility-scale battery storage",
+          "body": "Megapack is the dominant US-listed utility-scale battery storage product, deployed at hyperscaler campuses to handle peak power and grid arbitrage. Direct competitor to Fluence Energy (FLNC, in database). As AI data centers add behind-the-meter battery storage to handle interconnection delays and power scarcity pricing, Megapack capacity sales grow with AI capex regardless of vehicle volumes. The energy business is structurally separate from the auto cycle."
+        },
+        {
+          "title": "FSD inference fleet as distributed AI infrastructure",
+          "body": "Millions of Tesla vehicles operate as edge AI inference nodes running FSD (Full Self-Driving) software. The combined fleet is the largest distributed edge AI inference network outside Apple's iPhone fleet. Tesla collects training data from the entire fleet, processes it at Cortex, deploys updated models back to the fleet \u2014 a closed-loop AI infrastructure that no other company operates at this scale. The robotaxi and humanoid robot programs both leverage this same infrastructure stack."
+        }
+      ],
+      "bear_case": "Auto business is structurally cyclical and faces intense competition globally \u2014 BYD has overtaken Tesla in global EV unit volume, Chinese EV pricing has compressed margins, US EV demand growth has slowed materially. Stock at $363 trades at a multiple that requires AI/robotaxi/humanoid optionality to materialize at scale to justify current valuation. Musk-driven narrative cycle creates volatility that's structurally separate from fundamentals. FSD has been on a multi-year promised timeline that keeps slipping. Robotaxi launches have been multiple times delayed and limited to small geographic pilots. Optimus humanoid program is years from commercial scale. Mexico gigafactory expansion is on hold.",
+      "contrarian_case": "If Dojo plus Cortex plus FSD plus Megapack plus 4680 all compound for the next 36 months, Tesla is the most vertically integrated AI infrastructure builder in the world and the equity captures multiple separate exposures simultaneously. Megapack alone is a real utility-scale battery storage business growing at structural AI-data-center-driven demand rates. Dojo is real custom AI silicon. The robotaxi optionality, even if delayed, is meaningful in any scenario where it eventually materializes. The contrarian view is that Tesla is being valued primarily on the auto cycle when the AI infrastructure capex plus battery storage plus distributed inference fleet creates infrastructure exposure that's structurally separate from auto unit volumes.",
+      "what_kills_it": "Auto cyclical drag persisting and compressing the funding base for AI infrastructure investment. FSD continuing to underperform versus Waymo and Cruise on real-world deployment metrics. Robotaxi commercial launch repeatedly delayed beyond 2027. Megapack share losses to Chinese battery storage competitors (BYD, CATL) on price. Dojo program failing to scale beyond pilot deployment. Multiple compression if the AI/robotaxi/humanoid narrative loses credibility. Musk-driven equity volatility from any major political or regulatory event affecting the brand or the autonomy approval timeline.",
+      "kill_probability": {
+        "low": 35,
+        "high": 45,
+        "horizon_months": 36,
+        "components": [
+          {
+            "description": "auto cyclical and EV competition",
+            "pct_low": 30,
+            "pct_high": 35
+          },
+          {
+            "description": "FSD/robotaxi commercial launch delay",
+            "pct_low": 30,
+            "pct_high": 35
+          },
+          {
+            "description": "Dojo scaling disappointment",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "Megapack competitive squeeze from Chinese suppliers",
+            "pct_low": 25,
+            "pct_high": 30
+          },
+          {
+            "description": "Musk-driven equity volatility",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "multiple compression on rotation",
+            "pct_low": 25,
+            "pct_high": 30
+          }
+        ],
+        "raw_text": "35-45% over 36 months. Component breakdown: auto cyclical and EV competition ~30-35%; FSD/robotaxi commercial launch delay ~30-35%; Dojo scaling disappointment ~20-25%; Megapack competitive squeeze from Chinese suppliers ~25-30%; Musk-driven equity volatility ~20-25%; multiple compression on rotation ~25-30%. Higher kill probability than other Tier 1 names because Tesla's premium multiple requires multiple optionality vectors to materialize. The auto floor provides revenue durability but not multiple support at current valuation."
+      },
+      "winners": {
+        "raw_text": "BYD (foreign, China) on global EV share. NVIDIA (NVDA) on AI training silicon if Dojo scales slower than expected \u2014 Tesla still buys H100s at scale. Waymo (private, Google subsidiary) on robotaxi commercial launch credibility. Fluence Energy (FLNC) on battery storage share. CATL (foreign, China) on battery cell competition. Rivian (RIVN), Lucid (LCID) on US EV share if Tesla loses ground (limited but real). Boston Dynamics (private, Hyundai subsidiary) on humanoid robotics if Optimus disappoints. Specialty AI silicon competitors (AVGO, MRVL) on custom silicon if Dojo doesn't reach commercial scale and Tesla shifts to merchant alternatives.",
+        "parsed_tickers": [
+          {
+            "ticker": "NVDA",
+            "context_sentence": "NVIDIA (NVDA) on AI training silicon if Dojo scales slower than expected \u2014 Tesla still buys H100s at scale"
+          },
+          {
+            "ticker": "FLNC",
+            "context_sentence": "Fluence Energy (FLNC) on battery storage share"
+          },
+          {
+            "ticker": "RIVN",
+            "context_sentence": "Rivian (RIVN), Lucid (LCID) on US EV share if Tesla loses ground (limited but real). Boston Dynamics (private, Hyundai subsidiary) on humanoid robotics if Optimus disappoints"
+          },
+          {
+            "ticker": "LCID",
+            "context_sentence": "Rivian (RIVN), Lucid (LCID) on US EV share if Tesla loses ground (limited but real). Boston Dynamics (private, Hyundai subsidiary) on humanoid robotics if Optimus disappoints"
+          },
+          {
+            "ticker": "AVGO",
+            "context_sentence": "Specialty AI silicon competitors (AVGO, MRVL) on custom silicon if Dojo doesn't reach commercial scale and Tesla shifts to merchant alternatives."
+          }
+        ]
+      },
+      "source_pdf": "Tier 1 + Defense Sleeve v2",
+      "added_date": "2026-05-03"
+    },
+    {
+      "ticker": "TXN",
+      "company_name": "Texas Instruments",
+      "what_they_do": "One of the world's largest analog and embedded processor semiconductor companies. Makes the building-block chips that handle power management, signal processing, and motor control across virtually every electronic device. The 'unsexy but ubiquitous' chip company that competes head-to-head with Analog Devices, NXP, ON Semiconductor, and Microchip across multiple analog and embedded categories. Stock at $173.",
+      "hidden_angles": [
+        {
+          "title": "Largest analog manufacturing capacity globally",
+          "body": "TXN has the largest internally-owned analog manufacturing footprint of any analog semiconductor company \u2014 running multiple 300mm fabs in Texas and Utah. Most analog competitors (ADI, MCHP) are heavily fab-light and depend on TSMC and other foundries for capacity. TXN's vertical integration provides cost structure advantages and capacity certainty that competitors can't match, particularly during industrial and auto demand recovery cycles."
+        },
+        {
+          "title": "AI server power delivery exposure",
+          "body": "TXN's high-performance power management ICs are increasingly used in AI server power delivery alongside MPS Industries (MPWR) and Vicor (VICR). As AI server power densities increase and thermal management becomes more demanding, content per server is rising. TXN captures incremental content per server through both the high-performance PMIC products and the broader analog signal chain that surrounds AI accelerators."
+        },
+        {
+          "title": "Capital intensity is the strategic moat that doubles as the bear case",
+          "body": "TXN has been investing heavily in 300mm capacity at Sherman Texas and Lehi Utah \u2014 multi-year, multi-billion-dollar capacity expansion that compresses near-term earnings via depreciation but builds structural cost advantage. This is the same strategic playbook that Intel pursued and that has produced mixed results \u2014 capacity ahead of demand creates earnings drag during the build period and structural advantages only if the demand materializes. Currently in the earnings drag phase."
+        }
+      ],
+      "bear_case": "Cyclical analog business at the underlying product level. Industrial inventory destocking has been brutal through 2024-2026 and has compressed near-term earnings. Stock at $173 trades at premium multiple after multi-year run. Capital intensity from 300mm expansion is compressing free cash flow yield meaningfully \u2014 TXN's FCF yield dropped from 6%+ historically to under 3% during the build period. Auto cyclical drag continues affecting auto analog demand. Chinese analog competitors (Will Semiconductor, etc.) are gaining share at the low end. Multiple compression risk on rotation out of premium analog names.",
+      "contrarian_case": "If industrial recovery materializes through 2026-2027 and AI server power delivery exposure compounds at the rate AI server unit volumes grow, TXN's vertical integration plus capacity expansion produces structural compounding that the cyclical bear case ignores. Cited 6 times across the database (ADI, AMBA, MCHP, MPWR, SLAB, VICR) as the larger analog absorber when smaller specialty plays falter \u2014 the citation pattern is itself evidence of the structural position. Trades at premium but defensible multiple given the diversification across multiple end markets and the structural cost advantage from internal capacity.",
+      "what_kills_it": "Industrial cyclical persistence \u2014 if industrial recovery doesn't materialize through 2026-2027, the cyclical drag continues and the capacity expansion looks ill-timed. Auto cyclical drag affecting the auto analog revenue. AI server PMIC commoditizing as competitors invest in similar power delivery capacity. Capital intensity continuing to compress free cash flow longer than expected. Multiple compression on rotation out of premium analog names.",
+      "kill_probability": {
+        "low": 25,
+        "high": 30,
+        "horizon_months": 36,
+        "components": [
+          {
+            "description": "industrial cyclical persistence",
+            "pct_low": 25,
+            "pct_high": 30
+          },
+          {
+            "description": "auto cyclical drag",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "capital intensity FCF compression",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "AI PMIC commoditization",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "multiple compression on premium analog rotation",
+            "pct_low": 25,
+            "pct_high": 30
+          }
+        ],
+        "raw_text": "25-30% over 36 months. Component breakdown: industrial cyclical persistence ~25-30%; auto cyclical drag ~20-25%; capital intensity FCF compression ~20-25%; AI PMIC commoditization ~15-20%; multiple compression on premium analog rotation ~25-30%. Diversified end-market exposure plus internal capacity provide genuine downside protection. TXN is among the most defensible analog names because the vertical integration provides cost structure floor that fab-light competitors don't have."
+      },
+      "winners": {
+        "raw_text": "Analog Devices (ADI) on broader analog signal chain at scale. NXP Semiconductors (NXPI) on automotive analog specifically. Microchip (MCHP) on embedded controllers and FPGA. STMicroelectronics (STM, foreign) on power and automotive. Renesas (foreign, Japan) on automotive analog at global scale. Infineon (foreign) on power and automotive. Will Semiconductor (foreign, China) on commodity analog share at the low end. ON Semiconductor (ON) on power semiconductors specifically.",
+        "parsed_tickers": [
+          {
+            "ticker": "ADI",
+            "context_sentence": "Analog Devices (ADI) on broader analog signal chain at scale"
+          },
+          {
+            "ticker": "NXPI",
+            "context_sentence": "NXP Semiconductors (NXPI) on automotive analog specifically"
+          },
+          {
+            "ticker": "MCHP",
+            "context_sentence": "Microchip (MCHP) on embedded controllers and FPGA. STMicroelectronics (STM, foreign) on power and automotive"
+          },
+          {
+            "ticker": "STM",
+            "context_sentence": "Microchip (MCHP) on embedded controllers and FPGA. STMicroelectronics (STM, foreign) on power and automotive"
+          },
+          {
+            "ticker": "ON",
+            "context_sentence": "ON Semiconductor (ON) on power semiconductors specifically."
+          }
+        ]
+      },
+      "source_pdf": "Tier 1 + Defense Sleeve v2",
+      "added_date": "2026-05-03"
+    },
+    {
+      "ticker": "MARA",
+      "company_name": "Marathon Digital Holdings",
+      "what_they_do": "The largest pure-play Bitcoin mining company in the United States. Operates a fleet of ASIC mining rigs across multiple sites, increasingly with diversification into adjacent compute applications. Different from neoclouds (CRWV, NBIS) \u2014 Marathon mines Bitcoin first, with optional pivot to AI compute hosting in some facility configurations. Stock at $14.",
+      "hidden_angles": [
+        {
+          "title": "Largest pure-play US Bitcoin miner",
+          "body": "Marathon has the largest publicly-disclosed self-mining operation among US-listed pure-play miners. Vertical integration across mining hardware, hosting, and energy procurement is the deepest in the listed mining set. The scale advantage compounds with each subsequent halving cycle because higher-cost competitors are forced to consolidate or shut down faster than Marathon's lower marginal cost operations."
+        },
+        {
+          "title": "Power-asset thesis layered on Bitcoin thesis",
+          "body": "Marathon owns and controls multi-hundred-megawatt power infrastructure at multiple sites \u2014 the same kind of behind-the-meter generation and grid interconnection capacity that makes Bitcoin miners interesting to AI compute hosting customers. Even if Bitcoin prices compress, the underlying power infrastructure has option value as AI compute hosting capacity. CORZ, IREN, and CIFR have demonstrated the pattern of pivoting Bitcoin power infrastructure to AI hosting; Marathon has the same optionality at larger scale."
+        },
+        {
+          "title": "Most-cited unrepped winner across the Bitcoin miner basket",
+          "body": "Cited 5 times across the existing 9-ticker Bitcoin mining sleeve (BITF, BTDR, GLXY, HUT, RIOT) as the consolidation winner. The citation pattern is itself evidence that within the miner peer group, Marathon is treated as the structural leader \u2014 when smaller miners write their bear cases, Marathon is the named beneficiary."
+        }
+      ],
+      "bear_case": "Bitcoin mining is structurally cyclical with Bitcoin price plus halving cycle plus difficulty adjustment. Bitcoin halvings cut mining rewards in half every four years; the most recent halving in April 2024 has compressed margins for higher-cost operators. Stock at $14 has been volatile through the cycle. Customer concentration is essentially zero (mining is sold to the network, not to customers) but Bitcoin price concentration is the entire revenue base \u2014 a sustained Bitcoin drawdown compresses earnings catastrophically. The AI compute hosting pivot is real but is a secondary thesis; Marathon is primarily a Bitcoin price proxy with leverage. Sustained dilution from at-the-market equity issuance to fund capacity expansion has been a multi-year overhang.",
+      "contrarian_case": "If Bitcoin prices remain elevated through 2026-2027 and the AI compute hosting pivot accelerates as hyperscalers continue facing grid interconnection delays, Marathon captures the dual exposure at scale. The combination of largest US mining capacity plus the optionality on power infrastructure repurposing creates a barbell trade \u2014 Bitcoin upside if prices hold, AI compute hosting upside if Bitcoin drawdown forces the pivot. Trades at modest forward multiple given the dual exposure. The contrarian view is that Marathon is being valued primarily as a Bitcoin proxy when the power infrastructure underlying the mining operation has independent value as AI compute capacity.",
+      "what_kills_it": "Sustained Bitcoin drawdown below $40,000 forcing margin compression and triggering equity dilution to fund operations. Difficulty adjustment outpacing Bitcoin price recovery. AI compute hosting pivot disappointing if hyperscaler procurement standards exclude Bitcoin-mining facility designs. Power cost inflation in mining geographies (Texas particularly) compressing margins. ASIC technology obsolescence forcing capital-intensive fleet upgrades. Equity dilution continuing.",
+      "kill_probability": {
+        "low": 35,
+        "high": 45,
+        "horizon_months": 36,
+        "components": [
+          {
+            "description": "Bitcoin price drawdown",
+            "pct_low": 30,
+            "pct_high": 35
+          },
+          {
+            "description": "halving cycle margin compression",
+            "pct_low": 25,
+            "pct_high": 30
+          },
+          {
+            "description": "AI compute hosting pivot disappointment",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "power cost inflation",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "equity dilution overhang",
+            "pct_low": 25,
+            "pct_high": 30
+          }
+        ],
+        "raw_text": "35-45% over 36 months. Component breakdown: Bitcoin price drawdown ~30-35%; halving cycle margin compression ~25-30%; AI compute hosting pivot disappointment ~20-25%; power cost inflation ~15-20%; equity dilution overhang ~25-30%. Higher kill probability than other Tier 1 adds because Bitcoin price exposure dominates the thesis. The diversification toward AI compute hosting provides partial offset but doesn't eliminate the Bitcoin cyclical risk."
+      },
+      "winners": {
+        "raw_text": "CleanSpark (CLSK, not in database) on Bitcoin mining share. Riot Platforms (RIOT, in database) on direct competition. Bitfarms (BITF, in database) on direct competition. Core Scientific (CORZ, in database) on Bitcoin-plus-AI compute hosting if MARA's pivot stalls. Cipher Mining (CIFR, in database) on similar. IREN (in database) on AI compute hosting if MARA loses ground there. ASIC manufacturers (Bitmain private, MicroBT private) on hardware regardless of which miner wins capacity.",
+        "parsed_tickers": [
+          {
+            "ticker": "CLSK",
+            "context_sentence": "CleanSpark (CLSK, not in database) on Bitcoin mining share"
+          },
+          {
+            "ticker": "RIOT",
+            "context_sentence": "Riot Platforms (RIOT, in database) on direct competition"
+          },
+          {
+            "ticker": "BITF",
+            "context_sentence": "Bitfarms (BITF, in database) on direct competition"
+          },
+          {
+            "ticker": "CORZ",
+            "context_sentence": "Core Scientific (CORZ, in database) on Bitcoin-plus-AI compute hosting if MARA's pivot stalls"
+          },
+          {
+            "ticker": "CIFR",
+            "context_sentence": "Cipher Mining (CIFR, in database) on similar"
+          }
+        ]
+      },
+      "source_pdf": "Tier 1 + Defense Sleeve v2",
+      "added_date": "2026-05-03"
+    },
+    {
+      "ticker": "COHU",
+      "company_name": "Cohu Inc.",
+      "what_they_do": "Specialty semiconductor test equipment maker focused on test handlers \u2014 the machines that automate the wafer-level and final-test cycle at chip manufacturing facilities. Adjacent to AEHR's wafer-level burn-in test and Teradyne's production ATE but operating in a different niche: handling rather than test execution. Smaller pure-play than Teradyne or Advantest but with specific exposure to advanced packaging volume. Stock at $25.",
+      "hidden_angles": [
+        {
+          "title": "Test handler specialist serving advanced packaging",
+          "body": "Cohu's test handlers are used at the back-end of chip manufacturing to move chips through final test sequences. As advanced packaging volume compounds (CoWoS, HBM stacks, 2.5D and 3D integration), the test handler content per packaged chip rises. Cohu's exposure is structurally similar to Camtek/Onto on the inspection side but on the handling-and-throughput side instead. Pure-play exposure to the same advanced packaging tailwind."
+        },
+        {
+          "title": "Recovery from prolonged industrial cyclical drag",
+          "body": "Cohu's revenue has been compressed through the 2024-2026 industrial and auto semiconductor downturn. As industrial and auto recovery cycles inflect, Cohu's revenue per quarter has multi-quarter visibility for upside. The compression has been acute and the recovery should be similarly acute when it materializes."
+        },
+        {
+          "title": "Cited 3 times by AEHR, KEYS, TER as the adjacent test equipment beneficiary",
+          "body": "The citation pattern across three names already in the database is itself evidence of Cohu's structural position. AEHR cites Cohu on adjacent burn-in and final test; KEYS cites Cohu on adjacent test and measurement; Teradyne cites Cohu on adjacent test handlers. When all three of these competitor companies separately name Cohu as a structural participant, the gap in the database is real."
+        }
+      ],
+      "bear_case": "Sub-scale specialty supplier relative to Teradyne and Advantest at the broader test equipment level. Customer concentration on a small number of major chip makers and OSATs creates risk on any single major customer capex shift. Stock at $25 has been volatile through the industrial cyclical drag. The AI exposure is real but indirect \u2014 Cohu benefits from advanced packaging volume rather than directly serving AI accelerator manufacturers. Industrial and auto cyclical recovery has been delayed multiple times.",
+      "contrarian_case": "If advanced packaging volume keeps compounding through 2027 (CoWoS sold out at TSMC through 2027, HBM stacks getting taller, AI accelerator design cadence at 12-18 months), Cohu's test handler content compounds at the same rate. The industrial recovery cycle adds incremental upside on top of the structural advanced packaging tailwind. Trades at modest forward multiple given the dual exposure. The citation pattern across competitor sitreps confirms the structural position.",
+      "what_kills_it": "Industrial cyclical persistence \u2014 if industrial and auto recovery doesn't materialize through 2026-2027, the cyclical drag continues. Wafer fab equipment downturn affecting the broader semicap basket. Larger competitors (Teradyne, Advantest) extending into test handler share through M&A or aggressive product investment. AI advanced packaging volume disappointment if CoWoS capacity expansion slips. Multiple compression on rotation out of small-cap semicap names.",
+      "kill_probability": {
+        "low": 30,
+        "high": 35,
+        "horizon_months": 36,
+        "components": [
+          {
+            "description": "industrial cyclical persistence",
+            "pct_low": 25,
+            "pct_high": 30
+          },
+          {
+            "description": "advanced packaging volume disappointment",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "competitive entry from larger semicap players",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "multiple compression on small-cap rotation",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "customer concentration events",
+            "pct_low": 15,
+            "pct_high": 20
+          }
+        ],
+        "raw_text": "30-35% over 36 months. Component breakdown: industrial cyclical persistence ~25-30%; advanced packaging volume disappointment ~20-25%; competitive entry from larger semicap players ~15-20%; multiple compression on small-cap rotation ~20-25%; customer concentration events ~15-20%. The advanced packaging tailwind provides genuine secular support; failure modes are mostly cyclical and competitive."
+      },
+      "winners": {
+        "raw_text": "Teradyne (TER) on broader production ATE share. Advantest (foreign, Japan) on direct competition globally. AEHR Test Systems (AEHR) on specialty burn-in. Camtek (CAMT), Onto Innovation (ONTO) on inspection-side advanced packaging. FormFactor (FORM, not in database) on probe cards. Other specialty test equipment competitors (private and foreign) on niche segments.",
+        "parsed_tickers": [
+          {
+            "ticker": "TER",
+            "context_sentence": "Teradyne (TER) on broader production ATE share"
+          },
+          {
+            "ticker": "AEHR",
+            "context_sentence": "AEHR Test Systems (AEHR) on specialty burn-in"
+          },
+          {
+            "ticker": "CAMT",
+            "context_sentence": "Camtek (CAMT), Onto Innovation (ONTO) on inspection-side advanced packaging"
+          },
+          {
+            "ticker": "ONTO",
+            "context_sentence": "Camtek (CAMT), Onto Innovation (ONTO) on inspection-side advanced packaging"
+          },
+          {
+            "ticker": "FORM",
+            "context_sentence": "FormFactor (FORM, not in database) on probe cards"
+          }
+        ]
+      },
+      "source_pdf": "Tier 1 + Defense Sleeve v2",
+      "added_date": "2026-05-03"
+    },
+    {
+      "ticker": "WTS",
+      "company_name": "Watts Water Technologies",
+      "what_they_do": "Specialty water and plumbing products manufacturer. Sells valves, plumbing systems, drainage, water quality treatment, and water management products primarily to commercial and industrial customers. Has been positioning aggressively for data center water management as AI cooling drives water consumption growth at hyperscaler campuses. Stock at $232.",
+      "hidden_angles": [
+        {
+          "title": "Water treatment for data center liquid cooling",
+          "body": "Hyperscaler liquid cooling systems require water purification and treatment for closed-loop coolant fluid systems. As direct-to-chip and rear-door heat exchanger cooling proliferates, the water-management content per AI rack increases. Watts has been building specialty water treatment products specifically targeting the data center category \u2014 smaller share than Pentair (PNR, in database) and Ecolab (ECL, in database) at the largest hyperscaler accounts but real exposure to growing demand."
+        },
+        {
+          "title": "Cited 5 times by industrial and cooling tickers",
+          "body": "Cited across DD, ECL, GTES, PH, PNR as the focused water-treatment specialist competitor. The citation pattern across five different industrial sitreps is signal that Watts occupies a real structural position in the broader specialty water category. When five competitors separately name Watts as a structural participant, the gap in the database is meaningful."
+        },
+        {
+          "title": "Plumbing-and-drainage business provides earnings stability",
+          "body": "Stable plumbing-and-drainage business serves commercial real estate and industrial customers across multiple end markets. The non-data-center revenue is approximately 80% of total revenue and provides earnings stability through any single end-market cycle. The data center water management exposure is the marginal growth vector layered onto a stable industrial base."
+        }
+      ],
+      "bear_case": "Mature specialty plumbing business with low organic growth across the diversified base. AI exposure is incremental relative to total revenue \u2014 Watts is not a pure-play AI infrastructure name. Stock at $232 trades at premium multiple. Sub-scale relative to Pentair, Ecolab, and Veralto at scale on data center water management. Commercial real estate cyclical exposure on the broader plumbing business. Customer concentration in any single end market is moderate but contractor relationships matter and could shift.",
+      "contrarian_case": "Data center water demand is genuinely growing and Watts is positioning aggressively to capture incremental share that larger competitors focus less on. The plumbing-and-drainage base provides earnings floor that pure-play AI water names don't have. Cited 5 times across competitor sitreps as the structural participant. Trades at premium but defensible multiple given the dual exposure (stable commercial plumbing plus emerging data center water).",
+      "what_kills_it": "Specialty water-treatment competitors (Pentair, Ecolab, Veralto) winning incremental data center share at hyperscaler scale. Commercial real estate slowdown affecting the broader plumbing business. Multiple compression on rotation out of premium specialty industrials. Industrial cyclical drag affecting the diversified industrial customer base.",
+      "kill_probability": {
+        "low": 25,
+        "high": 30,
+        "horizon_months": 36,
+        "components": [
+          {
+            "description": "competitive squeeze on data center water from PNR/ECL/Veralto",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "commercial real estate cyclical",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "industrial cyclical drag",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "multiple compression on rotation",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "data center water adoption slower than expected",
+            "pct_low": 15,
+            "pct_high": 20
+          }
+        ],
+        "raw_text": "25-30% over 36 months. Component breakdown: competitive squeeze on data center water from PNR/ECL/Veralto ~20-25%; commercial real estate cyclical ~20-25%; industrial cyclical drag ~15-20%; multiple compression on rotation ~20-25%; data center water adoption slower than expected ~15-20%. Stable diversified business; failure modes are slow and partial."
+      },
+      "winners": {
+        "raw_text": "Pentair (PNR) on water treatment specifically. Ecolab (ECL) on industrial water at scale. Veralto (VLTO, not in database) on adjacent water and product quality. Roper Technologies (ROP) on adjacent niche industrials. Vertiv (VRT) and Modine (MOD) on integrated cooling at hyperscaler scale. Veolia (foreign, France) on global industrial water.",
+        "parsed_tickers": [
+          {
+            "ticker": "PNR",
+            "context_sentence": "Pentair (PNR) on water treatment specifically"
+          },
+          {
+            "ticker": "ECL",
+            "context_sentence": "Ecolab (ECL) on industrial water at scale"
+          },
+          {
+            "ticker": "VLTO",
+            "context_sentence": "Veralto (VLTO, not in database) on adjacent water and product quality"
+          },
+          {
+            "ticker": "ROP",
+            "context_sentence": "Roper Technologies (ROP) on adjacent niche industrials"
+          },
+          {
+            "ticker": "VRT",
+            "context_sentence": "Vertiv (VRT) and Modine (MOD) on integrated cooling at hyperscaler scale"
+          },
+          {
+            "ticker": "MOD",
+            "context_sentence": "Vertiv (VRT) and Modine (MOD) on integrated cooling at hyperscaler scale"
+          }
+        ]
+      },
+      "source_pdf": "Tier 1 + Defense Sleeve v2",
+      "added_date": "2026-05-03"
+    },
+    {
+      "ticker": "NXPI",
+      "company_name": "NXP Semiconductors",
+      "what_they_do": "Major analog and embedded processor semiconductor company specializing in automotive, industrial IoT, and edge AI applications. Strong position in automotive radar, ADAS chips, secure connectivity, and microcontrollers. Different from TXN and ADI \u2014 NXP is more automotive-focused with deeper exposure to ADAS and autonomous driving silicon. Stock at $182.",
+      "hidden_angles": [
+        {
+          "title": "Automotive radar and ADAS silicon leadership",
+          "body": "NXP holds dominant share in automotive radar chips (77 GHz radar transceivers) and ADAS controllers. As Level 2+ and Level 3 driver assistance becomes standard across the auto industry \u2014 and as Chinese OEMs ramp ADAS deployment volumes \u2014 NXP captures the silicon content per vehicle that grows with autonomy adoption. Each Level 2+ vehicle contains multiple NXP chips; each Level 3 vehicle contains substantially more."
+        },
+        {
+          "title": "Secure connectivity for IoT and edge AI",
+          "body": "NXP's secure element chips and secure microcontrollers provide the cryptographic and hardware-rooted-trust capability that AI-edge deployments require. As edge AI inference proliferates across industrial IoT, automotive, smart city, and infrastructure applications, NXP's secure connectivity content compounds with the device installed base. Different from cloud AI exposure \u2014 this is edge AI silicon, structurally separate from data center AI capex cycles."
+        },
+        {
+          "title": "Cited 3 times by ADI, MCHP, SLAB as competitive analog peer",
+          "body": "The citation pattern across three Custom AI Silicon names already in the database is signal that NXP occupies a real structural position. The 'foreign-listed friction' that I previously cited as exclusion reasoning was wrong \u2014 NXPI trades primarily on NASDAQ with full US options liquidity. The barrier was imaginary."
+        }
+      ],
+      "bear_case": "Auto cyclical exposure is the dominant business driver. EV and ICE auto unit volumes have been weak through 2024-2026 and the recovery has been delayed. Stock at $182 trades at modest multiple but has been volatile through cycle. Customer concentration on major auto OEMs (especially European OEMs which have faced significant pressure) creates risk. Chinese auto analog competitors are gaining share at the low end. Industrial cyclical drag continues affecting the broader analog portfolio. Multiple compression risk on rotation out of cyclical analog names.",
+      "contrarian_case": "If auto recovery materializes through 2026-2027 and ADAS adoption continues at the structural pace, NXP captures content-per-vehicle growth at multi-year visibility. Edge AI infrastructure exposure is genuinely growing and NXP has the secure connectivity position to capture incremental share. Trades at modest forward multiple given the dual exposure. The contrarian view is that NXP is being valued as a cyclical auto analog play when the ADAS plus edge AI exposure compounds independent of the auto unit volume cycle.",
+      "what_kills_it": "Auto cyclical persistence \u2014 if auto recovery doesn't materialize through 2026-2027, the cyclical drag continues. ADAS adoption slowing if regulatory or consumer adoption compresses. Chinese analog competitors winning incremental share. Edge AI infrastructure adoption disappointing. Multiple compression on rotation out of cyclical analog names.",
+      "kill_probability": {
+        "low": 30,
+        "high": 35,
+        "horizon_months": 36,
+        "components": [
+          {
+            "description": "auto cyclical persistence",
+            "pct_low": 30,
+            "pct_high": 35
+          },
+          {
+            "description": "ADAS adoption slower than expected",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "Chinese competitor share gains",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "multiple compression on rotation",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "edge AI infrastructure adoption disappointment",
+            "pct_low": 15,
+            "pct_high": 20
+          }
+        ],
+        "raw_text": "30-35% over 36 months. Component breakdown: auto cyclical persistence ~30-35%; ADAS adoption slower than expected ~20-25%; Chinese competitor share gains ~20-25%; multiple compression on rotation ~20-25%; edge AI infrastructure adoption disappointment ~15-20%. Higher kill probability than TXN because the auto exposure is more concentrated and the cyclical drag is more direct."
+      },
+      "winners": {
+        "raw_text": "Texas Instruments (TXN) on broader analog at scale. Analog Devices (ADI) on adjacent analog signal chain. Microchip (MCHP) on adjacent embedded. STMicroelectronics (STM, foreign) on automotive analog directly. Renesas (foreign, Japan) on automotive analog at scale. Infineon (foreign, Germany) on automotive power and analog. ON Semiconductor (ON) on automotive power. Mobileye (MBLY, not in database) on ADAS-specific silicon.",
+        "parsed_tickers": [
+          {
+            "ticker": "TXN",
+            "context_sentence": "Texas Instruments (TXN) on broader analog at scale"
+          },
+          {
+            "ticker": "ADI",
+            "context_sentence": "Analog Devices (ADI) on adjacent analog signal chain"
+          },
+          {
+            "ticker": "MCHP",
+            "context_sentence": "Microchip (MCHP) on adjacent embedded"
+          },
+          {
+            "ticker": "STM",
+            "context_sentence": "STMicroelectronics (STM, foreign) on automotive analog directly"
+          },
+          {
+            "ticker": "ON",
+            "context_sentence": "ON Semiconductor (ON) on automotive power"
+          },
+          {
+            "ticker": "MBLY",
+            "context_sentence": "Mobileye (MBLY, not in database) on ADAS-specific silicon."
+          }
+        ]
+      },
+      "source_pdf": "Tier 1 + Defense Sleeve v2",
+      "added_date": "2026-05-03"
+    },
+    {
+      "ticker": "AEP",
+      "company_name": "American Electric Power",
+      "what_they_do": "Second-largest US transmission utility by line miles, serving 5.6 million customers across 11 states. Owns and operates major transmission and distribution infrastructure across the Texas, Ohio, Indiana, West Virginia, and adjacent regions. Has substantial exposure to two of the most important AI buildout markets \u2014 Ohio (where Intel is building two leading-edge fabs) and Texas (ERCOT, the second-largest US data center market). Stock at $98.",
+      "hidden_angles": [
+        {
+          "title": "Ohio Intel fab plus Texas ERCOT data center exposure",
+          "body": "AEP's service territory includes the Columbus Ohio area where Intel is constructing two leading-edge semiconductor fabs (Ohio One project, multi-tens-of-billions investment). The Intel fabs alone require gigawatts of new electrical capacity and AEP is the regulated utility that delivers it. Separately, AEP has substantial Texas presence in ERCOT where data center buildout is the second-largest US market. The dual exposure to fab buildout plus data center buildout in the same utility is structurally unusual."
+        },
+        {
+          "title": "Largest transmission utility footprint by line miles",
+          "body": "AEP operates approximately 40,000 miles of transmission line \u2014 the second-largest in the US after Berkshire Hathaway Energy. Transmission expansion is the binding constraint for grid interconnection at AI data center buildouts. Hyperscalers are paying premium rates for earlier interconnection slots in markets where transmission capacity is constrained. AEP captures economic rent on the multi-year transmission expansion programs."
+        },
+        {
+          "title": "Regulated utility floor with multi-year capex visibility",
+          "body": "AEP has disclosed multi-year capex plans of $40+ billion through the late-2020s explicitly tied to grid expansion for AI data center load and electrification. The regulated structure means AEP captures regulated returns on the entire capex program, providing earnings stability and predictability that competitive generators don't have."
+        }
+      ],
+      "bear_case": "Regulated utility with regulated returns. Capital intensity from grid expansion is large and the financing burden falls primarily on AEP's balance sheet. Multiple states means multiple regulatory commissions and rate case outcomes can compress returns. Stock at $98 has not run as hard as the AI-power-thesis names because regulated structure caps the upside. Texas regulatory environment is less constructive than Ohio or Virginia. West Virginia coal exposure creates ESG overhang and energy transition execution risk.",
+      "contrarian_case": "If you want exposure to the AI buildout but with regulated downside protection plus multi-year capex visibility, AEP is among the cleanest single-name expressions. The dual exposure to Intel fab buildout plus ERCOT data center buildout is structurally unusual \u2014 no other utility in the database has both. Trades at modest valuation given the dual exposure. The contrarian view is that AEP is being valued as a generic regulated utility when the geographic concentration in two of the highest-growth AI infrastructure markets should justify a premium relative to peers.",
+      "what_kills_it": "Multi-state regulatory pushback on data center load growth \u2014 political pressure could compress allowed grid expansion in any single state. Hyperscalers building dedicated generation to bypass AEP grid interconnection in specific markets. Texas regulatory environment continuing to challenge utility returns. Multiple compression on rotation out of regulated utilities. Capex execution issues on the multi-year transmission expansion program. Coal asset retirement timing creating stranded asset risk.",
+      "kill_probability": {
+        "low": 20,
+        "high": 25,
+        "horizon_months": 36,
+        "components": [
+          {
+            "description": "multi-state regulatory pushback",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "hyperscalers bypassing grid via on-site generation",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "Texas regulatory pressure",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "multiple compression on regulated utility rotation",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "capex execution issues",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "coal stranded asset risk",
+            "pct_low": 10,
+            "pct_high": 15
+          }
+        ],
+        "raw_text": "20-25% over 36 months. Component breakdown: multi-state regulatory pushback ~20-25%; hyperscalers bypassing grid via on-site generation ~15-20%; Texas regulatory pressure ~15-20%; multiple compression on regulated utility rotation ~20-25%; capex execution issues ~15-20%; coal stranded asset risk ~10-15%. Regulated business model provides genuine downside protection \u2014 failure modes are slow and partial."
+      },
+      "winners": {
+        "raw_text": "Dominion Energy (D) on Northern Virginia DC alley. Duke Energy (DUK) on Charlotte and Atlanta-adjacent markets. Southern Company (SO) on Georgia. NextEra Energy (NEE) on competitive renewable plus storage. Exelon (EXC, not in database) on PJM transmission and Maryland/Pennsylvania DC markets. Vistra (VST), Constellation Energy (CEG) on competitive generation if hyperscalers shift to dedicated PPAs. Berkshire Hathaway Energy (private subsidiary of BRK) on Iowa and Nevada DC markets.",
+        "parsed_tickers": [
+          {
+            "ticker": "DUK",
+            "context_sentence": "Duke Energy (DUK) on Charlotte and Atlanta-adjacent markets"
+          },
+          {
+            "ticker": "SO",
+            "context_sentence": "Southern Company (SO) on Georgia"
+          },
+          {
+            "ticker": "NEE",
+            "context_sentence": "NextEra Energy (NEE) on competitive renewable plus storage"
+          },
+          {
+            "ticker": "EXC",
+            "context_sentence": "Exelon (EXC, not in database) on PJM transmission and Maryland/Pennsylvania DC markets"
+          },
+          {
+            "ticker": "VST",
+            "context_sentence": "Vistra (VST), Constellation Energy (CEG) on competitive generation if hyperscalers shift to dedicated PPAs"
+          },
+          {
+            "ticker": "CEG",
+            "context_sentence": "Vistra (VST), Constellation Energy (CEG) on competitive generation if hyperscalers shift to dedicated PPAs"
+          }
+        ]
+      },
+      "source_pdf": "Tier 1 + Defense Sleeve v2",
+      "added_date": "2026-05-03"
+    },
+    {
+      "ticker": "DUK",
+      "company_name": "Duke Energy",
+      "what_they_do": "Largest US electric utility by customer count, serving 8.4 million customers across the Carolinas, Florida, Indiana, Ohio, and Kentucky. Has substantial exposure to the rapidly-growing Charlotte/Research Triangle Park and Atlanta-adjacent data center markets. Operates major nuclear capacity (Catawba, McGuire, Oconee, Robinson, Brunswick, Shearon Harris). Stock at $113.",
+      "hidden_angles": [
+        {
+          "title": "Charlotte and RTP data center concentration",
+          "body": "Duke's North Carolina service territory includes Charlotte and Research Triangle Park (Raleigh-Durham), which together represent one of the fastest-growing US data center markets. Microsoft, Google, Meta, and Apple all have major campus buildouts in the Carolinas in execution or planned. Duke is the regulated monopoly that serves these markets \u2014 the same structural position that makes Dominion (D) the right play for Northern Virginia data center alley."
+        },
+        {
+          "title": "Largest US nuclear operator by reactor count",
+          "body": "Duke operates 11 nuclear reactors, more than any other US utility. As hyperscalers increasingly prioritize 24/7 carbon-free PPAs and as nuclear becomes the preferred baseload generation for AI data centers, Duke's nuclear fleet provides differentiated capacity that competitive merchant generators can sell to hyperscalers via direct PPAs (similar to the Constellation/Microsoft Three Mile Island deal). The nuclear fleet is a real strategic asset, not just an aging power plant."
+        },
+        {
+          "title": "Multi-state utility floor",
+          "body": "Duke's regulated utility structure across multiple states provides earnings stability through any single state's regulatory or political cycle. The diversification reduces single-state risk that pure-play utilities (Dominion in Virginia, NEE in Florida) face. Multi-year capex visibility on grid expansion plus nuclear refurbishment plus renewable buildout."
+        }
+      ],
+      "bear_case": "Regulated utility with regulated returns capping upside. Capital intensity is high and the financing burden falls primarily on Duke's balance sheet. Florida regulatory environment is generally constructive but rate cases are subject to commission decisions that can compress returns. Stock at $113 has not run as hard as the AI-power-thesis names because regulated structure caps the upside. Aging coal asset retirement creates stranded asset risk. Carolinas regulatory environment has had specific contentious rate case outcomes.",
+      "contrarian_case": "If you want exposure to the Charlotte/RTP and Atlanta-adjacent data center buildout markets, Duke is the cleanest single-name regulated utility expression. The combination of geographic concentration in growth markets plus the nuclear fleet plus multi-state diversification creates a defensive AI-power-thesis play that pure-play merchant generators can't match. Trades at modest valuation given the dual exposure. The contrarian view is that Duke is being valued as a generic regulated utility when the dual concentration in growth data center markets plus the largest nuclear fleet should justify a premium.",
+      "what_kills_it": "Regulatory pushback on data center load growth in Carolinas or Georgia. Hyperscalers building dedicated generation. Multiple compression on rotation out of regulated utilities. Nuclear refurbishment cost overruns affecting Catawba, McGuire, or Oconee. Coal asset retirement timing creating stranded asset risk. Florida regulatory pressure compressing returns.",
+      "kill_probability": {
+        "low": 20,
+        "high": 25,
+        "horizon_months": 36,
+        "components": [
+          {
+            "description": "regulatory pushback on DC load growth",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "hyperscalers bypassing grid via on-site generation",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "multiple compression on regulated utility rotation",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "nuclear refurbishment cost overruns",
+            "pct_low": 10,
+            "pct_high": 15
+          },
+          {
+            "description": "coal stranded asset risk",
+            "pct_low": 10,
+            "pct_high": 15
+          }
+        ],
+        "raw_text": "20-25% over 36 months. Component breakdown: regulatory pushback on DC load growth ~20-25%; hyperscalers bypassing grid via on-site generation ~15-20%; multiple compression on regulated utility rotation ~20-25%; nuclear refurbishment cost overruns ~10-15%; coal stranded asset risk ~10-15%. Regulated business model plus nuclear fleet provide genuine downside protection."
+      },
+      "winners": {
+        "raw_text": "Dominion Energy (D) on Northern Virginia. Southern Company (SO) on Georgia data center markets. NextEra Energy (NEE) on Florida if Duke loses share there. American Electric Power (AEP) on adjacent Ohio and Indiana. Constellation Energy (CEG) and Vistra (VST) on competitive nuclear generation if hyperscalers shift to direct PPAs. Talen Energy (TLN) on similar competitive nuclear. Berkshire Hathaway Energy (private) on adjacent regulated utility share.",
+        "parsed_tickers": [
+          {
+            "ticker": "SO",
+            "context_sentence": "Southern Company (SO) on Georgia data center markets"
+          },
+          {
+            "ticker": "NEE",
+            "context_sentence": "NextEra Energy (NEE) on Florida if Duke loses share there"
+          },
+          {
+            "ticker": "AEP",
+            "context_sentence": "American Electric Power (AEP) on adjacent Ohio and Indiana"
+          },
+          {
+            "ticker": "CEG",
+            "context_sentence": "Constellation Energy (CEG) and Vistra (VST) on competitive nuclear generation if hyperscalers shift to direct PPAs"
+          },
+          {
+            "ticker": "VST",
+            "context_sentence": "Constellation Energy (CEG) and Vistra (VST) on competitive nuclear generation if hyperscalers shift to direct PPAs"
+          },
+          {
+            "ticker": "TLN",
+            "context_sentence": "Talen Energy (TLN) on similar competitive nuclear"
+          }
+        ]
+      },
+      "source_pdf": "Tier 1 + Defense Sleeve v2",
+      "added_date": "2026-05-03"
+    },
+    {
+      "ticker": "SO",
+      "company_name": "Southern Company",
+      "what_they_do": "Major regulated electric utility serving 9 million customers across Georgia, Alabama, and Mississippi. Operates the Plant Vogtle nuclear facility (the only new US reactor brought online in decades \u2014 Units 3 and 4 completed 2023-2024). Has substantial exposure to Georgia data center buildout where Meta, Microsoft, and Amazon all have major campuses. Stock at $96.",
+      "hidden_angles": [
+        {
+          "title": "Georgia data center concentration plus Plant Vogtle nuclear",
+          "body": "Georgia is one of the fastest-growing US data center markets \u2014 Meta has its largest North American campus there, Microsoft has multiple sites, Amazon has multi-gigawatt buildouts in execution. Southern is the regulated utility that delivers power to these campuses. Plant Vogtle Units 3 and 4 added 2,234 MW of new nuclear capacity (the only new US nuclear capacity in decades). The combination of regulated geographic concentration plus new nuclear capacity is structurally unique."
+        },
+        {
+          "title": "Cited 3 times by D, NEE, VST as regulated utility absorber",
+          "body": "Cited across three names already in the database as the Southeast utility share absorber. The citation pattern from competitor utilities is signal that Southern occupies a real structural position. When three competitors separately name Southern as a structural participant, the gap in the database is meaningful."
+        },
+        {
+          "title": "Multi-decade nuclear license + regulatory certainty",
+          "body": "Plant Vogtle Units 3 and 4 just received their 40-year operating licenses with renewal optionality through 2080+. Plus the Hatch and Farley plants. The nuclear fleet provides multi-decade carbon-free baseload capacity that hyperscalers structurally need. The regulatory certainty plus the new nuclear capacity creates earnings durability that pure-play merchant generators can't match."
+        }
+      ],
+      "bear_case": "Plant Vogtle Units 3 and 4 cost overruns were severe \u2014 final cost approximately $35 billion versus original $14 billion estimate, with Southern recovering most via regulated rate base but creating multi-year balance sheet pressure. Regulated utility with regulated returns capping upside. Stock at $96 trades at modest multiple. Georgia regulatory environment has been generally constructive but rate cases are subject to commission decisions. Coal asset retirement creates stranded asset risk. Customer concentration on hyperscaler PPAs creates renegotiation risk.",
+      "contrarian_case": "If you want regulated exposure to the Georgia data center boom plus new nuclear capacity that hyperscalers structurally need, Southern is the cleanest single-name expression. The Plant Vogtle Units 3 and 4 are the only new US nuclear baseload capacity available \u2014 Microsoft, Google, and Meta have all signed PPAs for nuclear capacity in other markets, and Southern's Vogtle capacity is the regulated equivalent. Trades at modest valuation given the dual exposure. The contrarian view is that Southern is being valued primarily on the historical Vogtle cost overrun overhang when the new capacity is structurally valuable in the AI-power-thesis.",
+      "what_kills_it": "Georgia regulatory pushback on data center load growth. Hyperscalers building dedicated generation outside the Southern service territory. Coal asset retirement creating stranded asset costs. Multiple compression on rotation out of regulated utilities. Nuclear refurbishment cost overruns at Hatch or Farley. Plant Vogtle operational issues at the new units (low probability but possible).",
+      "kill_probability": {
+        "low": 20,
+        "high": 25,
+        "horizon_months": 36,
+        "components": [
+          {
+            "description": "Georgia regulatory pushback on DC load growth",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "hyperscalers bypassing grid via on-site generation",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "multiple compression on rotation",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "coal stranded asset risk",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "Plant Vogtle operational issues",
+            "pct_low": 5,
+            "pct_high": 10
+          },
+          {
+            "description": "nuclear refurbishment cost overruns",
+            "pct_low": 10,
+            "pct_high": 15
+          }
+        ],
+        "raw_text": "20-25% over 36 months. Component breakdown: Georgia regulatory pushback on DC load growth ~20-25%; hyperscalers bypassing grid via on-site generation ~15-20%; multiple compression on rotation ~20-25%; coal stranded asset risk ~15-20%; Plant Vogtle operational issues ~5-10%; nuclear refurbishment cost overruns ~10-15%. Regulated business plus new nuclear capacity provide genuine downside protection."
+      },
+      "winners": {
+        "raw_text": "Dominion Energy (D) on Northern Virginia. Duke Energy (DUK) on Carolinas. American Electric Power (AEP) on Ohio and Texas. NextEra Energy (NEE) on Florida adjacent. Constellation Energy (CEG), Vistra (VST), Talen Energy (TLN) on competitive nuclear generation if hyperscalers shift to direct PPAs. Tennessee Valley Authority (federal entity, not tradable) on regional capacity. Smaller utilities serving secondary Southeast markets.",
+        "parsed_tickers": [
+          {
+            "ticker": "DUK",
+            "context_sentence": "Duke Energy (DUK) on Carolinas"
+          },
+          {
+            "ticker": "AEP",
+            "context_sentence": "American Electric Power (AEP) on Ohio and Texas"
+          },
+          {
+            "ticker": "NEE",
+            "context_sentence": "NextEra Energy (NEE) on Florida adjacent"
+          },
+          {
+            "ticker": "CEG",
+            "context_sentence": "Constellation Energy (CEG), Vistra (VST), Talen Energy (TLN) on competitive nuclear generation if hyperscalers shift to direct PPAs"
+          },
+          {
+            "ticker": "VST",
+            "context_sentence": "Constellation Energy (CEG), Vistra (VST), Talen Energy (TLN) on competitive nuclear generation if hyperscalers shift to direct PPAs"
+          },
+          {
+            "ticker": "TLN",
+            "context_sentence": "Constellation Energy (CEG), Vistra (VST), Talen Energy (TLN) on competitive nuclear generation if hyperscalers shift to direct PPAs"
+          }
+        ]
+      },
+      "source_pdf": "Tier 1 + Defense Sleeve v2",
+      "added_date": "2026-05-03"
+    },
+    {
+      "ticker": "ENR",
+      "company_name": "Siemens Energy AG (ADR: SMNEY)",
+      "what_they_do": "German energy technology company spun out of Siemens AG in 2020. The direct head-to-head competitor to GE Vernova on heavy gas turbines for hyperscaler peaking power generation, plus grid technology, plus wind power. Operates one of the two dominant global gas turbine franchises (GE Vernova and Siemens Energy effectively split most of the heavy-duty gas turbine market). ADR trades as SMNEY in the US. Stock at $73 (Frankfurt listing).",
+      "hidden_angles": [
+        {
+          "title": "Direct duopoly competitor to GE Vernova on hyperscaler peaking gas turbines",
+          "body": "Siemens Energy and GE Vernova split most of the global heavy-duty gas turbine market between them. Mitsubishi Heavy Industries is the third major player but is foreign-listed and has smaller share. As hyperscalers add gas-fired peaking generation to support AI data center load (the same trend that drives the GEV thesis), Siemens Energy captures roughly 30-40% of the wins to GEV's 40-50%. Having GEV in the database without Siemens Energy is a structural omission \u2014 they're a duopoly, and the citation pattern across multiple GEV-related sitreps confirms this."
+        },
+        {
+          "title": "Grid solutions tailwind",
+          "body": "Siemens Energy operates a major grid technology business \u2014 high-voltage direct current (HVDC), transformers, switchgear, grid stability solutions. Same structural tailwind from utility transmission expansion that benefits Hubbell (HUBB), Eaton (ETN), Quanta Services (PWR), and others already in the database. Siemens Energy is among the largest global suppliers."
+        },
+        {
+          "title": "Wind business is structurally weak but improving",
+          "body": "Siemens Energy's wind business (Siemens Gamesa) has been in a deep cyclical and operational trough through 2023-2025 \u2014 multiple project cost overruns, quality issues at the offshore wind business, and significant losses. The wind business has been a meaningful drag on consolidated earnings but the cyclical bottom appears to have been reached and recovery is underway. The improvement adds optionality to the gas turbine plus grid thesis."
+        }
+      ],
+      "bear_case": "Wind business has been in deep cyclical trough that has compressed consolidated earnings \u2014 offshore wind project cost overruns and quality issues have been severe. Stock at $73 has run materially from sub-$10 lows during the wind crisis. Multiple expansion has done meaningful work. Foreign-listed parent with currency translation exposure to euro fluctuations affecting USD-denominated returns via ADR. ADR (SMNEY) has thinner volume than NYSE-listed alternatives. Customer concentration on a small number of major utility and hyperscaler customers creates renegotiation risk.",
+      "contrarian_case": "If you want full exposure to the heavy-duty gas turbine duopoly plus grid solutions plus the wind recovery, Siemens Energy is the only foreign-listed name that captures all three. The duopoly structure with GE Vernova means both companies benefit from hyperscaler peaking gas demand growth \u2014 adding Siemens Energy to the database alongside GEV is the same logic that justifies adding both Camtek and Onto, both Cadence and Synopsys. Trades at premium but the multi-vector exposure (gas turbines + grid + wind recovery) provides multiple growth vectors at a multiple that hasn't priced all three.",
+      "what_kills_it": "Wind business cyclical drag persisting longer than expected. GE Vernova consolidating gas turbine share via aggressive pricing or product roadmap aggression. Hyperscaler architecture shifting away from gas peaking toward nuclear or renewable plus storage. Currency translation pressure if euro strengthens materially against USD. Multiple compression on rotation out of premium European industrials. Grid solutions competitive squeeze from ABB, Hitachi Energy.",
+      "kill_probability": {
+        "low": 30,
+        "high": 35,
+        "horizon_months": 36,
+        "components": [
+          {
+            "description": "wind cyclical persistence",
+            "pct_low": 25,
+            "pct_high": 30
+          },
+          {
+            "description": "GE Vernova competitive squeeze on gas turbines",
+            "pct_low": 25,
+            "pct_high": 30
+          },
+          {
+            "description": "hyperscaler architecture shift away from gas peaking",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "currency translation pressure",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "multiple compression on European industrial rotation",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "grid solutions competitive squeeze",
+            "pct_low": 15,
+            "pct_high": 20
+          }
+        ],
+        "raw_text": "30-35% over 36 months. Component breakdown: wind cyclical persistence ~25-30%; GE Vernova competitive squeeze on gas turbines ~25-30%; hyperscaler architecture shift away from gas peaking ~15-20%; currency translation pressure ~15-20%; multiple compression on European industrial rotation ~20-25%; grid solutions competitive squeeze ~15-20%. Diversified business across gas, grid, and wind provides genuine downside protection but the wind drag is real."
+      },
+      "winners": {
+        "raw_text": "GE Vernova (GEV) on heavy gas turbines and grid solutions \u2014 direct head-to-head competitor in the duopoly. Mitsubishi Heavy Industries (foreign, Japan) on similar gas turbines. ABB (in database) on grid solutions and switchgear. Hitachi Energy (foreign) on adjacent grid solutions. Vestas (foreign, Denmark) on wind if Siemens Energy wind recovery stalls. General Electric (GE) parent on aero-derivative gas turbines. Cummins (CMI), Caterpillar (CAT) on smaller gas gensets if peaking architecture shifts smaller. Bloom Energy (BE) on fuel cell alternatives.",
+        "parsed_tickers": [
+          {
+            "ticker": "GEV",
+            "context_sentence": "GE Vernova (GEV) on heavy gas turbines and grid solutions \u2014 direct head-to-head competitor in the duopoly"
+          },
+          {
+            "ticker": "GE",
+            "context_sentence": "General Electric (GE) parent on aero-derivative gas turbines"
+          },
+          {
+            "ticker": "CMI",
+            "context_sentence": "Cummins (CMI), Caterpillar (CAT) on smaller gas gensets if peaking architecture shifts smaller"
+          },
+          {
+            "ticker": "CAT",
+            "context_sentence": "Cummins (CMI), Caterpillar (CAT) on smaller gas gensets if peaking architecture shifts smaller"
+          },
+          {
+            "ticker": "BE",
+            "context_sentence": "Bloom Energy (BE) on fuel cell alternatives."
+          }
+        ]
+      },
+      "source_pdf": "Tier 1 + Defense Sleeve v2",
+      "added_date": "2026-05-03"
+    },
+    {
+      "ticker": "RTX",
+      "company_name": "Raytheon Technologies",
+      "what_they_do": "Major US aerospace and defense company formed from the 2020 merger of Raytheon Company and United Technologies. Operates three businesses: Pratt & Whitney (commercial and military aircraft engines), Collins Aerospace (avionics and aircraft systems), and Raytheon (defense electronics, missiles, directed energy weapons, radar systems). Has multiple direct AI infrastructure exposures \u2014 the directed energy weapons program and the aero-derivative gas turbine business that competes with GEV and ENR for hyperscaler peaking gas. Stock at $123.",
+      "hidden_angles": [
+        {
+          "title": "Directed energy weapons program at scale",
+          "body": "Raytheon's directed energy weapons portfolio (high-energy lasers for counter-drone, counter-missile, counter-mortar applications) is among the largest US defense laser programs. Raytheon is a major customer of fiber laser components from IPG Photonics (IPGP, in database) and integrated photonics from Coherent (COHR, in database). As directed energy weapons mandate accelerates globally \u2014 drone defense being the proximate driver \u2014 Raytheon captures system integration revenue at the prime contractor level while IPG and Coherent capture component revenue."
+        },
+        {
+          "title": "Pratt & Whitney aero-derivative gas turbines for DC-adjacent fast-start plants",
+          "body": "Pratt & Whitney's aero-derivative gas turbines (turbines based on jet engine designs) are increasingly being deployed in fast-start power plants near data center campuses to handle peaking load. Same architectural segment as GE Aerospace (GE, in database) aero-derivatives. Different from GEV's heavy-duty turbines \u2014 these are smaller, faster-starting units that fit specific DC-adjacent peaking applications. Pratt's exposure is meaningful if smaller than GE's."
+        },
+        {
+          "title": "Defense aerospace tailwind from global rearmament",
+          "body": "NATO rearmament, Indo-Pacific tension, and Middle East conflict drivers all increase defense aerospace demand. Pratt & Whitney military engine business plus Collins Aerospace defense systems plus Raytheon missiles all benefit from sustained defense spending increases globally. Multi-year visibility on defense platform engines and avionics through F-35 production, F-22 modernization, KC-46 tanker, and multiple missile programs."
+        }
+      ],
+      "bear_case": "Pratt & Whitney has had ongoing operational issues with the geared turbofan engine (GTF) \u2014 powder metal contamination issue forced commercial aircraft groundings and multi-billion-dollar warranty charges. Stock at $123 has been pressured by the GTF situation through 2023-2025. Defense business is exposed to political-shift scenarios where defense budgets compress under aggressive policy changes. Commercial aerospace cyclical with airline capacity decisions. Multiple compression risk on rotation out of premium aerospace defense names.",
+      "contrarian_case": "If directed energy weapons mandate accelerates and the GTF operational issues are resolved (resolution timeline is multi-year but execution is on track), Raytheon captures dual upside from defense AI infrastructure plus commercial aerospace recovery plus aero-derivative gas turbines for DC peaking. Cited 4 times across the database (GE, HON, IPGP, KBR) as the structural participant \u2014 the citation pattern is itself evidence of position. Trades at modest forward multiple given the multi-vector exposure (defense lasers + aero engines + DC peaking turbines).",
+      "what_kills_it": "GTF operational issues persisting longer than expected and continuing to compress earnings. Defense budget compression under specific political-shift scenarios. Commercial aerospace recovery slowing if airline capacity decisions reverse. Hyperscaler architecture shifting away from gas peaking. Multiple compression on rotation out of premium aerospace defense.",
+      "kill_probability": {
+        "low": 25,
+        "high": 30,
+        "horizon_months": 36,
+        "components": [
+          {
+            "description": "GTF operational persistence",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "defense budget compression",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "commercial aerospace cyclical",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "multiple compression on rotation",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "directed energy programs ramp slow",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "competitive squeeze on aero-derivative gas turbines",
+            "pct_low": 15,
+            "pct_high": 20
+          }
+        ],
+        "raw_text": "25-30% over 36 months. Component breakdown: GTF operational persistence ~20-25%; defense budget compression ~15-20%; commercial aerospace cyclical ~20-25%; multiple compression on rotation ~20-25%; directed energy programs ramp slow ~15-20%; competitive squeeze on aero-derivative gas turbines ~15-20%. Diversified portfolio provides genuine downside protection."
+      },
+      "winners": {
+        "raw_text": "Lockheed Martin (LMT) on adjacent defense platforms. Northrop Grumman (NOC) on adjacent defense platforms. General Electric (GE) on aero-derivative gas turbine competition and commercial aerospace engines. CFM International (joint venture, GE + Safran foreign) on commercial engines. Boeing (BA), Airbus (foreign) on platform suppliers. Honeywell (HON) on aerospace systems adjacent. IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins. Foreign defense competitors (BAE Systems UK, Thales France, Leonardo Italy) on global market share.",
+        "parsed_tickers": [
+          {
+            "ticker": "LMT",
+            "context_sentence": "Lockheed Martin (LMT) on adjacent defense platforms"
+          },
+          {
+            "ticker": "NOC",
+            "context_sentence": "Northrop Grumman (NOC) on adjacent defense platforms"
+          },
+          {
+            "ticker": "GE",
+            "context_sentence": "General Electric (GE) on aero-derivative gas turbine competition and commercial aerospace engines"
+          },
+          {
+            "ticker": "BA",
+            "context_sentence": "Boeing (BA), Airbus (foreign) on platform suppliers"
+          },
+          {
+            "ticker": "HON",
+            "context_sentence": "Honeywell (HON) on aerospace systems adjacent"
+          },
+          {
+            "ticker": "IPGP",
+            "context_sentence": "IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins"
+          },
+          {
+            "ticker": "COHR",
+            "context_sentence": "IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins"
+          },
+          {
+            "ticker": "BAE",
+            "context_sentence": "Foreign defense competitors (BAE Systems UK, Thales France, Leonardo Italy) on global market share."
+          }
+        ]
+      },
+      "source_pdf": "Tier 1 + Defense Sleeve v2",
+      "added_date": "2026-05-03"
+    },
+    {
+      "ticker": "LMT",
+      "company_name": "Lockheed Martin",
+      "what_they_do": "Largest US defense contractor by revenue. Operates four segments: Aeronautics (F-35, F-22, C-130), Missiles and Fire Control (HIMARS, THAAD, JASSM, directed energy), Rotary and Mission Systems (Sikorsky helicopters, Aegis combat system), and Space (satellites, ICBMs, launch vehicles). Has multiple direct AI infrastructure exposures via the F-35 ISR data architecture, autonomous systems programs, and directed energy weapons. Stock at $467.",
+      "hidden_angles": [
+        {
+          "title": "F-35 ISR data architecture as massive AI inference workload",
+          "body": "The F-35 fleet generates approximately 1 terabyte of sensor data per aircraft per flight hour. The Autonomic Logistics Information System (ALIS) and its successor Operational Data Integrated Network (ODIN) process this data at scale \u2014 a multi-billion-dollar AI inference and data infrastructure program that Lockheed operates across multiple secure facilities globally. As the F-35 fleet expands toward 2,400+ aircraft globally, the data infrastructure scales with it. This is a real AI infrastructure exposure that has nothing to do with commercial AI."
+        },
+        {
+          "title": "Skunk Works AI/autonomous systems",
+          "body": "Lockheed's Skunk Works division has multiple classified AI and autonomous systems programs \u2014 the X-44A drone, the SR-72 hypersonic surveillance program, autonomous wingman programs (Loyal Wingman). These are real AI silicon and AI infrastructure customers, even if the specific customer mix and dollar amounts are classified. The Air Force Collaborative Combat Aircraft (CCA) program is structurally similar to Boeing's MQ-28 Ghost Bat \u2014 autonomous AI-enabled wingman aircraft."
+        },
+        {
+          "title": "Directed energy weapons leadership",
+          "body": "Lockheed's HELIOS program (High Energy Laser with Integrated Optical-dazzler and Surveillance) is one of the most mature US shipboard directed energy weapons. Lockheed is also a major component of the Army's directed energy programs. Same supply chain that benefits IPG Photonics (IPGP) and Coherent (COHR) on the component side."
+        }
+      ],
+      "bear_case": "Defense business is exposed to political-shift scenarios where defense budgets compress under aggressive policy changes. Stock at $467 trades at premium multiple. F-35 program has had multi-decade operational and cost issues that continue to surface. Customer concentration on a single dominant customer (the US Department of Defense, plus allied governments) creates risk on any single major program decision. Hypersonic and directed energy programs have multi-year development timelines with execution risk. Multiple compression risk on rotation out of premium defense names.",
+      "contrarian_case": "If global rearmament continues at the current pace through 2027-2028, Lockheed captures multi-year defense aerospace tailwind plus directed energy ramp plus space systems growth. The F-35 program is the largest defense program in history and the data infrastructure scaling with the fleet is genuinely AI buildout exposure. Trades at premium but defensible multiple given the multi-vector exposure. The contrarian view is that Lockheed is being valued as a generic defense prime when the AI-specific exposures (F-35 data architecture, Skunk Works autonomy, directed energy) provide additional optionality at a multiple that hasn't priced them.",
+      "what_kills_it": "Defense budget compression under specific political-shift scenarios. F-35 program operational issues persisting or new ones emerging. Multiple compression on rotation out of premium defense names. Geopolitical de-escalation reducing global rearmament pace (low probability but possible). Directed energy program execution issues affecting HELIOS.",
+      "kill_probability": {
+        "low": 20,
+        "high": 25,
+        "horizon_months": 36,
+        "components": [
+          {
+            "description": "defense budget compression under political shift",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "F-35 program operational issues",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "multiple compression on rotation",
+            "pct_low": 25,
+            "pct_high": 30
+          },
+          {
+            "description": "geopolitical de-escalation",
+            "pct_low": 5,
+            "pct_high": 10
+          },
+          {
+            "description": "directed energy execution issues",
+            "pct_low": 10,
+            "pct_high": 15
+          },
+          {
+            "description": "competitive squeeze from Boeing on F-35 successors",
+            "pct_low": 15,
+            "pct_high": 20
+          }
+        ],
+        "raw_text": "20-25% over 36 months. Component breakdown: defense budget compression under political shift ~15-20%; F-35 program operational issues ~15-20%; multiple compression on rotation ~25-30%; geopolitical de-escalation ~5-10%; directed energy execution issues ~10-15%; competitive squeeze from Boeing on F-35 successors ~15-20%. Defense business is structurally durable; failure modes are mostly macro (political budget shifts) rather than competitive."
+      },
+      "winners": {
+        "raw_text": "Northrop Grumman (NOC) on adjacent defense platforms \u2014 direct head-to-head competitor on B-21 Raider, Sentinel ICBM, space systems. Raytheon (RTX) on adjacent defense systems. Boeing (BA) on F-15EX and adjacent fighter platforms. General Dynamics (GD, not in database) on adjacent defense platforms. BAE Systems (foreign, UK) on global defense market share. Leonardo (foreign, Italy), Thales (foreign, France) on European defense share. IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins. Anduril (private) on autonomous systems if commercial competitors win share.",
+        "parsed_tickers": [
+          {
+            "ticker": "NOC",
+            "context_sentence": "Northrop Grumman (NOC) on adjacent defense platforms \u2014 direct head-to-head competitor on B-21 Raider, Sentinel ICBM, space systems"
+          },
+          {
+            "ticker": "RTX",
+            "context_sentence": "Raytheon (RTX) on adjacent defense systems"
+          },
+          {
+            "ticker": "BA",
+            "context_sentence": "Boeing (BA) on F-15EX and adjacent fighter platforms"
+          },
+          {
+            "ticker": "GD",
+            "context_sentence": "General Dynamics (GD, not in database) on adjacent defense platforms"
+          },
+          {
+            "ticker": "IPGP",
+            "context_sentence": "IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins"
+          },
+          {
+            "ticker": "COHR",
+            "context_sentence": "IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins"
+          }
+        ]
+      },
+      "source_pdf": "Tier 1 + Defense Sleeve v2",
+      "added_date": "2026-05-03"
+    },
+    {
+      "ticker": "NOC",
+      "company_name": "Northrop Grumman",
+      "what_they_do": "Major US defense contractor specializing in aerospace, defense electronics, mission systems, and space systems. Operates four segments: Aeronautics Systems (B-21 Raider, B-2, Global Hawk), Defense Systems (artillery, ammunition, ground vehicles), Mission Systems (radar, electronic warfare, communications), and Space Systems (satellites, ICBMs, launch vehicles). Has multiple direct AI infrastructure exposures via the B-21 Raider program, space-based ISR, and the Sentinel ICBM modernization. Stock at $544.",
+      "hidden_angles": [
+        {
+          "title": "B-21 Raider program is multi-decade AI-enabled platform",
+          "body": "The B-21 Raider strategic stealth bomber is being designed as an AI-enabled platform with autonomous mission capability and integrated sensor fusion across multiple domains. Production scheduled to begin in earnest 2027-2028 with deliveries continuing into the 2040s. The B-21 program is one of the largest defense modernization programs in US history and the AI infrastructure component (data fusion, autonomous mission planning, integrated battlespace awareness) is genuinely material. Northrop is the prime contractor and captures the largest single program revenue stream."
+        },
+        {
+          "title": "Space-based AI ISR as growing infrastructure category",
+          "body": "Northrop is among the largest US providers of national security space systems \u2014 military satellites, space-based ISR, missile warning systems. The new generation of space-based ISR systems uses AI inference at the edge (on-orbit processing rather than downlinking raw sensor data) which creates structural demand for hardened AI silicon, edge inference platforms, and the data architecture that ties multiple satellites into integrated battlespace awareness. The space AI infrastructure category is genuinely growing at structural rates."
+        },
+        {
+          "title": "Sentinel ICBM modernization program",
+          "body": "Northrop is the prime contractor for the Sentinel program \u2014 the modernization of the entire US ICBM fleet, replacing the aging Minuteman III. Multi-decade program with multi-tens-of-billions of contract value. The program has had cost overrun issues and faced restructuring through 2024-2025, but the underlying need is structural and the program continues. Sentinel modernization includes substantial AI and software infrastructure components."
+        }
+      ],
+      "bear_case": "Defense business exposed to political-shift scenarios where defense budgets compress. Stock at $544 trades at premium multiple. B-21 program is in early production and execution risk is meaningful. Sentinel ICBM program had a Nunn-McCurdy breach (cost overrun trigger) in 2024 that required Congressional restructuring \u2014 the program continues but execution risk remains. Customer concentration on US Department of Defense. Multiple compression risk on rotation out of premium defense names. Aerospace business is smaller than Lockheed's and has less commercial diversification.",
+      "contrarian_case": "If global rearmament continues at the current pace through 2027-2028 and the B-21 program ramps successfully, Northrop captures multi-decade aerospace defense growth plus the AI infrastructure component plus the space systems growth. The B-21 alone is a multi-decade revenue stream of multiple thousands of dollars per share if executed at expected scale. Trades at premium but defensible multiple given the multi-vector exposure. The contrarian view is that Northrop is being valued primarily on near-term Sentinel execution concerns when the longer-term B-21 plus space systems exposure is structurally larger.",
+      "what_kills_it": "Defense budget compression under specific political-shift scenarios. B-21 program execution issues during early production. Sentinel ICBM program continued cost overruns triggering further Congressional intervention. Multiple compression on rotation out of premium defense names. Geopolitical de-escalation reducing global rearmament pace. Space-based AI infrastructure programs delayed or restructured.",
+      "kill_probability": {
+        "low": 25,
+        "high": 30,
+        "horizon_months": 36,
+        "components": [
+          {
+            "description": "defense budget compression under political shift",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "B-21 execution issues during early production",
+            "pct_low": 20,
+            "pct_high": 25
+          },
+          {
+            "description": "Sentinel program cost overruns continuing",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "multiple compression on rotation",
+            "pct_low": 25,
+            "pct_high": 30
+          },
+          {
+            "description": "space programs execution issues",
+            "pct_low": 15,
+            "pct_high": 20
+          },
+          {
+            "description": "competitive squeeze from Boeing or Lockheed on adjacent programs",
+            "pct_low": 15,
+            "pct_high": 20
+          }
+        ],
+        "raw_text": "25-30% over 36 months. Component breakdown: defense budget compression under political shift ~15-20%; B-21 execution issues during early production ~20-25%; Sentinel program cost overruns continuing ~15-20%; multiple compression on rotation ~25-30%; space programs execution issues ~15-20%; competitive squeeze from Boeing or Lockheed on adjacent programs ~15-20%. Higher kill probability than LMT because Northrop has more concentration on a smaller number of major programs (B-21, Sentinel) and the execution risk is more concentrated."
+      },
+      "winners": {
+        "raw_text": "Lockheed Martin (LMT) on adjacent defense platforms \u2014 direct head-to-head competitor on space systems and aerospace. Raytheon (RTX) on adjacent defense systems. Boeing (BA) on adjacent aircraft platforms. General Dynamics (GD, not in database) on adjacent defense platforms. BAE Systems (foreign, UK) on global defense market share. L3Harris Technologies (LHX, not in database) on adjacent defense electronics and space. SpaceX (private) on launch services and satellite manufacturing if Northrop space programs lose ground. Anduril (private) on autonomous systems if commercial competitors win share. IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins.",
+        "parsed_tickers": [
+          {
+            "ticker": "LMT",
+            "context_sentence": "Lockheed Martin (LMT) on adjacent defense platforms \u2014 direct head-to-head competitor on space systems and aerospace"
+          },
+          {
+            "ticker": "RTX",
+            "context_sentence": "Raytheon (RTX) on adjacent defense systems"
+          },
+          {
+            "ticker": "BA",
+            "context_sentence": "Boeing (BA) on adjacent aircraft platforms"
+          },
+          {
+            "ticker": "GD",
+            "context_sentence": "General Dynamics (GD, not in database) on adjacent defense platforms"
+          },
+          {
+            "ticker": "LHX",
+            "context_sentence": "L3Harris Technologies (LHX, not in database) on adjacent defense electronics and space"
+          },
+          {
+            "ticker": "IPGP",
+            "context_sentence": "IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins."
+          },
+          {
+            "ticker": "COHR",
+            "context_sentence": "IPG Photonics (IPGP), Coherent (COHR) on directed energy components regardless of which defense prime wins."
+          }
+        ]
+      },
+      "source_pdf": "Tier 1 + Defense Sleeve v2",
+      "added_date": "2026-05-03"
+    }
+  ]
+}
