@@ -1,0 +1,31 @@
+=== FINAL SUPPLEMENT ETL REPORT ===
+Generated: 2026-05-03 02:38:35 UTC
+Source PDF: AI_Buildout_Final_Supplement_v2.pdf
+
+EXPECTED TICKERS: ABB, CAT, CMI, D, FTV, GE, SBGSY
+
+PARSE RESULTS:
+  TICKER   SECTIONS   CATEGORY                                      WARNINGS
+  CMI      7/7        11. Power Infrastructure & Equipment          0
+  CAT      7/7        11. Power Infrastructure & Equipment          0
+  D        7/7        12. Power Generation & Nuclear                0
+  SBGSY    7/7        11. Power Infrastructure & Equipment          0
+  ABB      7/7        11. Power Infrastructure & Equipment          0
+  FTV      7/7        05. Semiconductor Test & Inspection           0
+  GE       7/7        11. Power Infrastructure & Equipment          0
+
+DATABASE STATE AFTER INGESTION:
+  Total rows in sitreps table: 181  (expected 181)
+  Rows with category set:      181  (expected 181)
+  Rows missing price_at_add:   10  (expected ~7 — new rows)
+
+KILL PROBABILITY EXTRACTION:
+  Range parsed:      7/7
+  Horizon parsed:    7/7
+  Components parsed: 7/7
+
+WINNERS EXTRACTION:
+  Tickers identified:     39
+  Rationale-only entries: 0
+
+=== END REPORT ===
