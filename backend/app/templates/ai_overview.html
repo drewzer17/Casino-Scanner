@@ -412,6 +412,111 @@
     }
     .wb-rationale-btn:hover { background: rgba(168, 85, 247, 0.1); }
 
+    /* ── "Read full sitrep" link in modal rationale ── */
+    .sr-read-link {
+      font-size: 10px;
+      color: #a78bfa;
+      text-decoration: none;
+      margin-left: 7px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .sr-read-link:hover { text-decoration: underline; }
+
+    /* ── Sitrep research panel ───────────────────── */
+    #sr-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 1199;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    #sr-backdrop.sr-open { opacity: 1; pointer-events: auto; }
+    #sr-panel {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: min(50vw, 720px);
+      background: #e5e7eb;
+      border-left: 1px solid rgba(0,0,0,0.12);
+      z-index: 1200;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+    }
+    #sr-panel.sr-open { transform: translateX(0); }
+    #sr-header {
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      flex-shrink: 0;
+      background: #d1d5db;
+    }
+    #sr-header-left { flex: 1; min-width: 0; }
+    #sr-ticker-line {
+      font-weight: 800;
+      font-size: 18px;
+      color: #111827;
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+    .sr-ticker-company { font-weight: 400; font-size: 14px; color: #4b5563; margin-left: 8px; }
+    #sr-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+    .sr-pill {
+      font-size: 11px; font-weight: 600;
+      padding: 2px 8px; border-radius: 4px; white-space: nowrap;
+    }
+    .sr-pill-lens   { background: #8b5cf6; color: #fff; font-weight: 700; }
+    .sr-pill-lens2  { background: rgba(139,92,246,0.55); color: #fff; }
+    .sr-pill-cat    { background: #fbbf24; color: #000; }
+    .sr-pill-subcat { background: #06b6d4; color: #fff; font-size: 10px; }
+    #sr-updated { font-size: 11px; color: #6b7280; margin-top: 5px; }
+    #sr-header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    #sr-full-link {
+      font-size: 12px; color: #7c3aed; text-decoration: none; font-weight: 600;
+      padding: 4px 8px; border: 1px solid rgba(124,58,237,0.4); border-radius: 4px;
+      white-space: nowrap;
+    }
+    #sr-full-link:hover { border-color: #7c3aed; text-decoration: underline; }
+    #sr-close {
+      background: none; border: none; color: #374151;
+      cursor: pointer; font-size: 17px; padding: 3px 5px; line-height: 1; border-radius: 4px;
+    }
+    #sr-close:hover { color: #dc2626; }
+    #sr-body { flex: 1; overflow-y: auto; padding: 4px 20px 24px; }
+    #sr-loading { color: #6b7280; font-size: 14px; padding: 32px 0; text-align: center; }
+    #sr-error   { color: #dc2626; font-size: 13px; padding: 20px 0; }
+    .sr-section-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #8b5cf6;
+      margin-bottom: 8px; margin-top: 20px;
+      border-bottom: 1px solid rgba(139,92,246,0.3); padding-bottom: 4px;
+    }
+    .sr-what-they-do { margin: 0; color: #111827; font-size: 13px; line-height: 1.65; }
+    .sr-list { margin: 0; padding: 0 0 0 18px; list-style: disc; }
+    .sr-list li { color: #111827; font-size: 13px; line-height: 1.55; margin-bottom: 6px; }
+    .sr-winners-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-top: 2px; }
+    .sr-winner-card {
+      background: rgba(0,0,0,0.04); border: 1px solid rgba(139,92,246,0.3);
+      border-radius: 6px; padding: 10px 12px;
+    }
+    .sr-winner-ticker {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 13px; font-weight: 700; color: #7c3aed; letter-spacing: 0.04em;
+    }
+    .sr-winner-rationale { font-size: 11px; color: #1f2937; margin-top: 4px; line-height: 1.5; }
+    .sr-toggle-btn {
+      background: #8b5cf6; color: #fff; border: none; border-radius: 6px;
+      padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer;
+      display: block; margin: 24px auto 4px; transition: background 0.15s;
+    }
+    .sr-toggle-btn:hover { background: #7c3aed; }
+
     /* ── Search bar ──────────────────────────────── */
     .search-bar {
       display: flex;
@@ -747,6 +852,27 @@
     </div>
   </div>
 
+  <!-- ── Sitrep research panel ─────────────────────── -->
+  <div id="sr-backdrop"></div>
+  <div id="sr-panel">
+    <div id="sr-header">
+      <div id="sr-header-left">
+        <div id="sr-ticker-line"></div>
+        <div id="sr-pills"></div>
+        <div id="sr-updated"></div>
+      </div>
+      <div id="sr-header-right">
+        <a id="sr-full-link" href="#" target="_blank" rel="noreferrer">Full page ↗</a>
+        <button id="sr-close" title="Close">✕</button>
+      </div>
+    </div>
+    <div id="sr-body">
+      <div id="sr-loading">Loading…</div>
+      <div id="sr-content" style="display:none"></div>
+      <div id="sr-error" style="display:none"></div>
+    </div>
+  </div>
+
   <!-- ── Search bar ────────────────────────────────── -->
   <div class="search-bar">
     <input id="search" class="search-input" type="text"
@@ -802,6 +928,160 @@
   </div>
 
   <script>
+    // ── Shared HTML-escape utility ────────────────────────────────────────────
+    function esc(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    // ── Sitrep research panel (vanilla JS) ───────────────────────────────────
+    (function initSitrepPanel() {
+      const state = { compact: true, data: null };
+
+      function srClose() {
+        document.getElementById("sr-backdrop").classList.remove("sr-open");
+        document.getElementById("sr-panel").classList.remove("sr-open");
+        document.body.style.overflow = "";
+      }
+
+      function srOpen(ticker) {
+        const loading = document.getElementById("sr-loading");
+        const content = document.getElementById("sr-content");
+        const errEl   = document.getElementById("sr-error");
+
+        state.compact = true;
+        state.data    = null;
+
+        loading.style.display = "";
+        content.style.display = "none";
+        content.innerHTML     = "";
+        errEl.style.display   = "none";
+
+        document.getElementById("sr-ticker-line").innerHTML =
+          `<span style="font-weight:800;color:#111827">${esc(ticker)}</span>`;
+        document.getElementById("sr-pills").innerHTML   = "";
+        document.getElementById("sr-updated").textContent = "";
+        document.getElementById("sr-full-link").href   = `/ai-overview/${encodeURIComponent(ticker)}`;
+
+        document.getElementById("sr-backdrop").classList.add("sr-open");
+        document.getElementById("sr-panel").classList.add("sr-open");
+        document.body.style.overflow = "hidden";
+
+        fetch(`/api/sitrep/${encodeURIComponent(ticker)}`)
+          .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+          .then(d => {
+            state.data = d;
+            srRenderHeader(d);
+            loading.style.display = "none";
+            srRenderContent();
+            content.style.display = "";
+          })
+          .catch(e => {
+            loading.style.display = "none";
+            errEl.textContent     = `Error: ${e.message}`;
+            errEl.style.display   = "";
+          });
+      }
+
+      function srRenderHeader(d) {
+        document.getElementById("sr-ticker-line").innerHTML =
+          `<span style="font-weight:800;color:#111827">${esc(d.ticker || "")}</span>` +
+          (d.company_name ? `<span class="sr-ticker-company">${esc(d.company_name)}</span>` : "");
+
+        let ph = "";
+        if (d.primary_lens) ph += `<span class="sr-pill sr-pill-lens">${esc(d.primary_lens)}</span>`;
+        (d.lenses || []).filter(l => l !== d.primary_lens).forEach(l => {
+          ph += `<span class="sr-pill sr-pill-lens2">${esc(l)}</span>`;
+        });
+        if (d.category)    ph += `<span class="sr-pill sr-pill-cat">${esc(d.category)}</span>`;
+        if (d.subcategory) ph += `<span class="sr-pill sr-pill-subcat">${esc(d.subcategory)}</span>`;
+        document.getElementById("sr-pills").innerHTML = ph;
+        document.getElementById("sr-updated").textContent =
+          d.last_updated ? `Updated ${d.last_updated}` : "";
+      }
+
+      function srListHtml(items) {
+        let h = `<ul class="sr-list">`;
+        for (const item of items) {
+          if (typeof item === "string") {
+            h += `<li>${esc(item)}</li>`;
+          } else {
+            const title = item.label || item.title || item.name || item.component || "";
+            const body  = item.text  || item.body  || item.detail || item.description || "";
+            h += `<li>`;
+            if (title) h += `<strong>${esc(title)}${body ? " — " : ""}</strong>`;
+            if (body)  h += esc(body);
+            h += `</li>`;
+          }
+        }
+        return h + `</ul>`;
+      }
+
+      function srWinnersHtml(winners) {
+        let h = `<div class="sr-winners-grid">`;
+        for (const w of winners) {
+          const t = w.ticker || String(w);
+          const r = w.rationale || w.text || "";
+          h += `<div class="sr-winner-card">`;
+          h += `<div class="sr-winner-ticker">${esc(t)}</div>`;
+          if (r) h += `<div class="sr-winner-rationale">${esc(r)}</div>`;
+          h += `</div>`;
+        }
+        return h + `</div>`;
+      }
+
+      function srRenderContent() {
+        const d = state.data;
+        if (!d) return;
+        let h = "";
+        if (d.what_they_do) {
+          h += `<div class="sr-section-title">What They Do</div>`;
+          h += `<p class="sr-what-they-do">${esc(d.what_they_do)}</p>`;
+        }
+        if (!state.compact) {
+          if (d.hidden_angles  && d.hidden_angles.length) {
+            h += `<div class="sr-section-title">AI Exposure &amp; Hidden Angles</div>`;
+            h += srListHtml(d.hidden_angles);
+          }
+          if (d.kill_components && d.kill_components.length) {
+            h += `<div class="sr-section-title">What Could Kill This</div>`;
+            h += srListHtml(d.kill_components);
+          }
+          if (d.winners && d.winners.length) {
+            h += `<div class="sr-section-title">Who Wins If This Fails</div>`;
+            h += srWinnersHtml(d.winners);
+          }
+        }
+        h += `<button class="sr-toggle-btn" onclick="window._srToggle()">`;
+        h += state.compact ? "Show full research ▾" : "Show compact view ▴";
+        h += `</button>`;
+        document.getElementById("sr-content").innerHTML = h;
+      }
+
+      // Expose toggle via window so inline onclick can reach it
+      window._srToggle = function() {
+        state.compact = !state.compact;
+        srRenderContent();
+      };
+
+      // Expose srOpen globally so the banner IIFE can call it
+      window.srOpen = srOpen;
+
+      // Close handlers
+      document.getElementById("sr-close")
+        .addEventListener("click", srClose);
+      document.getElementById("sr-backdrop")
+        .addEventListener("click", srClose);
+
+      // Escape: close panel only when the convergence modal is not open
+      document.addEventListener("keydown", e => {
+        if (e.key !== "Escape") return;
+        if (document.getElementById("wb-modal-overlay").classList.contains("wb-open")) return;
+        if (document.getElementById("sr-panel").classList.contains("sr-open")) srClose();
+      });
+    })();
+
     // ── Convergence Winners Banner (Layers 1-3) ──────────────────────────────
     (async function loadWinnerBanner() {
 
@@ -974,7 +1254,9 @@
                       + `<span class="wb-modal-source-company">${esc(s.source_company || "")}</span>`
                       + `</div>`;
             if (s.rationale) {
-              bodyHtml += `<div class="wb-modal-rationale">"${esc(s.rationale)}"</div>`;
+              bodyHtml += `<div class="wb-modal-rationale">"${esc(s.rationale)}"`;
+              bodyHtml += ` <a class="sr-read-link" href="#" data-source-ticker="${esc(s.source_ticker)}">Read full sitrep →</a>`;
+              bodyHtml += `</div>`;
             }
             bodyHtml += `</div>`;  // .wb-modal-source
           }
@@ -1010,6 +1292,20 @@
       });
       document.addEventListener("keydown", e => {
         if (e.key === "Escape" && modalOverlay.classList.contains("wb-open")) closeModal();
+      });
+
+      // ── "Read full sitrep" delegated handler ─────────────────────────────
+      // Fires on any .sr-read-link click inside the modal body.
+      // Closes the convergence modal and opens the research panel for that source.
+      modalBody.addEventListener("click", e => {
+        const link = e.target.closest(".sr-read-link");
+        if (!link) return;
+        e.preventDefault();
+        const ticker = link.dataset.sourceTicker;
+        if (ticker && window.srOpen) {
+          closeModal();
+          window.srOpen(ticker);
+        }
       });
 
       // ── Build chip ────────────────────────────────────────────────────────
