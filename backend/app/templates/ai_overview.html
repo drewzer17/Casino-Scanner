@@ -19,6 +19,10 @@
       --red:       #e0525e;
       --yellow:    #fbbf24;
       --row-hover: #1e1e28;
+      /* pill colors matching scanner */
+      --pill-active-bg:     #ffcc33;
+      --pill-active-border: #ffcc33;
+      --pill-active-text:   #111;
     }
 
     body {
@@ -80,19 +84,18 @@
       font-weight: 600;
     }
 
-    /* ── Controls bar ────────────────────────────── */
-    .controls-bar {
+    /* ── Search bar ──────────────────────────────── */
+    .search-bar {
       display: flex;
       align-items: center;
       gap: 12px;
       padding: 14px 28px;
       border-bottom: 1px solid var(--border);
-      flex-wrap: wrap;
     }
     .search-input {
       flex: 1;
       min-width: 220px;
-      max-width: 360px;
+      max-width: 400px;
       padding: 8px 14px;
       background: var(--surface);
       border: 1px solid var(--border);
@@ -104,32 +107,88 @@
     }
     .search-input::placeholder { color: var(--muted); }
     .search-input:focus { border-color: var(--accent); }
-    .filter-group {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .filter-group label {
-      font-size: 12px;
-      color: var(--muted);
-      white-space: nowrap;
-    }
-    .filter-select {
-      padding: 7px 12px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text);
-      font-size: 13px;
-      outline: none;
-      cursor: pointer;
-    }
-    .filter-select:focus { border-color: var(--accent); }
     .result-count {
       margin-left: auto;
       font-size: 12px;
       color: var(--muted);
       white-space: nowrap;
+    }
+
+    /* ── Pill filter section ─────────────────────── */
+    .pill-section {
+      padding: 10px 28px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .pill-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      flex-wrap: nowrap;
+    }
+
+    .pill-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+      white-space: nowrap;
+      margin-right: 2px;
+      padding-top: 5px; /* align with pill text */
+      flex-shrink: 0;
+    }
+
+    .pill-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    /* Matches scanner .filter-toggle-btn exactly */
+    .pill-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+      padding: 3px 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      transition: all 0.1s;
+      line-height: 1.4;
+    }
+    .pill-btn:hover {
+      border-color: var(--muted);
+      color: var(--text);
+    }
+    .pill-btn.active {
+      background: var(--pill-active-bg);
+      border-color: var(--pill-active-border);
+      color: var(--pill-active-text);
+    }
+
+    /* Matches scanner .filter-count exactly */
+    .pill-count {
+      background: rgba(255,255,255,0.12);
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      min-width: 18px;
+      text-align: center;
+      line-height: 1.4;
+    }
+    .pill-btn.active .pill-count {
+      background: rgba(0,0,0,0.15);
     }
 
     /* ── Table ───────────────────────────────────── */
@@ -185,15 +244,15 @@
       letter-spacing: 0.02em;
       width: 80px;
     }
-    .td-company { color: var(--text); }
+    .td-company  { color: var(--text); }
     .td-category { color: var(--text); }
-    .td-subcat  { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
-    .td-price   { color: var(--text); font-family: "Courier New", Courier, monospace; white-space: nowrap; }
-    .td-at-add  { color: var(--muted); font-size: 12px; white-space: nowrap; }
-    .td-date    { display: block; font-size: 10px; color: var(--muted); opacity: 0.7; margin-top: 1px; }
-    .td-chg.pos { color: var(--green); font-weight: 600; }
-    .td-chg.neg { color: var(--red);   font-weight: 600; }
-    .td-chg.neu { color: var(--muted); }
+    .td-subcat   { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .td-price    { color: var(--text); font-family: "Courier New", Courier, monospace; white-space: nowrap; }
+    .td-at-add   { color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .td-date     { display: block; font-size: 10px; color: var(--muted); opacity: 0.7; margin-top: 1px; }
+    .td-chg.pos  { color: var(--green); font-weight: 600; }
+    .td-chg.neg  { color: var(--red);   font-weight: 600; }
+    .td-chg.neu  { color: var(--muted); }
 
     /* Research dot */
     .rdot {
@@ -250,28 +309,25 @@
     </div>
   </div>
 
-  <div class="controls-bar">
+  <!-- ── Search bar ────────────────────────────────── -->
+  <div class="search-bar">
     <input id="search" class="search-input" type="text"
       placeholder="Filter by ticker or company…" autocomplete="off" spellcheck="false" />
-
-    <div class="filter-group">
-      <label for="category-select">Category:</label>
-      <select id="category-select" class="filter-select">
-        <option value="">All Categories</option>
-      </select>
-    </div>
-
-    <div class="filter-group">
-      <label for="source-select">Source:</label>
-      <select id="source-select" class="filter-select">
-        <option value="">All Sources</option>
-        <option value="Combined v2">Combined v2</option>
-        <option value="COMPLETE">COMPLETE</option>
-        <option value="Final Supplement">Final Supplement</option>
-      </select>
-    </div>
-
     <span class="result-count" id="result-count"></span>
+  </div>
+
+  <!-- ── Pill filters ──────────────────────────────── -->
+  <div class="pill-section">
+    <!-- Category row: always visible -->
+    <div class="pill-row">
+      <span class="pill-label">Category</span>
+      <div class="pill-group" id="cat-pills"></div>
+    </div>
+    <!-- Subcategory row: shown only when a category is active -->
+    <div class="pill-row" id="subcat-row" style="display:none">
+      <span class="pill-label">Subcategory</span>
+      <div class="pill-group" id="subcat-pills"></div>
+    </div>
   </div>
 
   <div class="error-banner" id="error-banner"></div>
@@ -298,34 +354,24 @@
   </div>
 
   <script>
+    // ── State ────────────────────────────────────────────────────────────────
     let allTickers   = [];
     let sortCol      = "ticker";
     let sortDir      = 1;
     let filterText   = "";
-    let filterSource = "";
     let filterCat    = "";
+    let filterSubcat = "";
 
     const TOTAL = 181;
 
+    // ── Load data ────────────────────────────────────────────────────────────
     async function loadTickers() {
       try {
         const res = await fetch("/api/ai-overview/tickers");
         if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
         allTickers = data.tickers || data;
-
-        // Populate category dropdown from live data
-        const cats = [...new Set(
-          allTickers.map(t => t.category).filter(Boolean)
-        )].sort();
-        const sel = document.getElementById("category-select");
-        cats.forEach(c => {
-          const opt = document.createElement("option");
-          opt.value = c;
-          opt.textContent = c;
-          sel.appendChild(opt);
-        });
-
+        buildCategoryPills();
         render();
       } catch (err) {
         const banner = document.getElementById("error-banner");
@@ -336,8 +382,142 @@
       }
     }
 
+    // ── Category counts (static — based on full dataset) ────────────────────
+    function catCounts() {
+      const m = {};
+      allTickers.forEach(t => {
+        const c = t.category || "";
+        if (c) m[c] = (m[c] || 0) + 1;
+      });
+      return m;
+    }
+
+    function subcatCounts(cat) {
+      const m = {};
+      allTickers
+        .filter(t => t.category === cat)
+        .forEach(t => {
+          const s = t.subcategory || "";
+          if (s) m[s] = (m[s] || 0) + 1;
+        });
+      return m;
+    }
+
+    // ── Build category pills (once after data loads) ─────────────────────────
+    function buildCategoryPills() {
+      const counts = catCounts();
+      // Sort categories: "01.", "02.", ..., "18.", "99." last
+      const cats = Object.keys(counts).sort((a, b) => {
+        const na = parseInt(a) || 999;
+        const nb = parseInt(b) || 999;
+        return na - nb;
+      });
+
+      const container = document.getElementById("cat-pills");
+      container.innerHTML = "";
+
+      // "All" pill
+      const allBtn = makePill("All", allTickers.length, true, () => {
+        filterCat = "";
+        filterSubcat = "";
+        refreshCatPills();
+        refreshSubcatRow();
+        render();
+      });
+      allBtn.id = "cat-pill-all";
+      container.appendChild(allBtn);
+
+      cats.forEach(cat => {
+        const btn = makePill(cat, counts[cat], false, () => {
+          if (filterCat === cat) {
+            // Toggle off → back to All
+            filterCat = "";
+            filterSubcat = "";
+            refreshCatPills();
+            refreshSubcatRow();
+          } else {
+            filterCat = cat;
+            filterSubcat = "";
+            refreshCatPills();
+            refreshSubcatRow();
+          }
+          render();
+        });
+        btn.dataset.cat = cat;
+        container.appendChild(btn);
+      });
+    }
+
+    function refreshCatPills() {
+      document.querySelectorAll("#cat-pills .pill-btn").forEach(btn => {
+        const isAll = btn.id === "cat-pill-all";
+        const active = isAll ? filterCat === "" : btn.dataset.cat === filterCat;
+        btn.classList.toggle("active", active);
+      });
+    }
+
+    // ── Build / refresh subcategory pill row ─────────────────────────────────
+    function refreshSubcatRow() {
+      const row = document.getElementById("subcat-row");
+      if (!filterCat) {
+        row.style.display = "none";
+        return;
+      }
+      row.style.display = "";
+
+      const counts = subcatCounts(filterCat);
+      const subcats = Object.keys(counts).sort();
+      const container = document.getElementById("subcat-pills");
+      container.innerHTML = "";
+
+      // "All" subcategory pill
+      const allBtn = makePill("All", Object.values(counts).reduce((a, b) => a + b, 0), true, () => {
+        filterSubcat = "";
+        refreshSubcatPills();
+        render();
+      });
+      allBtn.id = "subcat-pill-all";
+      container.appendChild(allBtn);
+
+      subcats.forEach(sub => {
+        const btn = makePill(sub, counts[sub], false, () => {
+          if (filterSubcat === sub) {
+            filterSubcat = "";
+          } else {
+            filterSubcat = sub;
+          }
+          refreshSubcatPills();
+          render();
+        });
+        btn.dataset.sub = sub;
+        container.appendChild(btn);
+      });
+
+      refreshSubcatPills();
+    }
+
+    function refreshSubcatPills() {
+      document.querySelectorAll("#subcat-pills .pill-btn").forEach(btn => {
+        const isAll = btn.id === "subcat-pill-all";
+        const active = isAll ? filterSubcat === "" : btn.dataset.sub === filterSubcat;
+        btn.classList.toggle("active", active);
+      });
+    }
+
+    // ── Pill factory ─────────────────────────────────────────────────────────
+    function makePill(label, count, isActive, onClick) {
+      const btn = document.createElement("button");
+      btn.className = "pill-btn" + (isActive ? " active" : "");
+      btn.innerHTML =
+        escHtml(label) +
+        '<span class="pill-count">' + count + '</span>';
+      btn.addEventListener("click", onClick);
+      return btn;
+    }
+
+    // ── Filter + sort ─────────────────────────────────────────────────────────
     function sortedFiltered() {
-      let rows = allTickers.map((t, i) => Object.assign({}, t, { idx: i + 1 }));
+      let rows = allTickers.map((t, i) => Object.assign({}, t, { _idx: i + 1 }));
 
       if (filterText) {
         const q = filterText.toLowerCase();
@@ -346,98 +526,36 @@
           (r.company_name || "").toLowerCase().includes(q)
         );
       }
-      if (filterSource) {
-        rows = rows.filter(r => r.source === filterSource);
-      }
       if (filterCat) {
         rows = rows.filter(r => r.category === filterCat);
       }
+      if (filterSubcat) {
+        rows = rows.filter(r => r.subcategory === filterSubcat);
+      }
 
       rows.sort((a, b) => {
-        let av = a[sortCol] != null ? a[sortCol] : null;
-        let bv = b[sortCol] != null ? b[sortCol] : null;
-
+        const av = a[sortCol] != null ? a[sortCol] : null;
+        const bv = b[sortCol] != null ? b[sortCol] : null;
         // Nulls always sort to the bottom regardless of direction
         if (av === null && bv === null) return 0;
         if (av === null) return 1;
         if (bv === null) return -1;
-
         if (typeof av === "number" && typeof bv === "number") return sortDir * (av - bv);
         return sortDir * String(av).localeCompare(String(bv), undefined, { numeric: true });
       });
       return rows;
     }
 
-    function sourceBadge(source) {
-      if (source === "Combined v2")
-        return '<span class="source-badge combined">Combined v2</span>';
-      if (source === "COMPLETE")
-        return '<span class="source-badge complete">COMPLETE</span>';
-      if (source === "Final Supplement")
-        return '<span class="source-badge supplement">Final Supplement</span>';
-      return '<span class="source-badge">' + (source || "") + '</span>';
-    }
-
-    function researchDot(sections_parsed) {
-      if (sections_parsed == null)
-        return '<span class="rdot rdot-gray" title="Sitrep not yet available"></span>';
-      if (sections_parsed === 7)
-        return '<span class="rdot rdot-green" title="7/7 sections"></span>';
-      return '<span class="rdot rdot-yellow" title="' + sections_parsed + '/7 sections"></span>';
-    }
-
-    function fmtPrice(v) {
-      if (v == null) return '<span style="color:var(--muted)">—</span>';
-      return "$" + Number(v).toFixed(2);
-    }
-
-    function fmtAtAdd(price, date) {
-      if (price == null) return '<span style="color:var(--muted)">—</span>';
-      let dateStr = "";
-      if (date) {
-        // date is "YYYY-MM-DD" — render as "May 2"
-        const parts = date.split("-");
-        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-        dateStr = '<span class="td-date">' +
-          d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
-          '</span>';
-      }
-      return "$" + Number(price).toFixed(2) + dateStr;
-    }
-
-    function fmtChangePct(v) {
-      if (v == null) return '<span class="td-chg neu">—</span>';
-      const cls = v > 0 ? "pos" : v < 0 ? "neg" : "neu";
-      const sign = v > 0 ? "+" : "";
-      return '<span class="td-chg ' + cls + '">' + sign + v.toFixed(1) + '%</span>';
-    }
-
-    function fmtCategory(cat, sub) {
-      if (!cat) return '<span style="color:var(--muted)">—</span>';
-      let html = escHtml(cat);
-      if (sub) html += '<span class="td-subcat">' + escHtml(sub) + '</span>';
-      return html;
-    }
-
-    function escHtml(s) {
-      return String(s)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-    }
-
+    // ── Render ───────────────────────────────────────────────────────────────
     function render() {
       const rows  = sortedFiltered();
       const tbody = document.getElementById("table-body");
-      const total = TOTAL;
 
-      // Badge: "181 tickers" or "X of 181 tickers" if any filter active
-      const filtered = rows.length < total;
+      const filtered = (filterText || filterCat || filterSubcat);
       document.getElementById("badge").textContent =
-        filtered ? rows.length + " of " + total + " Tickers" : total + " Tickers";
+        filtered ? rows.length + " of " + TOTAL + " Tickers" : TOTAL + " Tickers";
       document.getElementById("result-count").textContent =
-        rows.length + (filtered ? " of " + total : "") + " tickers";
+        rows.length + (filtered ? " of " + TOTAL : "") + " tickers";
 
       if (rows.length === 0) {
         tbody.innerHTML = '<tr class="state-row"><td colspan="9">No tickers match your filter.</td></tr>';
@@ -459,6 +577,65 @@
       ).join("");
     }
 
+    // ── Formatters ───────────────────────────────────────────────────────────
+    function escHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function sourceBadge(source) {
+      if (source === "Combined v2")
+        return '<span class="source-badge combined">Combined v2</span>';
+      if (source === "COMPLETE")
+        return '<span class="source-badge complete">COMPLETE</span>';
+      if (source === "Final Supplement")
+        return '<span class="source-badge supplement">Final Supplement</span>';
+      return '<span class="source-badge">' + escHtml(source || "") + '</span>';
+    }
+
+    function researchDot(sections_parsed) {
+      if (sections_parsed == null)
+        return '<span class="rdot rdot-gray" title="Sitrep not yet available"></span>';
+      if (sections_parsed === 7)
+        return '<span class="rdot rdot-green" title="7/7 sections"></span>';
+      return '<span class="rdot rdot-yellow" title="' + sections_parsed + '/7 sections"></span>';
+    }
+
+    function fmtPrice(v) {
+      if (v == null) return '<span style="color:var(--muted)">—</span>';
+      return "$" + Number(v).toFixed(2);
+    }
+
+    function fmtAtAdd(price, date) {
+      if (price == null) return '<span style="color:var(--muted)">—</span>';
+      let dateStr = "";
+      if (date) {
+        const parts = date.split("-");
+        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        dateStr = '<span class="td-date">' +
+          d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
+          '</span>';
+      }
+      return "$" + Number(price).toFixed(2) + dateStr;
+    }
+
+    function fmtChangePct(v) {
+      if (v == null) return '<span class="td-chg neu">—</span>';
+      const cls = v > 0 ? "pos" : v < 0 ? "neg" : "neu";
+      const sign = v > 0 ? "+" : "";
+      return '<span class="td-chg ' + cls + '">' + sign + Number(v).toFixed(1) + '%</span>';
+    }
+
+    function fmtCategory(cat, sub) {
+      if (!cat) return '<span style="color:var(--muted)">—</span>';
+      let html = escHtml(cat);
+      if (sub) html += '<span class="td-subcat">' + escHtml(sub) + '</span>';
+      return html;
+    }
+
     // ── Column sort ──────────────────────────────────────────────────────────
     document.querySelectorAll("th[data-col]").forEach(th => {
       th.addEventListener("click", () => {
@@ -475,17 +652,9 @@
       });
     });
 
-    // ── Filters ──────────────────────────────────────────────────────────────
+    // ── Search ───────────────────────────────────────────────────────────────
     document.getElementById("search").addEventListener("input", e => {
       filterText = e.target.value.trim();
-      render();
-    });
-    document.getElementById("source-select").addEventListener("change", e => {
-      filterSource = e.target.value;
-      render();
-    });
-    document.getElementById("category-select").addEventListener("change", e => {
-      filterCat = e.target.value;
       render();
     });
 
