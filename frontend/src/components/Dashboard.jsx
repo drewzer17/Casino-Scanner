@@ -690,7 +690,7 @@ export default function Dashboard() {
                 <button className="search-clear" onClick={() => setSearchQuery("")}>✕</button>
               )}
             </div>
-            <a href="/ai-overview" className="ai-overview-btn" target="_blank" rel="noreferrer">
+            <a href="/ai-overview" className="ai-overview-btn">
               AI Overview
             </a>
           </div>
