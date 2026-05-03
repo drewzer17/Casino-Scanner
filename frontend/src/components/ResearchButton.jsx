@@ -9,6 +9,9 @@ export default function ResearchButton({ ticker, hasSitrep }) {
   return (
     <a
       href={`/ai-overview/${ticker}`}
+      onClick={() => {
+        sessionStorage.setItem("sitrep_return_to", window.location.href);
+      }}
       style={{
         display: "inline-flex",
         alignItems: "center",

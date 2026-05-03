@@ -346,7 +346,7 @@
 <body>
 
   <div class="page-header">
-    <a class="back-btn" href="/ai-overview">← Back to AI Overview</a>
+    <a id="sitrep-back-btn" class="back-btn" href="/ai-overview">← Back to AI Overview</a>
     <span class="last-updated" id="last-updated"></span>
   </div>
 
@@ -458,7 +458,52 @@
   </div>
 
   <script>
-    // Parse ticker from URL path: /ai-overview/TICKER
+    // ── Smart back-button ────────────────────────────────────────────────────
+    // Runs immediately (before async fetch) so the button is correct on load.
+    (function () {
+      var btn      = document.getElementById("sitrep-back-btn");
+      var returnTo = sessionStorage.getItem("sitrep_return_to");
+      if (!btn) return;
+
+      function backLabel(url) {
+        try {
+          // Accepts both absolute URLs and relative paths
+          var path = new URL(url, window.location.origin).pathname;
+          if (path === "/" || path === "") return "← Back to Scanner";
+          if (/^\/ai-overview\/?$/.test(path))  return "← Back to AI Overview";
+          return "← Back";
+        } catch (e) {
+          return "← Back to AI Overview";
+        }
+      }
+
+      if (returnTo) {
+        btn.href        = returnTo;
+        btn.textContent = backLabel(returnTo);
+      } else {
+        btn.textContent = "← Back to AI Overview";
+      }
+
+      btn.addEventListener("click", function (e) {
+        var rt = sessionStorage.getItem("sitrep_return_to");
+        sessionStorage.removeItem("sitrep_return_to");   // always clear on use
+
+        if (rt && document.referrer) {
+          // Normalise both to absolute URL for comparison
+          var rtAbs  = new URL(rt,  window.location.origin).href;
+          var refAbs = new URL(document.referrer, window.location.origin).href;
+          if (rtAbs === refAbs) {
+            // User came from that page this session → history.back() restores
+            // scroll position and SPA state via the browser's bfcache.
+            e.preventDefault();
+            history.back();
+          }
+          // else: fall through → let the <a href> navigate to the stored URL
+        }
+      });
+    })();
+
+    // ── Parse ticker from URL path: /ai-overview/TICKER ─────────────────────
     const pathParts = window.location.pathname.split("/").filter(Boolean);
     const ticker = pathParts[pathParts.length - 1].toUpperCase();
 

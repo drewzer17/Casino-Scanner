@@ -11,7 +11,10 @@ export default function ResearchAsterisk({ ticker, hasSitrep }) {
     <a
       href={`/ai-overview/${ticker}`}
       title="View AI research"
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        sessionStorage.setItem("sitrep_return_to", window.location.href);
+      }}
       style={{
         color: "#8b5cf6",
         fontWeight: "bold",

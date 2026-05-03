@@ -769,7 +769,7 @@
       }
 
       tbody.innerHTML = rows.map((r, i) =>
-        '<tr onclick="window.location=\'/ai-overview/' + escHtml(r.ticker) + '\'">' +
+        '<tr onclick="navigateToDetail(\'' + escHtml(r.ticker) + '\')">' +
           '<td class="td-num">' + (i + 1) + '</td>' +
           '<td class="td-dot">' + researchDot(r.sections_parsed) + '</td>' +
           '<td class="td-ticker">' + escHtml(r.ticker) + '</td>' +
@@ -863,6 +863,13 @@
       filterText = e.target.value.trim();
       render();
     });
+
+    // ── Smart back navigation ────────────────────────────────────────────────
+    // Store the current URL so the sitrep detail page can route back here.
+    function navigateToDetail(ticker) {
+      sessionStorage.setItem("sitrep_return_to", window.location.href);
+      window.location.href = "/ai-overview/" + ticker;
+    }
 
     loadTickers();
   </script>
