@@ -1,920 +1,1377 @@
 {
   "metadata": {
+    "schema_version": "2.0",
     "total_tickers": 181,
-    "sources": {
-      "Combined v2": "AI_Buildout_Master_Combined_v2.pdf \u2014 77 names, full canonical depth, Parts 1A-4B",
-      "COMPLETE": "AI_Buildout_Sitreps_COMPLETE.pdf \u2014 93 names, batches 1-10",
-      "Final Supplement": "AI_Buildout_Final_Supplement_v2.pdf \u2014 7 names, Tier 1 + Tier 2 adds (CMI, CAT, D, SBGSY, ABB, FTV, GE)"
-    },
-    "merged_pdf": "AI_Buildout_Ultimate_Master_Final_177names.pdf \u2014 177 unique tickers, 381 pages",
+    "total_categories": 18,
+    "total_subcategories": 169,
     "generated": "May 2, 2026",
-    "purpose": "AI Research module ticker universe for Casino Scanner integration"
+    "purpose": "AI Buildout ticker universe for Casino Scanner /ai-overview integration. Each ticker has full canonical sitrep in AI_Buildout_Ultimate_Master_Final_177names.pdf (381 pages).",
+    "source_pdfs": {
+      "Combined v2": "AI_Buildout_Master_Combined_v2.pdf (77 names, pages 1-140)",
+      "COMPLETE": "AI_Buildout_Sitreps_COMPLETE.pdf (93 names, pages 141-366)",
+      "Final Supplement": "AI_Buildout_Final_Supplement_v2.pdf (7 names: CMI, CAT, D, SBGSY, ABB, FTV, GE, pages 367-381)"
+    },
+    "category_taxonomy_origin": "Casino Scanner build doc Section M (16 base categories) + SITREP build-out 17-layer expansion + Specialty Materials addition = 18 final categories"
   },
+  "categories": [
+    {
+      "id": "01",
+      "name": "01. GPUs & Accelerators",
+      "ticker_count": 4
+    },
+    {
+      "id": "02",
+      "name": "02. Custom AI Silicon",
+      "ticker_count": 16
+    },
+    {
+      "id": "03",
+      "name": "03. Memory & Storage",
+      "ticker_count": 6
+    },
+    {
+      "id": "04",
+      "name": "04. Semiconductor Equipment",
+      "ticker_count": 14
+    },
+    {
+      "id": "05",
+      "name": "05. Semiconductor Test & Inspection",
+      "ticker_count": 7
+    },
+    {
+      "id": "06",
+      "name": "06. Foundry & Advanced Packaging",
+      "ticker_count": 8
+    },
+    {
+      "id": "07",
+      "name": "07. Optical & Photonics",
+      "ticker_count": 8
+    },
+    {
+      "id": "08",
+      "name": "08. Networking & Switching",
+      "ticker_count": 4
+    },
+    {
+      "id": "09",
+      "name": "09. Data Center Construction & EPC",
+      "ticker_count": 23
+    },
+    {
+      "id": "10",
+      "name": "10. Cooling & Thermal",
+      "ticker_count": 13
+    },
+    {
+      "id": "11",
+      "name": "11. Power Infrastructure & Equipment",
+      "ticker_count": 17
+    },
+    {
+      "id": "12",
+      "name": "12. Power Generation & Nuclear",
+      "ticker_count": 15
+    },
+    {
+      "id": "13",
+      "name": "13. Bitcoin Miners (Repurposed AI Compute)",
+      "ticker_count": 9
+    },
+    {
+      "id": "14",
+      "name": "14. Data Center REITs & Colocation",
+      "ticker_count": 5
+    },
+    {
+      "id": "15",
+      "name": "15. Neoclouds (AI Compute Pure-Play)",
+      "ticker_count": 2
+    },
+    {
+      "id": "16",
+      "name": "16. Hyperscalers & Mega-Cap Cloud",
+      "ticker_count": 8
+    },
+    {
+      "id": "17",
+      "name": "17. AI Software & Cybersecurity",
+      "ticker_count": 14
+    },
+    {
+      "id": "18",
+      "name": "18. Specialty Materials & Rare Earths",
+      "ticker_count": 4
+    }
+  ],
   "tickers": [
     {
       "ticker": "AAOI",
       "company_name": "Applied Optoelectronics",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "07. Optical & Photonics",
+      "subcategory": "Optical Transceivers (Hyperscale)"
     },
     {
       "ticker": "AAON",
       "company_name": "AAON Inc.",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "10. Cooling & Thermal",
+      "subcategory": "Semi-Custom HVAC"
     },
     {
       "ticker": "ABB",
       "company_name": "ABB Ltd",
-      "source": "Final Supplement"
+      "source": "Final Supplement",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "DC Electrification (Switchgear)"
     },
     {
       "ticker": "ACLS",
       "company_name": "Axcelis Technologies",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "04. Semiconductor Equipment",
+      "subcategory": "Ion Implantation"
     },
     {
       "ticker": "ADI",
       "company_name": "Analog Devices",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "02. Custom AI Silicon",
+      "subcategory": "Analog & Mixed Signal (AI Server Power)"
     },
     {
       "ticker": "AEHR",
       "company_name": "AEHR Test Systems",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "05. Semiconductor Test & Inspection",
+      "subcategory": "Wafer-Level Burn-In Test"
     },
     {
       "ticker": "AGX",
       "company_name": "Argan Inc.",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Power Plant EPC (DC-Adjacent)"
     },
     {
       "ticker": "AKAM",
       "company_name": "Akamai Technologies",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "17. AI Software & Cybersecurity",
+      "subcategory": "CDN + Edge Security"
     },
     {
       "ticker": "ALAB",
       "company_name": "Astera Labs",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "02. Custom AI Silicon",
+      "subcategory": "AI Connectivity (Retimers, PCIe/CXL)"
     },
     {
       "ticker": "AMAT",
       "company_name": "Applied Materials",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "04. Semiconductor Equipment",
+      "subcategory": "Diversified Semicap (Deposition/Etch/CMP)"
     },
     {
       "ticker": "AMBA",
       "company_name": "Ambarella",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "02. Custom AI Silicon",
+      "subcategory": "Edge AI Vision Processor"
     },
     {
       "ticker": "AMD",
       "company_name": "Advanced Micro Devices",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "01. GPUs & Accelerators",
+      "subcategory": "Merchant GPU + CPU"
     },
     {
       "ticker": "AMKR",
       "company_name": "Amkor Technology",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "06. Foundry & Advanced Packaging",
+      "subcategory": "OSAT (Outsourced Assembly & Test)"
     },
     {
       "ticker": "AMT",
       "company_name": "American Tower",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "14. Data Center REITs & Colocation",
+      "subcategory": "Tower REIT + DC (CoreSite)"
     },
     {
       "ticker": "AMZN",
       "company_name": "Amazon.com",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "16. Hyperscalers & Mega-Cap Cloud",
+      "subcategory": "Hyperscaler (AWS + Anthropic)"
     },
     {
       "ticker": "ANET",
       "company_name": "Arista Networks",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "08. Networking & Switching",
+      "subcategory": "Hyperscale Switching"
     },
     {
       "ticker": "APD",
       "company_name": "Air Products and Chemicals",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Industrial Gas (Helium, Hydrogen)"
     },
     {
       "ticker": "APH",
       "company_name": "Amphenol",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "08. Networking & Switching",
+      "subcategory": "Connectors & Interconnect"
     },
     {
       "ticker": "APLD",
       "company_name": "Applied Digital",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "13. Bitcoin Miners (Repurposed AI Compute)",
+      "subcategory": "AI Compute Hosting (Pivoted)"
     },
     {
       "ticker": "ARM",
       "company_name": "ARM Holdings",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "01. GPUs & Accelerators",
+      "subcategory": "CPU IP Licensing"
     },
     {
       "ticker": "ASML",
       "company_name": "ASML Holding",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "04. Semiconductor Equipment",
+      "subcategory": "EUV Lithography Monopoly"
     },
     {
       "ticker": "ASX",
       "company_name": "ASE Technology Holding",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "06. Foundry & Advanced Packaging",
+      "subcategory": "OSAT (Advanced Packaging)"
     },
     {
       "ticker": "AVGO",
       "company_name": "Broadcom",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "02. Custom AI Silicon",
+      "subcategory": "Hyperscaler Custom Silicon (TPU, MTIA, OpenAI)"
     },
     {
       "ticker": "AZZ",
       "company_name": "AZZ Inc.",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "Galvanizing + Electrical Steel"
     },
     {
       "ticker": "BABA",
       "company_name": "Alibaba Group",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "16. Hyperscalers & Mega-Cap Cloud",
+      "subcategory": "Hyperscaler (China)"
     },
     {
       "ticker": "BE",
       "company_name": "Bloom Energy",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Fuel Cell (DC Prime Power)"
     },
     {
       "ticker": "BHE",
       "company_name": "Benchmark Electronics",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Contract Manufacturing (Specialty)"
     },
     {
       "ticker": "BIDU",
       "company_name": "Baidu",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "16. Hyperscalers & Mega-Cap Cloud",
+      "subcategory": "Hyperscaler (China + Ernie)"
     },
     {
       "ticker": "BITF",
       "company_name": "Bitfarms",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "13. Bitcoin Miners (Repurposed AI Compute)",
+      "subcategory": "Bitcoin Mining"
     },
     {
       "ticker": "BKR",
       "company_name": "Baker Hughes",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "LNG Equipment + Industrial Gas"
     },
     {
       "ticker": "BTDR",
       "company_name": "Bitdeer Technologies",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "13. Bitcoin Miners (Repurposed AI Compute)",
+      "subcategory": "Bitcoin Mining + ASIC Design"
     },
     {
       "ticker": "BWXT",
       "company_name": "BWX Technologies",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Nuclear Components + SMR"
     },
     {
       "ticker": "CAMT",
       "company_name": "Camtek",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "05. Semiconductor Test & Inspection",
+      "subcategory": "Advanced Packaging Inspection"
     },
     {
       "ticker": "CARR",
       "company_name": "Carrier Global",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "10. Cooling & Thermal",
+      "subcategory": "Commercial HVAC"
     },
     {
       "ticker": "CAT",
       "company_name": "Caterpillar Inc.",
-      "source": "Final Supplement"
+      "source": "Final Supplement",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "Hyperscaler Backup Power + Construction Equipment"
     },
     {
       "ticker": "CCJ",
       "company_name": "Cameco",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Uranium Mining (Largest)"
     },
     {
       "ticker": "CDNS",
       "company_name": "Cadence Design Systems",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "06. Foundry & Advanced Packaging",
+      "subcategory": "EDA Software (Chip Design Tools)"
     },
     {
       "ticker": "CEG",
       "company_name": "Constellation Energy",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Nuclear Operator (Largest US)"
     },
     {
       "ticker": "CFLT",
       "company_name": "Confluent",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "17. AI Software & Cybersecurity",
+      "subcategory": "Streaming Data (Kafka)"
     },
     {
       "ticker": "CIEN",
       "company_name": "Ciena Corporation",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "07. Optical & Photonics",
+      "subcategory": "Long-Haul Optical Transport (DCI)"
     },
     {
       "ticker": "CIFR",
       "company_name": "Cipher Digital",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "13. Bitcoin Miners (Repurposed AI Compute)",
+      "subcategory": "Bitcoin + Power Site Development"
     },
     {
       "ticker": "CLS",
       "company_name": "Celestica",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Contract Manufacturing (AI Servers)"
     },
     {
       "ticker": "CMI",
       "company_name": "Cummins Inc.",
-      "source": "Final Supplement"
+      "source": "Final Supplement",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "Hyperscaler Backup Power (Diesel + Natural Gas)"
     },
     {
       "ticker": "COHR",
       "company_name": "Coherent Corp",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "07. Optical & Photonics",
+      "subcategory": "Optical Transceivers + Defense Lasers"
     },
     {
       "ticker": "CORZ",
       "company_name": "Core Scientific",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "13. Bitcoin Miners (Repurposed AI Compute)",
+      "subcategory": "Bitcoin + AI Compute Hosting"
     },
     {
       "ticker": "CRDO",
       "company_name": "Credo Technology",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "02. Custom AI Silicon",
+      "subcategory": "AI Connectivity (Active Electrical Cables)"
     },
     {
       "ticker": "CRWD",
       "company_name": "CrowdStrike",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "17. AI Software & Cybersecurity",
+      "subcategory": "Endpoint Security"
     },
     {
       "ticker": "CRWV",
       "company_name": "CoreWeave",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "15. Neoclouds (AI Compute Pure-Play)",
+      "subcategory": "GPU Cloud (Largest, Highest-Leverage)"
     },
     {
       "ticker": "CSCO",
       "company_name": "Cisco Systems",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "08. Networking & Switching",
+      "subcategory": "Enterprise Networking"
     },
     {
       "ticker": "D",
       "company_name": "Dominion Energy",
-      "source": "Final Supplement"
+      "source": "Final Supplement",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Regulated Utility (Northern Virginia DC Alley)"
     },
     {
       "ticker": "DBRG",
       "company_name": "DigitalBridge Group",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "14. Data Center REITs & Colocation",
+      "subcategory": "Digital Infrastructure Asset Manager"
     },
     {
       "ticker": "DD",
       "company_name": "DuPont",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "04. Semiconductor Equipment",
+      "subcategory": "Specialty Chemicals (CMP/Photoresist)"
     },
     {
       "ticker": "DDOG",
       "company_name": "Datadog",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "17. AI Software & Cybersecurity",
+      "subcategory": "Observability & Monitoring"
     },
     {
       "ticker": "DELL",
       "company_name": "Dell Technologies",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Server OEM (AI-Optimized)"
     },
     {
       "ticker": "DLR",
       "company_name": "Digital Realty",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "14. Data Center REITs & Colocation",
+      "subcategory": "DC REIT (Hyperscale + Colo)"
     },
     {
       "ticker": "DOV",
       "company_name": "Dover Corporation",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "10. Cooling & Thermal",
+      "subcategory": "Diversified Industrial Cooling"
     },
     {
       "ticker": "DY",
       "company_name": "Dycom Industries",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Specialty Infrastructure (Fiber/Utility)"
     },
     {
       "ticker": "ECL",
       "company_name": "Ecolab",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "10. Cooling & Thermal",
+      "subcategory": "Industrial Water Treatment"
     },
     {
       "ticker": "EME",
       "company_name": "EMCOR Group",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Mechanical+Electrical Contracting"
     },
     {
       "ticker": "EMR",
       "company_name": "Emerson Electric",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "Industrial Automation + Process"
     },
     {
       "ticker": "ENTG",
       "company_name": "Entegris",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "04. Semiconductor Equipment",
+      "subcategory": "Specialty Materials & Filters"
     },
     {
       "ticker": "EQIX",
       "company_name": "Equinix",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "14. Data Center REITs & Colocation",
+      "subcategory": "DC REIT (Network-Dense Colo)"
     },
     {
       "ticker": "ESI",
       "company_name": "Element Solutions",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "04. Semiconductor Equipment",
+      "subcategory": "Specialty Chemicals (Packaging)"
     },
     {
       "ticker": "ESTC",
       "company_name": "Elastic",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "17. AI Software & Cybersecurity",
+      "subcategory": "Search + Observability"
     },
     {
       "ticker": "ETN",
       "company_name": "Eaton Corporation",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "Integrated Electrical (UPS, Switchgear)"
     },
     {
       "ticker": "FIX",
       "company_name": "Comfort Systems USA",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Mechanical+Electrical Contracting"
     },
     {
       "ticker": "FLEX",
       "company_name": "Flex Ltd.",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Contract Manufacturing (Diversified)"
     },
     {
       "ticker": "FLNC",
       "company_name": "Fluence Energy",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "Battery Storage Systems"
     },
     {
       "ticker": "FLR",
       "company_name": "Fluor",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Diversified EPC"
     },
     {
       "ticker": "FN",
       "company_name": "Fabrinet",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "07. Optical & Photonics",
+      "subcategory": "Contract Optical Manufacturing"
     },
     {
       "ticker": "FTNT",
       "company_name": "Fortinet",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "17. AI Software & Cybersecurity",
+      "subcategory": "Network Security (Firewall)"
     },
     {
       "ticker": "FTV",
       "company_name": "Fortive Corporation",
-      "source": "Final Supplement"
+      "source": "Final Supplement",
+      "category": "05. Semiconductor Test & Inspection",
+      "subcategory": "Electronic Test & Measurement (Tektronix)"
     },
     {
       "ticker": "GE",
       "company_name": "General Electric (GE Aerospace)",
-      "source": "Final Supplement"
+      "source": "Final Supplement",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "Aerospace + Aero-Derivative Turbines"
     },
     {
       "ticker": "GEV",
       "company_name": "GE Vernova",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "Gas Turbines + SMR + Grid Solutions"
     },
     {
       "ticker": "GFS",
       "company_name": "GlobalFoundries",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "06. Foundry & Advanced Packaging",
+      "subcategory": "Specialty Foundry"
     },
     {
       "ticker": "GILT",
       "company_name": "Gilat Satellite Networks",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "07. Optical & Photonics",
+      "subcategory": "Satellite Networking"
     },
     {
       "ticker": "GLW",
       "company_name": "Corning",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "07. Optical & Photonics",
+      "subcategory": "Specialty Glass + Optical Fiber"
     },
     {
       "ticker": "GLXY",
       "company_name": "Galaxy Digital",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "13. Bitcoin Miners (Repurposed AI Compute)",
+      "subcategory": "Crypto + AI Asset Management"
     },
     {
       "ticker": "GNRC",
       "company_name": "Generac Holdings",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "Backup Power (Residential + Small Commercial)"
     },
     {
       "ticker": "GOOGL",
       "company_name": "Alphabet",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "16. Hyperscalers & Mega-Cap Cloud",
+      "subcategory": "Hyperscaler (DeepMind + TPU)"
     },
     {
       "ticker": "GTES",
       "company_name": "Gates Industrial",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "10. Cooling & Thermal",
+      "subcategory": "Fluid Power Components"
     },
     {
       "ticker": "GTLB",
       "company_name": "GitLab",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "17. AI Software & Cybersecurity",
+      "subcategory": "DevOps Platform"
     },
     {
       "ticker": "GTLS",
       "company_name": "Chart Industries",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "10. Cooling & Thermal",
+      "subcategory": "Cryogenic Cooling (BKR-Owned)"
     },
     {
       "ticker": "HON",
       "company_name": "Honeywell",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "Diversified Industrial + Quantum"
     },
     {
       "ticker": "HPE",
       "company_name": "Hewlett Packard Enterprise",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Server OEM + Networking (Juniper)"
     },
     {
       "ticker": "HUBB",
       "company_name": "Hubbell Inc.",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "Electrical Products (Utility + DC)"
     },
     {
       "ticker": "HUT",
       "company_name": "Hut 8",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "13. Bitcoin Miners (Repurposed AI Compute)",
+      "subcategory": "Bitcoin + AI Compute Pivot"
     },
     {
       "ticker": "IBM",
       "company_name": "IBM",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "16. Hyperscalers & Mega-Cap Cloud",
+      "subcategory": "Enterprise Cloud + Quantum"
     },
     {
       "ticker": "ICHR",
       "company_name": "Ichor Holdings",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "04. Semiconductor Equipment",
+      "subcategory": "Fluid Subsystems (Semicap)"
     },
     {
       "ticker": "IESC",
       "company_name": "IES Holdings",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Industrial+Commercial Electrical"
     },
     {
       "ticker": "IMOS",
       "company_name": "ChipMOS Technologies",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "06. Foundry & Advanced Packaging",
+      "subcategory": "OSAT (Memory Packaging)"
     },
     {
       "ticker": "INTC",
       "company_name": "Intel",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "01. GPUs & Accelerators",
+      "subcategory": "Merchant CPU + Foundry Pivot"
     },
     {
       "ticker": "IPGP",
       "company_name": "IPG Photonics",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "07. Optical & Photonics",
+      "subcategory": "Industrial & Defense Fiber Lasers"
     },
     {
       "ticker": "IREN",
       "company_name": "IREN Limited",
-      "source": "Combined v2"
+      "source": "COMPLETE",
+      "category": "99. Uncategorized",
+      "subcategory": "Pending categorization"
     },
     {
       "ticker": "IRM",
       "company_name": "Iron Mountain",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "14. Data Center REITs & Colocation",
+      "subcategory": "Storage + Data Center REIT"
     },
     {
       "ticker": "J",
       "company_name": "Jacobs Solutions",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "99. Uncategorized",
+      "subcategory": "Pending categorization"
     },
     {
       "ticker": "JBL",
       "company_name": "Jabil",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Contract Manufacturing (Diversified)"
     },
     {
       "ticker": "JCI",
       "company_name": "Johnson Controls",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "10. Cooling & Thermal",
+      "subcategory": "Commercial HVAC + Building Controls"
     },
     {
       "ticker": "KBR",
       "company_name": "KBR Inc.",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Diversified EPC + Government"
     },
     {
       "ticker": "KEYS",
       "company_name": "Keysight Technologies",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "05. Semiconductor Test & Inspection",
+      "subcategory": "Electronic Test & Measurement"
     },
     {
       "ticker": "KLAC",
       "company_name": "KLA Corporation",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "04. Semiconductor Equipment",
+      "subcategory": "Process Control & Inspection (Fab)"
     },
     {
       "ticker": "KLIC",
       "company_name": "Kulicke & Soffa",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "04. Semiconductor Equipment",
+      "subcategory": "Bonding Equipment (Advanced Packaging)"
     },
     {
       "ticker": "LEU",
       "company_name": "Centrus Energy",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Uranium Enrichment (HALEU)"
     },
     {
       "ticker": "LII",
       "company_name": "Lennox International",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "10. Cooling & Thermal",
+      "subcategory": "Commercial HVAC (Specialty)"
     },
     {
       "ticker": "LIN",
       "company_name": "Linde",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Industrial Gas (Helium, Specialty)"
     },
     {
       "ticker": "LITE",
       "company_name": "Lumentum Holdings",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "07. Optical & Photonics",
+      "subcategory": "Optical Components (NVDA-Backed)"
     },
     {
       "ticker": "LMB",
       "company_name": "Limbach Holdings",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Mid-Market Mechanical"
     },
     {
       "ticker": "LRCX",
       "company_name": "Lam Research",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "04. Semiconductor Equipment",
+      "subcategory": "Etch & Deposition Equipment"
     },
     {
       "ticker": "LSCC",
       "company_name": "Lattice Semiconductor",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "02. Custom AI Silicon",
+      "subcategory": "Companion FPGA (Server Housekeeping)"
     },
     {
       "ticker": "MCHP",
       "company_name": "Microchip Technology",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "02. Custom AI Silicon",
+      "subcategory": "Microcontrollers + FPGA"
     },
     {
       "ticker": "MDB",
       "company_name": "MongoDB",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "17. AI Software & Cybersecurity",
+      "subcategory": "NoSQL Database (AI-Native)"
     },
     {
       "ticker": "META",
       "company_name": "Meta Platforms",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "16. Hyperscalers & Mega-Cap Cloud",
+      "subcategory": "Hyperscaler (Llama + MTIA)"
     },
     {
       "ticker": "MKSI",
       "company_name": "MKS Instruments",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "04. Semiconductor Equipment",
+      "subcategory": "Specialty Subsystems (Vacuum/Lasers)"
     },
     {
       "ticker": "MOD",
       "company_name": "Modine Manufacturing",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "10. Cooling & Thermal",
+      "subcategory": "Liquid Cooling (Coolant Distribution)"
     },
     {
       "ticker": "MP",
       "company_name": "MP Materials",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "18. Specialty Materials & Rare Earths",
+      "subcategory": "Rare Earth Mining + Magnets (US)"
     },
     {
       "ticker": "MPWR",
       "company_name": "Monolithic Power Systems",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "02. Custom AI Silicon",
+      "subcategory": "Power Management ICs (AI Server)"
     },
     {
       "ticker": "MRVL",
       "company_name": "Marvell Technology",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "02. Custom AI Silicon",
+      "subcategory": "Hyperscaler Custom Silicon (Trainium, Axion)"
     },
     {
       "ticker": "MSFT",
       "company_name": "Microsoft",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "16. Hyperscalers & Mega-Cap Cloud",
+      "subcategory": "Hyperscaler (OpenAI Partner)"
     },
     {
       "ticker": "MTRN",
       "company_name": "Materion",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "18. Specialty Materials & Rare Earths",
+      "subcategory": "Specialty Materials (Beryllium, Defense)"
     },
     {
       "ticker": "MTSI",
       "company_name": "MACOM Technology Solutions",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "02. Custom AI Silicon",
+      "subcategory": "RF & GaN Power Semiconductors"
     },
     {
       "ticker": "MTZ",
       "company_name": "MasTec",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Infrastructure Construction"
     },
     {
       "ticker": "MU",
       "company_name": "Micron Technology",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "03. Memory & Storage",
+      "subcategory": "DRAM + HBM + NAND"
     },
     {
       "ticker": "MYRG",
       "company_name": "MYR Group",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Electrical Construction"
     },
     {
       "ticker": "NBIS",
       "company_name": "Nebius Group",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "15. Neoclouds (AI Compute Pure-Play)",
+      "subcategory": "GPU Cloud (Meta-Backed)"
     },
     {
       "ticker": "NEE",
       "company_name": "NextEra Energy",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Renewable + Storage + Regulated Utility (FPL)"
     },
     {
       "ticker": "NET",
       "company_name": "Cloudflare",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "17. AI Software & Cybersecurity",
+      "subcategory": "CDN + Edge + Zero Trust"
     },
     {
       "ticker": "NTAP",
       "company_name": "NetApp",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "03. Memory & Storage",
+      "subcategory": "Enterprise Storage Software/Systems"
     },
     {
       "ticker": "NVDA",
       "company_name": "NVIDIA",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "01. GPUs & Accelerators",
+      "subcategory": "Merchant GPU (AI Training/Inference)"
     },
     {
       "ticker": "NVMI",
       "company_name": "Nova Ltd",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "05. Semiconductor Test & Inspection",
+      "subcategory": "Wafer Metrology"
     },
     {
       "ticker": "NVT",
       "company_name": "nVent Electric",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "99. Uncategorized",
+      "subcategory": "Pending categorization"
     },
     {
       "ticker": "OKLO",
       "company_name": "Oklo",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "SMR Pre-Revenue (Aurora)"
     },
     {
       "ticker": "ONTO",
       "company_name": "Onto Innovation",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "05. Semiconductor Test & Inspection",
+      "subcategory": "Advanced Packaging Inspection"
     },
     {
       "ticker": "ORCL",
       "company_name": "Oracle",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "16. Hyperscalers & Mega-Cap Cloud",
+      "subcategory": "Cloud + AI Database"
     },
     {
       "ticker": "PANW",
       "company_name": "Palo Alto Networks",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "17. AI Software & Cybersecurity",
+      "subcategory": "Network + Cloud Security Platform"
     },
     {
       "ticker": "PENG",
       "company_name": "Penguin Solutions",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "17. AI Software & Cybersecurity",
+      "subcategory": "Vertical AI Software"
     },
     {
       "ticker": "PH",
       "company_name": "Parker Hannifin",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "Motion & Control (Hydraulics)"
     },
     {
       "ticker": "PLAB",
       "company_name": "Photronics",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "05. Semiconductor Test & Inspection",
+      "subcategory": "Photomask Inspection"
     },
     {
       "ticker": "PLTR",
       "company_name": "Palantir Technologies",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "17. AI Software & Cybersecurity",
+      "subcategory": "AI Analytics + Government"
     },
     {
       "ticker": "PLXS",
       "company_name": "Plexus Corp",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Contract Manufacturing (Specialty)"
     },
     {
       "ticker": "PNR",
       "company_name": "Pentair",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "10. Cooling & Thermal",
+      "subcategory": "Water Treatment"
     },
     {
       "ticker": "POET",
       "company_name": "POET Technologies",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "02. Custom AI Silicon",
+      "subcategory": "Photonic Integration (Pre-Revenue)"
     },
     {
       "ticker": "POWL",
       "company_name": "Powell Industries",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "Switchgear (DC + Industrial)"
     },
     {
       "ticker": "PRIM",
       "company_name": "Primoris Services",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Specialty Infrastructure"
     },
     {
       "ticker": "PSTG",
       "company_name": "Pure Storage",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "03. Memory & Storage",
+      "subcategory": "All-Flash Enterprise Storage"
     },
     {
       "ticker": "PWR",
       "company_name": "Quanta Services",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Electrical Contracting (Grid + DC)"
     },
     {
       "ticker": "QCOM",
       "company_name": "Qualcomm",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "02. Custom AI Silicon",
+      "subcategory": "Mobile/Edge AI SoC"
     },
     {
       "ticker": "RIOT",
       "company_name": "Riot Platforms",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "13. Bitcoin Miners (Repurposed AI Compute)",
+      "subcategory": "Bitcoin Mining"
     },
     {
       "ticker": "RMBS",
       "company_name": "Rambus",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "02. Custom AI Silicon",
+      "subcategory": "Memory Interface IP"
     },
     {
       "ticker": "ROK",
       "company_name": "Rockwell Automation",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "Industrial Automation"
     },
     {
       "ticker": "S",
       "company_name": "SentinelOne",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "99. Uncategorized",
+      "subcategory": "Pending categorization"
     },
     {
       "ticker": "SANM",
       "company_name": "Sanmina",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Contract Manufacturing (High-Mix)"
     },
     {
       "ticker": "SBGSY",
       "company_name": "Schneider Electric (ADR)",
-      "source": "Final Supplement"
+      "source": "Final Supplement",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "Integrated DC Electrification (ADR)"
     },
     {
       "ticker": "SLAB",
       "company_name": "Silicon Labs",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "02. Custom AI Silicon",
+      "subcategory": "IoT Wireless SoC"
     },
     {
       "ticker": "SMCI",
       "company_name": "Super Micro Computer",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Server OEM (Liquid-Cooled)"
     },
     {
       "ticker": "SMR",
       "company_name": "NuScale Power",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "SMR (NuScale)"
     },
     {
       "ticker": "SMTC",
       "company_name": "Semtech",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "02. Custom AI Silicon",
+      "subcategory": "Analog & Connectivity"
     },
     {
       "ticker": "SNDK",
       "company_name": "SanDisk",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "03. Memory & Storage",
+      "subcategory": "NAND Flash"
     },
     {
       "ticker": "SNOW",
       "company_name": "Snowflake",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "17. AI Software & Cybersecurity",
+      "subcategory": "Cloud Data Warehouse"
     },
     {
       "ticker": "SNPS",
       "company_name": "Synopsys",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "06. Foundry & Advanced Packaging",
+      "subcategory": "EDA Software (Chip Design Tools)"
     },
     {
       "ticker": "SPXC",
       "company_name": "SPX Technologies",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "10. Cooling & Thermal",
+      "subcategory": "Cooling Towers + HVAC"
     },
     {
       "ticker": "STRL",
       "company_name": "Sterling Infrastructure",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "Infrastructure (E-Infrastructure Solutions)"
     },
     {
       "ticker": "STX",
       "company_name": "Seagate Technology",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "03. Memory & Storage",
+      "subcategory": "HDD (Mass Capacity)"
     },
     {
       "ticker": "TEL",
       "company_name": "TE Connectivity",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "08. Networking & Switching",
+      "subcategory": "Connectors & Interconnect"
     },
     {
       "ticker": "TER",
       "company_name": "Teradyne",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "04. Semiconductor Equipment",
+      "subcategory": "Production ATE (Test Equipment)"
     },
     {
       "ticker": "TLN",
       "company_name": "Talen Energy",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Nuclear Operator (Susquehanna)"
     },
     {
       "ticker": "TSM",
       "company_name": "Taiwan Semiconductor Manufacturing",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "06. Foundry & Advanced Packaging",
+      "subcategory": "Leading-Edge Foundry Monopoly"
     },
     {
       "ticker": "TT",
       "company_name": "Trane Technologies",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "10. Cooling & Thermal",
+      "subcategory": "Commercial HVAC + Service"
     },
     {
       "ticker": "TTMI",
       "company_name": "TTM Technologies",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "09. Data Center Construction & EPC",
+      "subcategory": "PCB Manufacturing"
     },
     {
       "ticker": "UCTT",
       "company_name": "Ultra Clean Holdings",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "04. Semiconductor Equipment",
+      "subcategory": "Subsystems & Critical Components"
     },
     {
       "ticker": "UEC",
       "company_name": "Uranium Energy Corp",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Uranium Mining (US-Focused)"
     },
     {
       "ticker": "UMC",
       "company_name": "United Microelectronics",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "06. Foundry & Advanced Packaging",
+      "subcategory": "Mature-Node Foundry"
     },
     {
       "ticker": "USAR",
       "company_name": "USA Rare Earth",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "18. Specialty Materials & Rare Earths",
+      "subcategory": "Rare Earth (US-Domestic Supply)"
     },
     {
       "ticker": "UUUU",
       "company_name": "Energy Fuels",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "18. Specialty Materials & Rare Earths",
+      "subcategory": "Rare Earth + Uranium"
     },
     {
       "ticker": "VECO",
       "company_name": "Veeco Instruments",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "04. Semiconductor Equipment",
+      "subcategory": "Specialty Equipment (MOCVD/EUV Mask)"
     },
     {
       "ticker": "VICR",
       "company_name": "Vicor Corporation",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "02. Custom AI Silicon",
+      "subcategory": "High-Density Power Modules"
     },
     {
       "ticker": "VRT",
       "company_name": "Vertiv Holdings",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "10. Cooling & Thermal",
+      "subcategory": "Integrated DC Cooling Platform"
     },
     {
       "ticker": "VST",
       "company_name": "Vistra",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "12. Power Generation & Nuclear",
+      "subcategory": "Competitive Generation (Nuclear + Gas)"
     },
     {
       "ticker": "WCC",
       "company_name": "WESCO International",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "11. Power Infrastructure & Equipment",
+      "subcategory": "Electrical Distribution"
     },
     {
       "ticker": "WDC",
       "company_name": "Western Digital",
-      "source": "Combined v2"
+      "source": "Combined v2",
+      "category": "03. Memory & Storage",
+      "subcategory": "HDD + Storage Systems"
     },
     {
       "ticker": "WULF",
       "company_name": "TeraWulf",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "13. Bitcoin Miners (Repurposed AI Compute)",
+      "subcategory": "Bitcoin + AI Compute Pivot"
     },
     {
       "ticker": "ZS",
       "company_name": "Zscaler",
-      "source": "COMPLETE"
+      "source": "COMPLETE",
+      "category": "17. AI Software & Cybersecurity",
+      "subcategory": "Zero Trust + SASE"
     }
   ]
 }

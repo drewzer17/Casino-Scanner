@@ -1431,17 +1431,73 @@ _AI_UNIVERSE_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "ai
 
 @router.get("/ai-overview/tickers", include_in_schema=True)
 def get_ai_overview_tickers(db: Session = Depends(get_db)):
-    """Return the full AI buildout ticker universe merged with sitrep parse status."""
+    """Return the full AI buildout ticker universe merged with sitrep data and live prices."""
     if not _AI_UNIVERSE_PATH.exists():
         raise HTTPException(status_code=404, detail="AI universe data file not found")
     with open(_AI_UNIVERSE_PATH, "r") as f:
         data = json.load(f)
 
-    # Fetch sections_parsed for all sitreps in one query and merge
-    rows = db.execute(text("SELECT ticker, sections_parsed FROM sitreps")).fetchall()
-    sitrep_map: dict[str, int] = {r.ticker: r.sections_parsed for r in rows}
+    # One query: fetch all sitrep fields needed for the overview
+    sitrep_rows = db.execute(
+        text(
+            "SELECT ticker, sections_parsed, category, subcategory, "
+            "       price_at_add, price_at_add_date "
+            "FROM sitreps"
+        )
+    ).fetchall()
+
+    sitrep_map: dict[str, dict] = {}
+    for r in sitrep_rows:
+        pad_date = r.price_at_add_date
+        sitrep_map[r.ticker] = {
+            "sections_parsed":  r.sections_parsed,
+            "category":         r.category,
+            "subcategory":      r.subcategory,
+            "price_at_add":     float(r.price_at_add) if r.price_at_add is not None else None,
+            "price_at_add_date": str(pad_date) if pad_date is not None else None,
+        }
+
+    # Collect tickers that have a price_at_add so we can fetch current prices
+    tickers_needing_price = [
+        t["ticker"]
+        for t in data.get("tickers", [])
+        if sitrep_map.get(t["ticker"], {}).get("price_at_add") is not None
+    ]
+
+    # Batch-fetch live prices (Tradier, ≤20 symbols per call)
+    current_prices: dict[str, float] = {}
+    if tickers_needing_price:
+        try:
+            from ..scanner.engine import QUOTE_BATCH, fetch_quotes
+            for i in range(0, len(tickers_needing_price), QUOTE_BATCH):
+                batch = tickers_needing_price[i : i + QUOTE_BATCH]
+                try:
+                    quotes = fetch_quotes(batch)
+                    for sym, q in quotes.items():
+                        price = q.get("last") or q.get("prevclose")
+                        if price:
+                            current_prices[sym] = float(price)
+                except Exception as batch_exc:
+                    logger.warning("ai-overview price batch failed: %s", batch_exc)
+        except Exception as import_exc:
+            logger.warning("ai-overview: could not import fetch_quotes: %s", import_exc)
+
+    # Merge all fields into each ticker entry
     for t in data.get("tickers", []):
-        t["sections_parsed"] = sitrep_map.get(t["ticker"])  # None = no sitrep
+        s = sitrep_map.get(t["ticker"], {})
+        t["sections_parsed"]  = s.get("sections_parsed")
+        t["category"]         = s.get("category") or t.get("category") or None
+        t["subcategory"]      = s.get("subcategory") or t.get("subcategory") or None
+        t["price_at_add"]     = s.get("price_at_add")
+        t["price_at_add_date"] = s.get("price_at_add_date")
+
+        pad = s.get("price_at_add")
+        cur = current_prices.get(t["ticker"])
+        t["current_price"] = cur
+        if pad and cur:
+            t["change_pct"] = round((cur - pad) / pad * 100, 1)
+        else:
+            t["change_pct"] = None
 
     return data
 
