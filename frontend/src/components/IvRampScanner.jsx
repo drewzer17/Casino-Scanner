@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import ResearchAsterisk from "./ResearchAsterisk.jsx";
 
 function velCell(v) {
   if (v == null) return <span className="text-muted-sm">—</span>;
@@ -30,6 +31,7 @@ function cellValue(row, key) {
   switch (key) {
     case "ticker": return (
       <span>
+        <ResearchAsterisk ticker={row.ticker} hasSitrep={row.has_sitrep} />
         {row.ticker}
         {row.company_name && (
           <span className="company-name company-name-table">{row.company_name}</span>

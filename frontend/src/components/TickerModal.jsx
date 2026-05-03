@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { api } from "../api/client.js";
+import ResearchButton from "./ResearchButton.jsx";
 
 function fmt(v, digits = 2) {
   if (v == null) return "—";
@@ -283,7 +284,10 @@ export default function TickerModal({ row, onClose }) {
               )}
             </div>
           </div>
-          <button className="modal-close" onClick={onClose}>✕</button>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <ResearchButton ticker={row.ticker} hasSitrep={row.has_sitrep} />
+            <button className="modal-close" onClick={onClose}>✕</button>
+          </div>
         </div>
 
         <div className="modal-body">

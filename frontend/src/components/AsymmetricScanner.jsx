@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import CrossConflictWarning from "./CrossConflictWarning.jsx";
+import ResearchAsterisk from "./ResearchAsterisk.jsx";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -437,6 +438,7 @@ function cellValue(row, key, evalOtmLevel = 0) {
     case "ticker": return (
       <span>
         {row.sma_golden_cross === true && row.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
+        <ResearchAsterisk ticker={row.ticker} hasSitrep={row.has_sitrep} />
         {row.ticker}
         {row.company_name && (
           <span className="company-name company-name-table">{row.company_name}</span>

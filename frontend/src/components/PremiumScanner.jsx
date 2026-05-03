@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import CrossConflictWarning from "./CrossConflictWarning.jsx";
+import ResearchAsterisk from "./ResearchAsterisk.jsx";
 
 const DTE_RANGES = [
   { label: "≤3",    min: 0,  max: 3  },
@@ -215,6 +216,7 @@ function cellValue(item, key) {
     case "ticker":     return (
       <span>
         {item.sma_golden_cross === true && item.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
+        <ResearchAsterisk ticker={item.ticker} hasSitrep={item.has_sitrep} />
         {item.ticker}
         {item.company_name && (
           <span className="company-name company-name-table">{item.company_name}</span>
