@@ -121,6 +121,12 @@ class ScanResultOut(BaseModel):
     # AI research sitrep flag
     has_sitrep: bool = False
 
+    # AI Buildout Universe metadata (null if ticker not in universe)
+    primary_lens: str | None = None
+    lenses: list[str] = []
+    category: str | None = None
+    subcategory: str | None = None
+
 
 class ScanLatestOut(BaseModel):
     run_id: int

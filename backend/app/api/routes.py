@@ -129,11 +129,73 @@ def _parse_expiry_data(raw: str | None) -> list[ExpiryRow]:
         return []  # old format or corrupt — caller needs a new scan
 
 
+_DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
+
+
+def _build_ai_metadata() -> dict[str, dict]:
+    """Build {ticker: {primary_lens, lenses, category, subcategory}} once per request.
+
+    Reads ai_buildout_universe.json (categories) and ai_overview_lenses.json
+    (lens membership + primary assignments).  Missing files are silently skipped.
+    """
+    # ── 1. Category / subcategory from universe JSON ──────────────────────────
+    cat_map: dict[str, dict] = {}
+    univ_path = _DATA_DIR / "ai_buildout_universe.json"
+    if univ_path.exists():
+        try:
+            with open(univ_path) as f:
+                univ = json.load(f)
+            for t in univ.get("tickers", []):
+                sym = t.get("ticker")
+                if sym:
+                    cat_map[sym] = {
+                        "category":    t.get("category") or None,
+                        "subcategory": t.get("subcategory") or None,
+                    }
+        except Exception:
+            pass
+
+    # ── 2. Lens membership + primary resolution ───────────────────────────────
+    lens_names_map: dict[str, list[str]] = {}   # ticker → [lens_name, ...]
+    primary_map:    dict[str, str]       = {}   # ticker → primary_lens_name
+
+    lens_path = _DATA_DIR / "ai_overview_lenses.json"
+    if lens_path.exists():
+        try:
+            with open(lens_path) as f:
+                lenses_data = json.load(f)
+            for lens in lenses_data.get("lenses", []):
+                name = lens.get("name", "")
+                for sym in lens.get("tickers", []):
+                    lens_names_map.setdefault(sym, []).append(name)
+                for sym in lens.get("primary_for", []):
+                    primary_map[sym] = name
+            # Auto-assign primary for single-lens tickers
+            for sym, names in lens_names_map.items():
+                if sym not in primary_map and len(names) == 1:
+                    primary_map[sym] = names[0]
+        except Exception:
+            pass
+
+    # ── 3. Merge ──────────────────────────────────────────────────────────────
+    all_syms = set(cat_map) | set(lens_names_map)
+    return {
+        sym: {
+            "category":    cat_map.get(sym, {}).get("category"),
+            "subcategory": cat_map.get(sym, {}).get("subcategory"),
+            "lenses":      lens_names_map.get(sym, []),
+            "primary_lens": primary_map.get(sym),
+        }
+        for sym in all_syms
+    }
+
+
 def _to_out(
     row: models.ScanResult,
     history: list[TimeframeDelta] | None = None,
     sources: list[str] | None = None,
     has_sitrep: bool = False,
+    ai_meta: dict | None = None,
 ) -> ScanResultOut:
     return ScanResultOut(
         ticker=row.ticker,
@@ -210,6 +272,11 @@ def _to_out(
         iv_ramp_flag=row.iv_ramp_flag or False,
         # AI research sitrep flag
         has_sitrep=has_sitrep,
+        # AI Buildout Universe metadata
+        primary_lens=(ai_meta or {}).get("primary_lens"),
+        lenses=(ai_meta or {}).get("lenses") or [],
+        category=(ai_meta or {}).get("category"),
+        subcategory=(ai_meta or {}).get("subcategory"),
     )
 
 
@@ -255,6 +322,9 @@ def scan_latest(db: Session = Depends(get_db)) -> ScanLatestOut:
     ).fetchall()
     sitrep_set: set[str] = {r.ticker for r in sitrep_rows}
 
+    # Build AI metadata once for the whole request (reads two JSON files)
+    ai_meta_map = _build_ai_metadata()
+
     sell_now: list[ScanResultOut] = []
     buy_sell_later: list[ScanResultOut] = []
     watchlist: list[ScanResultOut] = []
@@ -265,6 +335,7 @@ def scan_latest(db: Session = Depends(get_db)) -> ScanLatestOut:
             history=hist,
             sources=ticker_sources.get(row.ticker, []),
             has_sitrep=row.ticker in sitrep_set,
+            ai_meta=ai_meta_map.get(row.ticker),
         )
         if row.bucket == "sell_now":
             sell_now.append(out)

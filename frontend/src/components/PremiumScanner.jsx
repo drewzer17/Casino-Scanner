@@ -218,6 +218,24 @@ function cellValue(item, key) {
         {item.sma_golden_cross === true && item.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
         <ResearchAsterisk ticker={item.ticker} hasSitrep={item.has_sitrep} />
         {item.ticker}
+        {item.has_sitrep && item.primary_lens && (
+          <span style={{
+            display: "inline-block",
+            background: "#8b5cf6",
+            color: "#fff",
+            fontSize: "10px",
+            fontWeight: 500,
+            padding: "2px 6px",
+            borderRadius: "3px",
+            marginLeft: "6px",
+            marginRight: "4px",
+            cursor: "default",
+            whiteSpace: "nowrap",
+            verticalAlign: "middle",
+          }}>
+            {item.primary_lens}
+          </span>
+        )}
         {item.company_name && (
           <span className="company-name company-name-table">{item.company_name}</span>
         )}

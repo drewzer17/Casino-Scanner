@@ -273,8 +273,76 @@ export default function TickerModal({ row, onClose }) {
       <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
         {/* ── Header ── */}
         <div className="modal-header">
-          <div>
-            <div className="modal-ticker">{row.ticker}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+              <div className="modal-ticker">{row.ticker}</div>
+              {/* AI Universe metadata pills — only shown when ticker is in universe */}
+              {(row.primary_lens || (row.lenses && row.lenses.length > 0) || row.category) && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", alignItems: "center" }}>
+                  {/* Primary lens — bold purple */}
+                  {row.primary_lens && (
+                    <span style={{
+                      background: "#8b5cf6",
+                      color: "#fff",
+                      fontWeight: 700,
+                      fontSize: "12px",
+                      padding: "3px 9px",
+                      borderRadius: "4px",
+                      cursor: "default",
+                      whiteSpace: "nowrap",
+                    }}>
+                      {row.primary_lens}
+                    </span>
+                  )}
+                  {/* Secondary lenses — faded purple */}
+                  {(row.lenses || [])
+                    .filter(l => l !== row.primary_lens)
+                    .map(l => (
+                      <span key={l} style={{
+                        background: "rgba(139,92,246,0.3)",
+                        color: "rgba(255,255,255,0.75)",
+                        fontWeight: 400,
+                        fontSize: "12px",
+                        padding: "3px 9px",
+                        borderRadius: "4px",
+                        cursor: "default",
+                        whiteSpace: "nowrap",
+                      }}>
+                        {l}
+                      </span>
+                    ))}
+                  {/* Category — yellow */}
+                  {row.category && (
+                    <span style={{
+                      background: "#fbbf24",
+                      color: "#111",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      padding: "3px 8px",
+                      borderRadius: "4px",
+                      cursor: "default",
+                      whiteSpace: "nowrap",
+                    }}>
+                      {row.category}
+                    </span>
+                  )}
+                  {/* Subcategory — teal */}
+                  {row.subcategory && (
+                    <span style={{
+                      background: "#0891b2",
+                      color: "#fff",
+                      fontSize: "10px",
+                      padding: "2px 7px",
+                      borderRadius: "4px",
+                      cursor: "default",
+                      whiteSpace: "nowrap",
+                    }}>
+                      {row.subcategory}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
             <div className="modal-sub">
               {fmtDollar(price)} · Score {fmt(row.score, 0)} · {row.bucket?.replace(/_/g, " ")}
               {row.sma_regime && (
@@ -284,7 +352,7 @@ export default function TickerModal({ row, onClose }) {
               )}
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
             <ResearchButton ticker={row.ticker} hasSitrep={row.has_sitrep} />
             <button className="modal-close" onClick={onClose}>✕</button>
           </div>

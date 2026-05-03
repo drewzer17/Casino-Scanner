@@ -4,61 +4,71 @@
       "id": "fab_equipment",
       "name": "Fab Equipment",
       "group": "Front-end (Chip Production)",
-      "tickers": ["ASML", "LRCX", "AMAT", "KLAC", "ACLS", "MKSI", "ICHR", "UCTT", "VECO", "TER"]
+      "tickers": ["ASML", "LRCX", "AMAT", "KLAC", "ACLS", "MKSI", "ICHR", "UCTT", "VECO", "TER"],
+      "primary_for": ["AMAT", "UCTT", "VECO"]
     },
     {
       "id": "foundries",
       "name": "Foundries",
       "group": "Front-end (Chip Production)",
-      "tickers": ["TSM", "UMC", "GFS"]
+      "tickers": ["TSM", "UMC", "GFS"],
+      "primary_for": ["TSM"]
     },
     {
       "id": "lithography",
       "name": "Lithography",
       "group": "Front-end (Chip Production)",
-      "tickers": ["ASML", "VECO", "KLAC", "PLAB", "DD"]
+      "tickers": ["ASML", "VECO", "KLAC", "PLAB", "DD"],
+      "primary_for": ["ASML"]
     },
     {
       "id": "etch_deposition",
       "name": "Etch & Deposition",
       "group": "Front-end (Chip Production)",
-      "tickers": ["LRCX", "AMAT", "ACLS", "MKSI", "ICHR", "UCTT"]
+      "tickers": ["LRCX", "AMAT", "ACLS", "MKSI", "ICHR", "UCTT"],
+      "primary_for": ["LRCX", "ACLS", "MKSI", "ICHR"]
     },
     {
       "id": "photomasks",
       "name": "Photomasks",
       "group": "Front-end (Chip Production)",
-      "tickers": ["PLAB", "KLAC"]
+      "tickers": ["PLAB", "KLAC"],
+      "primary_for": ["PLAB"]
     },
     {
       "id": "metrology_test",
       "name": "Metrology / Inspection / Test",
       "group": "Front-end (Chip Production)",
-      "tickers": ["KLAC", "NVMI", "ONTO", "CAMT", "AEHR", "TER", "KEYS"]
+      "tickers": ["KLAC", "NVMI", "ONTO", "CAMT", "AEHR", "TER", "KEYS"],
+      "primary_for": ["KLAC", "CAMT", "ONTO", "AEHR", "TER"]
     },
     {
       "id": "specialty_gases",
       "name": "Specialty Gases",
       "group": "Front-end (Chip Production)",
-      "tickers": ["APD", "LIN"]
+      "tickers": ["APD", "LIN"],
+      "primary_for": []
     },
     {
       "id": "specialty_chemicals",
       "name": "Specialty Chemicals & Materials",
       "group": "Front-end (Chip Production)",
-      "tickers": ["DD", "ENTG", "ESI", "MTRN"]
+      "tickers": ["DD", "ENTG", "ESI", "MTRN"],
+      "primary_for": ["DD"]
     },
     {
       "id": "advanced_packaging",
       "name": "Advanced Packaging / OSAT",
       "group": "Back-end (Packaging + Chips)",
-      "tickers": ["KLIC", "AMKR", "ASX", "IMOS", "TSM"]
+      "tickers": ["KLIC", "AMKR", "ASX", "IMOS", "TSM"],
+      "primary_for": ["KLIC", "AMKR", "ASX", "IMOS"]
     },
     {
       "id": "memory_hbm",
       "name": "Memory & HBM",
       "group": "Back-end (Packaging + Chips)",
-      "tickers": ["MU", "KLIC", "CAMT", "ONTO", "AEHR", "IMOS", "SNDK"]
+      "tickers": ["MU", "KLIC", "CAMT", "ONTO", "AEHR", "IMOS", "SNDK"],
+      "primary_for": ["MU"]
     },
     {
       "id": "gpu_ai_accelerators",
@@ -68,13 +78,15 @@
         "NVDA", "AMD", "AVGO", "MRVL", "ALAB", "CRDO", "ARM", "AMBA",
         "MPWR", "LSCC", "RMBS", "CDNS", "SNPS", "QCOM", "INTC", "SLAB",
         "ADI", "MCHP", "SMTC", "VICR"
-      ]
+      ],
+      "primary_for": ["AVGO", "MRVL", "VICR"]
     },
     {
       "id": "ai_server_oems",
       "name": "AI Server OEMs / Contract Manufacturers",
       "group": "Back-end (Packaging + Chips)",
-      "tickers": ["DELL", "HPE", "SMCI", "JBL", "PLXS", "SANM", "FLEX", "BHE", "CLS", "TTMI"]
+      "tickers": ["DELL", "HPE", "SMCI", "JBL", "PLXS", "SANM", "FLEX", "BHE", "CLS", "TTMI"],
+      "primary_for": []
     },
     {
       "id": "optical_networking",
@@ -83,7 +95,8 @@
       "tickers": [
         "AAOI", "COHR", "LITE", "FN", "POET", "MTSI", "ANET", "CSCO",
         "CIEN", "AVGO", "MRVL", "GLW", "GILT", "IPGP"
-      ]
+      ],
+      "primary_for": []
     },
     {
       "id": "power",
@@ -93,8 +106,9 @@
         "CMI", "CAT", "GNRC", "BE", "ETN", "ABB", "SBGSY", "VRT", "HUBB",
         "EMR", "ROK", "NVT", "CEG", "VST", "NEE", "D", "TLN", "SMR",
         "OKLO", "BWXT", "CCJ", "LEU", "UEC", "UUUU", "GEV", "GE", "FTV",
-        "DOV", "PH", "BKR", "GTLS", "HON"
-      ]
+        "DOV", "PH", "BKR", "GTLS", "HON", "VICR"
+      ],
+      "primary_for": []
     },
     {
       "id": "cooling_thermal",
@@ -103,19 +117,22 @@
       "tickers": [
         "TT", "CARR", "JCI", "LII", "MOD", "AAON", "VRT", "PNR",
         "GTES", "DOV", "FTV", "FLNC", "ECL"
-      ]
+      ],
+      "primary_for": ["VRT", "DOV", "FTV"]
     },
     {
       "id": "dc_reits",
       "name": "Data Center REITs",
       "group": "Infrastructure",
-      "tickers": ["DLR", "EQIX", "AMT", "IRM", "DBRG"]
+      "tickers": ["DLR", "EQIX", "AMT", "IRM", "DBRG"],
+      "primary_for": []
     },
     {
       "id": "storage",
       "name": "Storage",
       "group": "Demand & Adjacent",
-      "tickers": ["PSTG", "NTAP", "STX", "WDC", "SNDK", "MU"]
+      "tickers": ["PSTG", "NTAP", "STX", "WDC", "SNDK", "MU"],
+      "primary_for": ["SNDK"]
     },
     {
       "id": "hyperscalers_software_cyber",
@@ -125,7 +142,8 @@
         "MSFT", "AMZN", "GOOGL", "META", "ORCL", "IBM", "BABA", "BIDU",
         "PLTR", "SNOW", "DDOG", "MDB", "CFLT", "ESTC", "GTLB", "AKAM",
         "PENG", "CRWD", "PANW", "FTNT", "NET", "ZS", "S"
-      ]
+      ],
+      "primary_for": []
     },
     {
       "id": "construction_epc",
@@ -135,25 +153,29 @@
         "PWR", "MTZ", "EME", "FIX", "AGX", "FLR", "KBR", "PRIM", "STRL",
         "IESC", "MYRG", "LMB", "AZZ", "DY", "POWL", "SPXC", "WCC", "TEL",
         "APH", "J"
-      ]
+      ],
+      "primary_for": []
     },
     {
       "id": "bitcoin_miners",
       "name": "Bitcoin Miners (Pivoted to AI)",
       "group": "Demand & Adjacent",
-      "tickers": ["APLD", "IREN", "CIFR", "CORZ", "WULF", "HUT", "BITF", "RIOT", "BTDR", "GLXY"]
+      "tickers": ["APLD", "IREN", "CIFR", "CORZ", "WULF", "HUT", "BITF", "RIOT", "BTDR", "GLXY"],
+      "primary_for": []
     },
     {
       "id": "specialty_materials",
       "name": "Specialty Materials & Rare Earths",
       "group": "Demand & Adjacent",
-      "tickers": ["MP", "USAR", "UUUU", "MTRN"]
+      "tickers": ["MP", "USAR", "UUUU", "MTRN"],
+      "primary_for": ["MTRN", "UUUU"]
     },
     {
       "id": "neoclouds",
       "name": "Neoclouds / AI Compute Pure-Play",
       "group": "Demand & Adjacent",
-      "tickers": ["CRWV", "NBIS"]
+      "tickers": ["CRWV", "NBIS"],
+      "primary_for": []
     }
   ]
 }
