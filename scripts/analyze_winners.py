@@ -142,6 +142,10 @@ by_lens: dict[str, dict[str, dict]] = defaultdict(
 sitrep_tickers: set[str] = set()  # all source tickers in DB
 errors: list[str] = []
 
+# winner_ticker → { src_ticker → {rationale, company, lens, category} }
+# Only the FIRST occurrence per (winner, source) pair is stored.
+winner_detail: dict[str, dict[str, dict]] = defaultdict(dict)
+
 for i, row in enumerate(rows):
     src = (row["ticker"] or "").upper()
     sitrep_tickers.add(src)
@@ -169,11 +173,17 @@ for i, row in enumerate(rows):
 
     # Collect unique winner tickers from this sitrep (count each once per source)
     seen_winners: set[str] = set()
+    src_company = (row.get("company_name") or universe_meta.get(src, {}).get("company") or "")
+    cat = (row.get("category") or universe_meta.get(src, {}).get("category") or "").strip()
+    lens = ticker_primary_lens.get(src, "")
+
     for w in raw_winners:
         if isinstance(w, dict):
-            wticker = (w.get("ticker") or "").upper().strip()
+            wticker   = (w.get("ticker") or "").upper().strip()
+            rationale = (w.get("rationale") or "").strip()
         elif isinstance(w, str):
-            wticker = w.upper().strip()
+            wticker   = w.upper().strip()
+            rationale = ""
         else:
             continue
         if not wticker or wticker in seen_winners:
@@ -184,14 +194,21 @@ for i, row in enumerate(rows):
         overall[wticker]["count"] += 1
         overall[wticker]["sources"].add(src)
 
+        # Per-source rationale detail (first occurrence wins)
+        if src not in winner_detail[wticker]:
+            winner_detail[wticker][src] = {
+                "rationale": rationale,
+                "company":   src_company,
+                "lens":      lens,
+                "category":  cat,
+            }
+
         # Per category — use sitrep's own stored category, fall back to universe
-        cat = (row.get("category") or universe_meta.get(src, {}).get("category") or "").strip()
         if cat:
             by_category[cat][wticker]["count"] += 1
             by_category[cat][wticker]["sources"].add(src)
 
         # Per lens — use primary lens of the SOURCE ticker
-        lens = ticker_primary_lens.get(src, "")
         if lens:
             by_lens[lens][wticker]["count"] += 1
             by_lens[lens][wticker]["sources"].add(src)
@@ -388,34 +405,63 @@ cross_cutting_json = sorted(
     key=lambda x: (-len(x[1]), -x[2], x[0]),
 )[:10]
 
+def _build_sources_list(wticker: str) -> list[dict]:
+    """Return sorted source list for a winner ticker."""
+    sources = []
+    for src_t, detail in winner_detail[wticker].items():
+        sources.append({
+            "source_ticker":   src_t,
+            "source_company":  detail["company"],
+            "source_lens":     detail["lens"],
+            "source_category": detail["category"],
+            "rationale":       detail["rationale"],
+        })
+    # Sort by lens (primary grouping key), then ticker alphabetically
+    sources.sort(key=lambda x: (x["source_lens"] or "\xff", x["source_ticker"]))
+    return sources
+
+def _winner_obj(wticker: str, count: int, cats_set: set) -> dict:
+    """Build a fully-enriched winner object."""
+    in_univ = wticker in sitrep_tickers
+    um      = universe_meta.get(wticker, {})
+    return {
+        "ticker":       wticker,
+        "company_name": um.get("company", ""),
+        "mentions":     count,
+        "in_universe":  in_univ,
+        "primary_lens": ticker_primary_lens.get(wticker) if in_univ else None,
+        "category":     um.get("category") or None,
+        "subcategory":  um.get("subcategory") or None,
+        "sectors_count": len(cats_set),
+        "sectors":      sorted(cats_set),
+        "sources":      _build_sources_list(wticker),
+    }
+
+# all_winners_with_sources: every winner ticker → full enriched object
+all_winners: dict[str, dict] = {}
+for wticker, d in overall.items():
+    cats = winner_cat_breadth.get(wticker, set())
+    all_winners[wticker] = _winner_obj(wticker, d["count"], cats)
+
 freq_json = {
-    "generated_at": _dt.utcnow().isoformat() + "Z",
-    "total_sitreps_analyzed": len(rows),
-    "total_unique_winners": total_unique_winners,
+    "generated_at":            _dt.utcnow().isoformat() + "Z",
+    "total_sitreps_analyzed":  len(rows),
+    "total_unique_winners":    total_unique_winners,
     "top_5_overall": [
-        {
-            "ticker": wticker,
-            "company_name": universe_meta.get(wticker, {}).get("company", ""),
-            "mentions": count,
-        }
+        _winner_obj(wticker, count, winner_cat_breadth.get(wticker, set()))
         for wticker, count, _ in top5
     ],
     "cross_cutting_winners": [
-        {
-            "ticker": t,
-            "company_name": universe_meta.get(t, {}).get("company", ""),
-            "mentions": count,
-            "sectors_count": len(cats),
-            "sectors": sorted(cats),
-        }
+        _winner_obj(t, count, cats)
         for t, cats, count in cross_cutting_json
     ],
+    "all_winners_with_sources": all_winners,
 }
 
 JSON_OUT = REPO_ROOT / "backend" / "data" / "winner-frequency.json"
 JSON_OUT.parent.mkdir(parents=True, exist_ok=True)
 JSON_OUT.write_text(json.dumps(freq_json, indent=2), encoding="utf-8")
-progress(f"  JSON written to: {JSON_OUT}")
+progress(f"  JSON written to: {JSON_OUT} ({JSON_OUT.stat().st_size // 1024} KB)")
 
 # ── Terminal summary ──────────────────────────────────────────────────────────
 print(f"\nAnalysis complete. Report saved to:\n  {OUTPUT_FILE}\n")

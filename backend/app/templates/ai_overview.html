@@ -175,6 +175,243 @@
       font-style: italic;
     }
 
+    /* ── Chip clickable state ────────────────────── */
+    .wb-chip {
+      cursor: pointer;
+      transition: border-color 0.12s, box-shadow 0.12s;
+    }
+    .wb-chip:hover {
+      border-color: rgba(168, 85, 247, 0.5);
+    }
+    .wb-chip.wb-chip-active {
+      border-color: rgba(168, 85, 247, 0.8);
+      box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+    }
+
+    /* ── Inline expansion ────────────────────────── */
+    .wb-expansion {
+      display: none;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(168, 85, 247, 0.2);
+      border-radius: 6px;
+      padding: 14px 16px 12px;
+      margin-top: 8px;
+      margin-bottom: 4px;
+    }
+    .wb-exp-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .wb-exp-title {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.04em;
+    }
+    .wb-exp-company {
+      font-size: 13px;
+      color: #8888a0;
+      margin-left: 6px;
+      font-weight: 400;
+      font-family: inherit;
+    }
+    .wb-exp-close {
+      background: none;
+      border: none;
+      color: #555568;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 0 4px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .wb-exp-close:hover { color: #e55; }
+    .wb-exp-meta {
+      font-size: 12px;
+      color: #8888a0;
+      margin-bottom: 10px;
+      line-height: 1.8;
+    }
+    .wb-exp-meta strong { color: #ccc; margin-right: 4px; }
+    .wb-in-universe  { color: #22c55e; }
+    .wb-not-universe { color: #6b7280; }
+    .wb-exp-sectors-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(168, 85, 247, 0.7);
+      margin-bottom: 8px;
+    }
+    .wb-sector-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .wb-sector-pill {
+      background: rgba(168, 85, 247, 0.1);
+      border: 1px solid rgba(168, 85, 247, 0.22);
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 11px;
+      color: rgba(200, 150, 255, 0.9);
+      cursor: default;
+      white-space: nowrap;
+    }
+    .wb-sector-pill .sp-count {
+      color: rgba(168, 85, 247, 0.6);
+      margin-left: 3px;
+    }
+    .wb-exp-footer {
+      text-align: center;
+      margin-top: 6px;
+    }
+    .wb-expand-btn {
+      background: none;
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      border-radius: 6px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 18px;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .wb-expand-btn:hover { background: rgba(168, 85, 247, 0.1); }
+
+    /* ── Winner modal ────────────────────────────── */
+    #wb-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 9000;
+      align-items: center;
+      justify-content: center;
+    }
+    #wb-modal-overlay.wb-open { display: flex; }
+    #wb-modal {
+      background: #1a1b1e;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      border-radius: 10px;
+      width: 80vw;
+      max-width: 1000px;
+      max-height: 82vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .wb-modal-header {
+      padding: 20px 24px 14px;
+      border-bottom: 1px solid rgba(168, 85, 247, 0.15);
+      flex-shrink: 0;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .wb-modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      padding-right: 36px;
+    }
+    .wb-modal-title .mt-ticker {
+      font-family: 'Courier New', Courier, monospace;
+      letter-spacing: 0.04em;
+    }
+    .wb-modal-subtitle {
+      font-size: 12px;
+      color: #8888a0;
+    }
+    .wb-modal-close {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: #555568;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .wb-modal-close:hover { color: #e55; }
+    .wb-modal-body {
+      padding: 8px 24px 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .wb-modal-sector { margin-bottom: 4px; }
+    .wb-modal-sector-header {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding: 14px 0 8px;
+      border-top: 1px solid rgba(168, 85, 247, 0.15);
+      margin-bottom: 4px;
+    }
+    .wb-modal-sector:first-child .wb-modal-sector-header {
+      border-top: none;
+      padding-top: 8px;
+    }
+    .wb-modal-source { margin-bottom: 8px; }
+    .wb-modal-source-row {
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+    }
+    .wb-modal-source-ticker {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+    }
+    .wb-modal-source-sep { color: #3a3a50; font-size: 11px; }
+    .wb-modal-source-company {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+    .wb-modal-rationale {
+      display: none;
+      font-size: 11px;
+      color: #6b7280;
+      font-style: italic;
+      line-height: 1.65;
+      margin-top: 3px;
+      padding-left: 10px;
+      border-left: 2px solid rgba(168, 85, 247, 0.2);
+    }
+    .wb-modal-rationale.wb-rat-on { display: block; }
+    .wb-modal-footer {
+      padding: 10px 24px 16px;
+      border-top: 1px solid rgba(168, 85, 247, 0.12);
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .wb-rationale-btn {
+      background: none;
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      border-radius: 6px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 18px;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .wb-rationale-btn:hover { background: rgba(168, 85, 247, 0.1); }
+
     /* ── Search bar ──────────────────────────────── */
     .search-bar {
       display: flex;
@@ -489,8 +726,25 @@
     </div>
     <div class="wb-section-label">Top 5 Overall</div>
     <div class="wb-row" id="wb-top5"></div>
+    <div class="wb-expansion" id="wb-expansion-top5"></div>
     <div class="wb-section-label">Named Across 5+ Sectors</div>
     <div class="wb-row" id="wb-cross"></div>
+    <div class="wb-expansion" id="wb-expansion-cross"></div>
+  </div>
+
+  <!-- ── Winner detail modal ───────────────────────── -->
+  <div id="wb-modal-overlay">
+    <div id="wb-modal">
+      <div class="wb-modal-header">
+        <div class="wb-modal-title" id="wb-modal-title"></div>
+        <div class="wb-modal-subtitle" id="wb-modal-subtitle"></div>
+        <button class="wb-modal-close" id="wb-modal-close" title="Close">✕</button>
+      </div>
+      <div class="wb-modal-body" id="wb-modal-body"></div>
+      <div class="wb-modal-footer">
+        <button class="wb-rationale-btn" id="wb-rationale-btn">Show rationale ▾</button>
+      </div>
+    </div>
   </div>
 
   <!-- ── Search bar ────────────────────────────────── -->
@@ -548,58 +802,265 @@
   </div>
 
   <script>
-    // ── Convergence Winners Banner ────────────────────────────────────────────
+    // ── Convergence Winners Banner (Layers 1-3) ──────────────────────────────
     (async function loadWinnerBanner() {
-      const banner  = document.getElementById("winner-banner");
-      const top5El  = document.getElementById("wb-top5");
-      const crossEl = document.getElementById("wb-cross");
-      const metaEl  = document.getElementById("wb-meta");
 
-      function chip(ticker, company, countLabel, subLabel) {
+      // ── DOM refs ──────────────────────────────────────────────────────────
+      const banner       = document.getElementById("winner-banner");
+      const top5El       = document.getElementById("wb-top5");
+      const crossEl      = document.getElementById("wb-cross");
+      const metaEl       = document.getElementById("wb-meta");
+      const expTop5      = document.getElementById("wb-expansion-top5");
+      const expCross     = document.getElementById("wb-expansion-cross");
+      const modalOverlay = document.getElementById("wb-modal-overlay");
+      const modalTitleEl = document.getElementById("wb-modal-title");
+      const modalSubEl   = document.getElementById("wb-modal-subtitle");
+      const modalBody    = document.getElementById("wb-modal-body");
+      const modalClose   = document.getElementById("wb-modal-close");
+      const rationaleBtn = document.getElementById("wb-rationale-btn");
+
+      // ── State ─────────────────────────────────────────────────────────────
+      let winnerLookup  = {};      // ticker → full winner obj from all_winners_with_sources
+      let activeChipEl  = null;    // currently highlighted chip element
+      let activeExpEl   = null;    // currently shown expansion div
+      let rationaleOn   = false;   // whether rationale text is shown in modal
+
+      // ── Utilities ─────────────────────────────────────────────────────────
+      function esc(str) {
+        return String(str || "")
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      }
+
+      function stripCatPrefix(s) {
+        // "10. Cooling & Thermal" → "Cooling & Thermal"
+        return (s || "").replace(/^\d+\.\s*/, "");
+      }
+
+      // Group sources by their lens (or stripped category as fallback)
+      function groupBySector(sources) {
+        const map = new Map();
+        for (const s of (sources || [])) {
+          const key = s.source_lens || stripCatPrefix(s.source_category) || "Other";
+          if (!map.has(key)) map.set(key, []);
+          map.get(key).push(s);
+        }
+        return map; // Map<sectorName, sources[]>
+      }
+
+      // Sector name → count pairs, sorted by count desc
+      function sectorCounts(sources) {
+        const m = new Map();
+        for (const s of (sources || [])) {
+          const k = s.source_lens || stripCatPrefix(s.source_category) || "Other";
+          m.set(k, (m.get(k) || 0) + 1);
+        }
+        return [...m.entries()].sort((a, b) => b[1] - a[1]);
+      }
+
+      // ── Layer 1: Inline expansion ─────────────────────────────────────────
+
+      function collapseExpansion() {
+        if (activeChipEl) activeChipEl.classList.remove("wb-chip-active");
+        if (activeExpEl)  { activeExpEl.innerHTML = ""; activeExpEl.style.display = "none"; }
+        activeChipEl = null;
+        activeExpEl  = null;
+      }
+
+      function showExpansion(winner, chipEl, expEl) {
+        // Deactivate a different chip in the OTHER row's expansion
+        if (activeChipEl && activeChipEl !== chipEl) {
+          activeChipEl.classList.remove("wb-chip-active");
+        }
+        if (activeExpEl && activeExpEl !== expEl) {
+          activeExpEl.innerHTML = "";
+          activeExpEl.style.display = "none";
+        }
+
+        // Toggle: same chip clicked again → collapse
+        if (activeChipEl === chipEl) {
+          collapseExpansion();
+          return;
+        }
+
+        activeChipEl = chipEl;
+        activeExpEl  = expEl;
+        chipEl.classList.add("wb-chip-active");
+
+        const inUniverse = winner.in_universe;
+        const counts     = sectorCounts(winner.sources);
+        const total      = (winner.sources || []).length;
+
+        // Meta lines (lens / category / subcategory / universe flag)
+        let metaHtml = "";
+        if (inUniverse) {
+          if (winner.primary_lens)
+            metaHtml += `<div><strong>Lens:</strong> ${esc(winner.primary_lens)} <span style="color:#444458">(primary)</span></div>`;
+          if (winner.category)
+            metaHtml += `<div><strong>Category:</strong> ${esc(winner.category)}</div>`;
+          if (winner.subcategory)
+            metaHtml += `<div><strong>Subcategory:</strong> ${esc(winner.subcategory)}</div>`;
+          metaHtml += `<div><strong>Sitrep:</strong> <span class="wb-in-universe">✓ In universe</span></div>`;
+        } else {
+          metaHtml += `<div><strong>Sitrep:</strong> <span class="wb-not-universe">Not in universe</span></div>`;
+        }
+
+        // Sector pills
+        const pillsHtml = counts.map(([name, cnt]) =>
+          `<span class="wb-sector-pill">${esc(name)}<span class="sp-count">(${cnt})</span></span>`
+        ).join("");
+
+        expEl.innerHTML = `
+          <div class="wb-exp-header">
+            <div>
+              <span class="wb-exp-title">${esc(winner.ticker)}</span>
+              ${winner.company_name
+                ? `<span class="wb-exp-company">— ${esc(winner.company_name)}</span>`
+                : ""}
+            </div>
+            <button class="wb-exp-close" title="Close">✕</button>
+          </div>
+          <div class="wb-exp-meta">${metaHtml}</div>
+          <div class="wb-exp-sectors-label">
+            Named in ${counts.length} sector${counts.length !== 1 ? "s" : ""}
+            — ${total} source${total !== 1 ? "s" : ""}
+          </div>
+          <div class="wb-sector-pills">${pillsHtml}</div>
+          <div class="wb-exp-footer">
+            <button class="wb-expand-btn">Expand details →</button>
+          </div>
+        `;
+        expEl.style.display = "block";
+
+        expEl.querySelector(".wb-exp-close")
+             .addEventListener("click", collapseExpansion);
+        expEl.querySelector(".wb-expand-btn")
+             .addEventListener("click", () => openModal(winner));
+      }
+
+      // ── Layer 2: Modal ────────────────────────────────────────────────────
+
+      function openModal(winner) {
+        // Reset rationale state
+        rationaleOn = false;
+        rationaleBtn.textContent = "Show rationale ▾";
+
+        const grouped = groupBySector(winner.sources);
+        const total   = (winner.sources || []).length;
+        const sectors = grouped.size;
+
+        // Header
+        modalTitleEl.innerHTML =
+          `<span class="mt-ticker">${esc(winner.ticker)}</span>` +
+          (winner.company_name
+            ? ` <span style="font-size:14px;font-weight:400;color:#8888a0">— ${esc(winner.company_name)}</span>`
+            : "");
+        modalSubEl.textContent =
+          `Named ${total} time${total !== 1 ? "s" : ""} across ${sectors} sector${sectors !== 1 ? "s" : ""}`;
+
+        // Body: one .wb-modal-sector per lens group
+        let bodyHtml = "";
+        let first = true;
+        grouped.forEach((sources, sectorName) => {
+          bodyHtml += `<div class="wb-modal-sector">`;
+          bodyHtml += `<div class="wb-modal-sector-header">`
+                    + `── ${esc(sectorName)} (${sources.length} source${sources.length !== 1 ? "s" : ""}) ──`
+                    + `</div>`;
+          for (const s of sources) {
+            bodyHtml += `<div class="wb-modal-source">`;
+            bodyHtml += `<div class="wb-modal-source-row">`
+                      + `<span class="wb-modal-source-ticker">${esc(s.source_ticker)}</span>`
+                      + `<span class="wb-modal-source-sep">—</span>`
+                      + `<span class="wb-modal-source-company">${esc(s.source_company || "")}</span>`
+                      + `</div>`;
+            if (s.rationale) {
+              bodyHtml += `<div class="wb-modal-rationale">"${esc(s.rationale)}"</div>`;
+            }
+            bodyHtml += `</div>`;  // .wb-modal-source
+          }
+          bodyHtml += `</div>`;    // .wb-modal-sector
+          first = false;
+        });
+
+        modalBody.innerHTML = bodyHtml;
+        modalOverlay.classList.add("wb-open");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeModal() {
+        modalOverlay.classList.remove("wb-open");
+        document.body.style.overflow = "";
+      }
+
+      // ── Layer 3: Rationale toggle ─────────────────────────────────────────
+
+      rationaleBtn.addEventListener("click", () => {
+        rationaleOn = !rationaleOn;
+        rationaleBtn.textContent = rationaleOn ? "Hide rationale ▴" : "Show rationale ▾";
+        modalBody.querySelectorAll(".wb-modal-rationale").forEach(el =>
+          el.classList.toggle("wb-rat-on", rationaleOn)
+        );
+      });
+
+      // ── Modal close handlers ──────────────────────────────────────────────
+
+      modalClose.addEventListener("click", closeModal);
+      modalOverlay.addEventListener("click", e => {
+        if (e.target === modalOverlay) closeModal();
+      });
+      document.addEventListener("keydown", e => {
+        if (e.key === "Escape" && modalOverlay.classList.contains("wb-open")) closeModal();
+      });
+
+      // ── Build chip ────────────────────────────────────────────────────────
+
+      function buildChip(winner, subLabel, expEl) {
         const el = document.createElement("div");
         el.className = "wb-chip";
-        el.title = company || ticker;
+        el.title = `${winner.ticker}${winner.company_name ? " — " + winner.company_name : ""} · click for details`;
         el.innerHTML =
-          `<span class="wb-chip-ticker">${ticker}</span>` +
-          (company ? `<span class="wb-divider"></span><span class="wb-chip-company">${company}</span>` : "") +
-          `<span class="wb-divider"></span><span class="wb-chip-count">${countLabel}</span>` +
-          (subLabel ? `<span class="wb-chip-sectors">${subLabel}</span>` : "");
+          `<span class="wb-chip-ticker">${esc(winner.ticker)}</span>` +
+          (winner.company_name
+            ? `<span class="wb-divider"></span><span class="wb-chip-company">${esc(winner.company_name)}</span>`
+            : "") +
+          `<span class="wb-divider"></span><span class="wb-chip-count">${winner.mentions}×</span>` +
+          `<span class="wb-chip-sectors">${subLabel}</span>`;
+
+        el.addEventListener("click", () => {
+          // Always use the full enriched object from the lookup
+          const full = winnerLookup[winner.ticker] || winner;
+          showExpansion(full, el, expEl);
+        });
         return el;
       }
+
+      // ── Fetch and render ──────────────────────────────────────────────────
 
       try {
         const res = await fetch("/api/winner-frequency");
         if (!res.ok) throw new Error("not found");
         const d = await res.json();
 
+        winnerLookup = d.all_winners_with_sources || {};
+
         metaEl.textContent =
           `${d.total_sitreps_analyzed} sitreps · ${d.total_unique_winners} unique winners`;
 
         (d.top_5_overall || []).forEach((w, i) => {
-          top5El.appendChild(chip(
-            w.ticker,
-            w.company_name,
-            `${w.mentions}×`,
-            `#${i + 1}`
-          ));
+          top5El.appendChild(buildChip(w, `#${i + 1}`, expTop5));
         });
 
         (d.cross_cutting_winners || []).forEach(w => {
-          crossEl.appendChild(chip(
-            w.ticker,
-            w.company_name,
-            `${w.mentions}×`,
-            `${w.sectors_count} sectors`
-          ));
+          crossEl.appendChild(buildChip(w, `${w.sectors_count} sectors`, expCross));
         });
 
         banner.style.display = "block";
+
       } catch (err) {
         banner.style.display = "block";
         top5El.innerHTML = `<span class="wb-error">Winner frequency data not available — run scripts/analyze_winners.py to generate.</span>`;
-        crossEl.remove();
-        document.querySelector(".wb-section-label:last-of-type") && document.querySelector(".wb-section-label:last-of-type").remove();
       }
+
     })();
 
     // ── State ────────────────────────────────────────────────────────────────
