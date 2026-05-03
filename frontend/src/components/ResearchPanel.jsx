@@ -404,7 +404,7 @@ export default function ResearchPanel({ ticker, onClose }) {
 
                   {data.winners && data.winners.length > 0 && (
                     <>
-                      {sectionTitle("Who Wins If This Works")}
+                      {sectionTitle("Who Wins If This Fails")}
                       {renderWinnersGrid(data.winners)}
                     </>
                   )}
