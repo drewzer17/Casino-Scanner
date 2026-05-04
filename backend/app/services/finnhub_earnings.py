@@ -1,19 +1,20 @@
 """Finnhub earnings calendar integration.
 
-One API call fetches the entire market's earnings dates for the next
-90 days.  Results are stored in the ``earnings_calendar`` PostgreSQL
-table.  The cache is never refreshed automatically; use the
-POST /api/refresh-earnings endpoint (or the "Run Earnings" UI button)
-to populate or update it on demand.
+Fetches earnings in 7-day chunks to avoid Finnhub's 1500-entry
+response cap (which truncates data when a single large window is
+requested).  Results are stored in the ``earnings_calendar``
+PostgreSQL table.  The cache is never refreshed automatically; use
+the POST /api/refresh-earnings endpoint (or the "Run Earnings" UI
+button) to populate or update it on demand.
 
 Public entry points
 -------------------
 get_earnings_lookup(db)
     Read-only.  Returns {TICKER: days_until_earnings} for all tickers
-    with an upcoming earnings date in the cache.
+    with an upcoming earnings date in the cache (today or later).
 
 refresh_earnings_cache(db)
-    Force-fetch from Finnhub and upsert the full result into the DB.
+    Force-fetch from Finnhub (chunked) and upsert into the DB.
     Called by the POST /api/refresh-earnings route.
 """
 from __future__ import annotations
@@ -30,59 +31,98 @@ from ..config import settings
 logger = logging.getLogger(__name__)
 
 _FINNHUB_BASE = "https://finnhub.io/api/v1"
-_DAYS_AHEAD = 90
+_DAYS_AHEAD   = 90          # fetch window used by refresh_earnings_cache
+_CHUNK_DAYS   = 7           # request chunk size — keeps each call well under
+                            # Finnhub's 1500-entry response cap
 
 
-# ── Finnhub fetch ──────────────────────────────────────────────────────────────
+# ── Finnhub fetch (chunked) ────────────────────────────────────────────────────
 
 def _fetch_from_finnhub(days_ahead: int = _DAYS_AHEAD) -> dict[str, date]:
-    """Call Finnhub /calendar/earnings for today → today+days_ahead.
+    """Fetch Finnhub /calendar/earnings in 7-day chunks.
 
-    Returns {TICKER: next_earnings_date}.  Returns {} on any error so
-    the caller can decide how to handle a missing response.
+    Finnhub caps responses at 1500 entries and returns them in
+    reverse-chronological order, so a single 90-day window silently
+    drops near-term dates (e.g. the current week's earnings).
+    Chunking keeps each request comfortably under the cap.
+
+    Returns {TICKER: next_earnings_date} for the full window.
+    If ALL chunks fail, returns {}.  Partial data from successful
+    chunks is preserved even when individual chunks error.
     """
     api_key = settings.finnhub_api_key
     if not api_key:
         logger.warning("FINNHUB_API_KEY not set — skipping earnings fetch")
         return {}
 
-    today = date.today()
-    to_date = today + timedelta(days=days_ahead)
-    params = {
-        "from":  today.isoformat(),
-        "to":    to_date.isoformat(),
-        "token": api_key,
-    }
+    today     = date.today()
+    end_date  = today + timedelta(days=days_ahead)
+    chunk_sz  = timedelta(days=_CHUNK_DAYS)
 
-    try:
-        resp = httpx.get(
-            f"{_FINNHUB_BASE}/calendar/earnings",
-            params=params,
-            timeout=20.0,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-    except Exception as exc:
-        logger.warning("Finnhub earnings fetch failed: %s", exc)
-        return {}
+    combined: dict[str, date] = {}
+    chunk_start = today
+    chunks_ok   = 0
+    chunks_fail = 0
 
-    events = data.get("earningsCalendar") or []
-    result: dict[str, date] = {}
-    for ev in events:
-        sym = (ev.get("symbol") or "").upper().strip()
-        date_str = ev.get("date") or ""
-        if not sym or not date_str:
-            continue
+    while chunk_start <= end_date:
+        chunk_end = min(chunk_start + chunk_sz - timedelta(days=1), end_date)
+
         try:
-            earn_date = date.fromisoformat(date_str)
-        except ValueError:
-            continue
-        # Keep the earliest date if a symbol appears more than once
-        if sym not in result or earn_date < result[sym]:
-            result[sym] = earn_date
+            resp = httpx.get(
+                f"{_FINNHUB_BASE}/calendar/earnings",
+                params={
+                    "from":  chunk_start.isoformat(),
+                    "to":    chunk_end.isoformat(),
+                    "token": api_key,
+                },
+                timeout=20.0,
+            )
+            resp.raise_for_status()
+            events = resp.json().get("earningsCalendar") or []
 
-    logger.info("Finnhub earnings fetch: %d tickers with upcoming earnings", len(result))
-    return result
+            if len(events) >= 1500:
+                logger.warning(
+                    "Finnhub chunk %s→%s returned %d entries (may be capped — "
+                    "consider reducing _CHUNK_DAYS)",
+                    chunk_start, chunk_end, len(events),
+                )
+
+            chunk_tickers = 0
+            for ev in events:
+                sym      = (ev.get("symbol") or "").upper().strip()
+                date_str = ev.get("date") or ""
+                if not sym or not date_str:
+                    continue
+                try:
+                    earn_date = date.fromisoformat(date_str)
+                except ValueError:
+                    continue
+                # Keep the earliest date if a symbol appears in multiple chunks
+                if sym not in combined or earn_date < combined[sym]:
+                    combined[sym] = earn_date
+                    chunk_tickers += 1
+
+            logger.info(
+                "Finnhub chunk %s→%s: %d raw events, %d new/updated tickers",
+                chunk_start, chunk_end, len(events), chunk_tickers,
+            )
+            chunks_ok += 1
+
+        except Exception as exc:
+            logger.error(
+                "Finnhub chunk %s→%s failed (continuing): %s",
+                chunk_start, chunk_end, exc,
+            )
+            chunks_fail += 1
+
+        chunk_start = chunk_end + timedelta(days=1)
+
+    logger.info(
+        "Finnhub chunked fetch complete: %d chunks ok, %d failed, "
+        "%d total tickers across %d-day window",
+        chunks_ok, chunks_fail, len(combined), days_ahead,
+    )
+    return combined
 
 
 # ── Cache refresh ──────────────────────────────────────────────────────────────
@@ -127,8 +167,10 @@ def get_earnings_lookup(db: Session) -> dict[str, int]:
     POST /api/refresh-earnings endpoint (or the "Run Earnings" UI button)
     to populate / refresh the cache on demand.
 
-    Only dates today or in the future are included; past earnings (if
-    somehow still in the cache) are filtered out.
+    Returns all tickers whose next_earnings_date is today or later.
+    No upper-bound cutoff is applied here — the fetch window used by
+    refresh_earnings_cache is the authoritative source of truth for
+    how far ahead the cache extends.
     """
     today = date.today()
     try:
@@ -149,7 +191,7 @@ def get_earnings_lookup(db: Session) -> dict[str, int]:
         if r.next_earnings_date is None:
             continue
         days = (r.next_earnings_date - today).days
-        if 0 <= days <= _DAYS_AHEAD:
+        if days >= 0:
             lookup[r.ticker] = days
 
     logger.info("get_earnings_lookup: %d tickers loaded from cache", len(lookup))
