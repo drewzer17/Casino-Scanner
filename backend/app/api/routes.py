@@ -1691,50 +1691,84 @@ def get_sitrep_panel(ticker: str, db: Session = Depends(get_db)):
     return data
 
 
-@router.get("/admin/refresh-earnings", include_in_schema=True)
-def admin_refresh_earnings(db: Session = Depends(get_db)) -> dict:
+@router.post("/refresh-earnings", include_in_schema=True)
+def refresh_earnings(db: Session = Depends(get_db)) -> dict:
     """Manually trigger a Finnhub earnings calendar refresh.
 
-    Forces a fresh fetch from Finnhub regardless of cache age,
-    then returns the number of rows upserted and a sample of tickers.
-    Use this after deploying the finnhub integration to populate the
-    cache for the first time, or to diagnose earnings data issues.
+    Forces a fresh fetch from Finnhub regardless of cache age.
+    Returns success/failure status, row count, timestamp, and duration.
     """
+    import time as _time
     from ..services.finnhub_earnings import refresh_earnings_cache
     from ..config import settings
 
     if not settings.finnhub_api_key:
-        raise HTTPException(
-            status_code=503,
-            detail="FINNHUB_API_KEY not configured — add it to Railway environment variables",
-        )
+        return {
+            "success": False,
+            "error": "FINNHUB_API_KEY not configured — add it to Railway environment variables",
+        }
+
+    t0 = _time.monotonic()
     try:
-        upserted = refresh_earnings_cache(db)
+        rows_updated = refresh_earnings_cache(db)
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Finnhub refresh failed: {exc}")
+        return {"success": False, "error": f"Finnhub refresh failed: {exc}"}
 
-    # Return a sample so the caller can eyeball the data
-    from sqlalchemy import text as _text
-    rows = db.execute(
-        _text("""
-            SELECT ticker, next_earnings_date
-            FROM earnings_calendar
-            WHERE next_earnings_date >= CURRENT_DATE
-            ORDER BY next_earnings_date
-            LIMIT 20
-        """)
-    ).fetchall()
-    sample = [{"ticker": r.ticker, "date": str(r.next_earnings_date)} for r in rows]
+    duration = round(_time.monotonic() - t0, 1)
+    fetched_at = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    return {
+        "success": True,
+        "rows_updated": rows_updated,
+        "fetched_at": fetched_at,
+        "duration_seconds": duration,
+    }
 
-    total = db.execute(
-        _text("SELECT COUNT(*) FROM earnings_calendar WHERE next_earnings_date >= CURRENT_DATE")
-    ).scalar() or 0
+
+@router.get("/earnings-status", include_in_schema=True)
+def earnings_status(db: Session = Depends(get_db)) -> dict:
+    """Return the current state of the earnings calendar cache.
+
+    Returns last_refresh timestamp, row count, and a human-readable
+    staleness string (e.g. "3 hours ago", "never").
+    """
+    try:
+        row = db.execute(
+            text("SELECT MAX(fetched_at) AS latest FROM earnings_calendar")
+        ).fetchone()
+        latest: datetime | None = row.latest if row else None
+    except Exception:
+        latest = None
+
+    try:
+        rows_count = db.execute(
+            text("SELECT COUNT(*) FROM earnings_calendar WHERE next_earnings_date >= CURRENT_DATE")
+        ).scalar() or 0
+    except Exception:
+        rows_count = 0
+
+    def _human(dt: datetime | None) -> str:
+        if dt is None:
+            return "never"
+        diff = datetime.utcnow() - dt
+        total_seconds = int(diff.total_seconds())
+        if total_seconds < 60:
+            return "just now"
+        mins = total_seconds // 60
+        if mins < 60:
+            return f"{mins} minute{'s' if mins != 1 else ''} ago"
+        hrs = mins // 60
+        if hrs < 24:
+            return f"{hrs} hour{'s' if hrs != 1 else ''} ago"
+        days = hrs // 24
+        if days < 7:
+            return f"{days} day{'s' if days != 1 else ''} ago"
+        weeks = days // 7
+        return f"{weeks} week{'s' if weeks != 1 else ''} ago"
 
     return {
-        "status": "ok",
-        "upserted": upserted,
-        "total_upcoming": total,
-        "sample_next_20": sample,
+        "last_refresh": latest.strftime("%Y-%m-%dT%H:%M:%SZ") if latest else None,
+        "rows_count": rows_count,
+        "human_readable": _human(latest),
     }
 
 

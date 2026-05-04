@@ -243,6 +243,11 @@ export default function Dashboard() {
   const [scanProgress, setScanProgress] = useState(null);
   const pollRef = useRef(null);
 
+  // Earnings refresh state
+  const [earningsStatus, setEarningsStatus] = useState(null);   // { last_refresh, rows_count, human_readable }
+  const [earningsRefreshing, setEarningsRefreshing] = useState(false);
+  const [earningsMsg, setEarningsMsg] = useState(null);         // { text, ok } | null
+
   const stopPolling = () => {
     if (pollRef.current) {
       clearInterval(pollRef.current);
@@ -298,6 +303,10 @@ export default function Dashboard() {
           startPolling();
         }
       })
+      .catch(() => {});
+
+    api.earningsStatus()
+      .then((s) => { if (!cancelled) setEarningsStatus(s); })
       .catch(() => {});
 
     return () => {
@@ -381,6 +390,35 @@ export default function Dashboard() {
       setReloadMsg(`Error: ${e.message}`);
       setTimeout(() => setReloadMsg(null), 5000);
     }
+  };
+
+  const handleRunEarnings = async () => {
+    if (earningsRefreshing) return;
+    setEarningsRefreshing(true);
+    setEarningsMsg(null);
+    try {
+      const res = await api.runEarnings();
+      if (res.success) {
+        setEarningsMsg({ text: `✓ ${res.rows_updated} tickers updated`, ok: true });
+        // Re-fetch status to get updated human_readable
+        api.earningsStatus().then(setEarningsStatus).catch(() => {});
+      } else {
+        setEarningsMsg({ text: `✗ ${res.error}`, ok: false });
+      }
+    } catch (e) {
+      setEarningsMsg({ text: `✗ ${e.message}`, ok: false });
+    } finally {
+      setEarningsRefreshing(false);
+      setTimeout(() => setEarningsMsg(null), 4000);
+    }
+  };
+
+  const earningsStatusColor = () => {
+    if (!earningsStatus?.last_refresh) return "#ef4444"; // red — never
+    const diffDays = (Date.now() - new Date(earningsStatus.last_refresh + (earningsStatus.last_refresh.endsWith("Z") ? "" : "Z")).getTime()) / 86_400_000;
+    if (diffDays > 30) return "#ef4444";   // red
+    if (diffDays > 7)  return "#fbbf24";   // yellow
+    return "var(--text-muted)";            // dim gray
   };
 
   const scanProgressLabel = () => {
@@ -719,6 +757,26 @@ export default function Dashboard() {
               </button>
             </>
           )}
+          <div className="earnings-refresh-wrap">
+            <button
+              className="earnings-refresh-btn"
+              onClick={handleRunEarnings}
+              disabled={earningsRefreshing}
+            >
+              {earningsRefreshing ? "Refreshing…" : "Run Earnings"}
+            </button>
+            {earningsMsg ? (
+              <span className={`earnings-refresh-msg${earningsMsg.ok ? " ok" : " err"}`}>
+                {earningsMsg.text}
+              </span>
+            ) : (
+              <span className="earnings-status-text" style={{ color: earningsStatusColor() }}>
+                {earningsStatus
+                  ? `Last refresh: ${earningsStatus.human_readable}`
+                  : "Earnings: loading…"}
+              </span>
+            )}
+          </div>
           <div className="reload-universe-wrap">
             <button className="reload-universe-btn" onClick={handleReloadUniverse}>
               Reload Universe

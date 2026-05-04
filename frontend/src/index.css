@@ -449,6 +449,53 @@ body {
   text-overflow: ellipsis;
 }
 
+/* ── Earnings refresh button ───────────────────────────────────── */
+.earnings-refresh-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.earnings-refresh-btn {
+  padding: 5px 11px;
+  border-radius: 5px;
+  border: 1px solid #7c3aed;
+  background: transparent;
+  color: #a78bfa;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.earnings-refresh-btn:hover:not(:disabled) {
+  background: #4c1d95;
+  border-color: #8b5cf6;
+  color: #ede9fe;
+}
+
+.earnings-refresh-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.earnings-status-text {
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.earnings-refresh-msg {
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.earnings-refresh-msg.ok  { color: var(--green); }
+.earnings-refresh-msg.err { color: #ef4444; }
+
 /* ── Source filter row ─────────────────────────────────────────── */
 .source-filter-row {
   display: flex;

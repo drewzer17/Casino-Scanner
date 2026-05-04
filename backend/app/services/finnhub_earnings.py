@@ -1,20 +1,20 @@
 """Finnhub earnings calendar integration.
 
 One API call fetches the entire market's earnings dates for the next
-90 days.  Results are cached in the ``earnings_calendar`` PostgreSQL
-table with a 24-hour TTL.
+90 days.  Results are stored in the ``earnings_calendar`` PostgreSQL
+table.  The cache is never refreshed automatically; use the
+POST /api/refresh-earnings endpoint (or the "Run Earnings" UI button)
+to populate or update it on demand.
 
 Public entry points
 -------------------
 get_earnings_lookup(db)
-    Returns {TICKER: days_until_earnings} for all tickers that have an
-    upcoming earnings date in the cache.  If the cache is stale (>24h)
-    it refreshes synchronously before returning.  Gracefully returns
-    whatever is in the cache (possibly stale) if the API is unavailable.
+    Read-only.  Returns {TICKER: days_until_earnings} for all tickers
+    with an upcoming earnings date in the cache.
 
 refresh_earnings_cache(db)
     Force-fetch from Finnhub and upsert the full result into the DB.
-    Called internally by get_earnings_lookup when cache is stale.
+    Called by the POST /api/refresh-earnings route.
 """
 from __future__ import annotations
 
@@ -30,7 +30,6 @@ from ..config import settings
 logger = logging.getLogger(__name__)
 
 _FINNHUB_BASE = "https://finnhub.io/api/v1"
-_CACHE_TTL_HOURS = 24
 _DAYS_AHEAD = 90
 
 
@@ -119,51 +118,18 @@ def refresh_earnings_cache(db: Session) -> int:
     return upserted
 
 
-# ── Cache read (with stale-on-read refresh) ────────────────────────────────────
-
-_last_refresh_attempt: datetime | None = None  # in-process guard so we don't
-                                                # hammer finnhub if DB writes fail
-
+# ── Cache read (read-only — no automatic refresh) ──────────────────────────────
 
 def get_earnings_lookup(db: Session) -> dict[str, int]:
     """Return {TICKER: days_until_earnings} from the DB cache.
 
-    If the cache is empty or the most-recently-fetched row is older than
-    24 hours, a synchronous refresh is triggered first.  On failure the
-    stale/empty cache is returned rather than raising.
+    Read-only — never triggers a Finnhub fetch automatically.  Use the
+    POST /api/refresh-earnings endpoint (or the "Run Earnings" UI button)
+    to populate / refresh the cache on demand.
 
     Only dates today or in the future are included; past earnings (if
     somehow still in the cache) are filtered out.
     """
-    global _last_refresh_attempt
-
-    # ── Staleness check ────────────────────────────────────────────────────────
-    try:
-        row = db.execute(
-            text("SELECT MAX(fetched_at) AS latest FROM earnings_calendar")
-        ).fetchone()
-        latest_fetch: datetime | None = row.latest if row else None
-    except Exception as exc:
-        logger.warning("earnings_calendar staleness check failed: %s", exc)
-        latest_fetch = None
-
-    needs_refresh = (
-        latest_fetch is None
-        or (datetime.utcnow() - latest_fetch) > timedelta(hours=_CACHE_TTL_HOURS)
-    )
-
-    # Rate-limit in-process refresh attempts to once per 10 minutes even if DB
-    # writes fail, so a broken finnhub key doesn't spam the API on every scan.
-    if needs_refresh:
-        now = datetime.utcnow()
-        if _last_refresh_attempt is None or (now - _last_refresh_attempt) > timedelta(minutes=10):
-            _last_refresh_attempt = now
-            try:
-                refresh_earnings_cache(db)
-            except Exception as exc:
-                logger.warning("earnings refresh failed, using stale cache: %s", exc)
-
-    # ── Read cache ─────────────────────────────────────────────────────────────
     today = date.today()
     try:
         rows = db.execute(

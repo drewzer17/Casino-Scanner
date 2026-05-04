@@ -37,4 +37,6 @@ export const api = {
   reloadUniverse: () => post("/api/universe/reload"),
   stopScan: () => post("/api/scan/stop"),
   resetScan: () => post("/api/scan/reset"),
+  runEarnings: () => post("/api/refresh-earnings"),
+  earningsStatus: () => get("/api/earnings-status"),
 };
