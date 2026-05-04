@@ -32,8 +32,9 @@ logger = logging.getLogger(__name__)
 
 _FINNHUB_BASE = "https://finnhub.io/api/v1"
 _DAYS_AHEAD   = 90          # fetch window used by refresh_earnings_cache
-_CHUNK_DAYS   = 7           # request chunk size — keeps each call well under
-                            # Finnhub's 1500-entry response cap
+_CHUNK_DAYS   = 3           # request chunk size — 7-day windows hit the 1500-entry
+                            # cap during peak Q1/Q3 earnings weeks; 3-day keeps
+                            # each chunk well under the cap (~500 entries max)
 
 
 # ── Finnhub fetch (chunked) ────────────────────────────────────────────────────
