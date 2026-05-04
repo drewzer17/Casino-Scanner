@@ -1,5 +1,7 @@
 import React, { useState } from "react";
+import EarningsTile from "./EarningsTile.jsx";
 import ResearchAsterisk from "./ResearchAsterisk.jsx";
+import ScrollArrows from "./ScrollArrows.jsx";
 
 function velCell(v) {
   if (v == null) return <span className="text-muted-sm">—</span>;
@@ -33,6 +35,7 @@ function cellValue(row, key, onResearch) {
       <span>
         <ResearchAsterisk ticker={row.ticker} hasSitrep={row.has_sitrep} onResearch={onResearch} isDefense={row.is_defense} />
         {row.ticker}
+        <EarningsTile days={row.earnings_days} inWindow={row.earnings_in_window} />
         {row.company_name && (
           <span className="company-name company-name-table">{row.company_name}</span>
         )}
@@ -125,7 +128,7 @@ export default function IvRampScanner({ rows, onRowClick, onResearch }) {
           onClick={() => setFlaggedOnly(false)}
         >Show All ({rows.length})</button>
       </div>
-      <div className="prem-scanner-wrap">
+      <ScrollArrows>
         {sorted.length === 0 ? (
           <div className="empty">
             {flaggedOnly
@@ -170,7 +173,7 @@ export default function IvRampScanner({ rows, onRowClick, onResearch }) {
             </tbody>
           </table>
         )}
-      </div>
+      </ScrollArrows>
     </div>
   );
 }

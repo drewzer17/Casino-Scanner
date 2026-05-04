@@ -272,6 +272,14 @@ def _to_out(
         iv_ramp_flag=row.iv_ramp_flag or False,
         # AI research sitrep flag
         has_sitrep=has_sitrep,
+        # Earnings enrichment
+        next_earnings_date=(
+            str(datetime.utcnow().date() + timedelta(days=int(row.earnings_days)))
+            if row.earnings_days is not None and row.earnings_days >= 0 else None
+        ),
+        earnings_in_window=(
+            row.earnings_days is not None and 0 < row.earnings_days <= 14
+        ),
         # AI Buildout Universe metadata
         primary_lens=(ai_meta or {}).get("primary_lens"),
         lenses=(ai_meta or {}).get("lenses") or [],

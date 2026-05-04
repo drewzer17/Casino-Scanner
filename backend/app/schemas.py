@@ -121,6 +121,10 @@ class ScanResultOut(BaseModel):
     # AI research sitrep flag
     has_sitrep: bool = False
 
+    # Earnings enrichment (derived from earnings_days at response time)
+    next_earnings_date: str | None = None   # ISO date string, e.g. "2026-05-20"
+    earnings_in_window: bool = False        # True when earnings ≤ 14 days away
+
     # AI Buildout Universe metadata (null if ticker not in universe)
     primary_lens: str | None = None
     lenses: list[str] = []

@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import CrossConflictWarning from "./CrossConflictWarning.jsx";
+import EarningsTile from "./EarningsTile.jsx";
 import ResearchAsterisk from "./ResearchAsterisk.jsx";
+import ScrollArrows from "./ScrollArrows.jsx";
 
 const DTE_RANGES = [
   { label: "≤3",    min: 0,  max: 3  },
@@ -218,6 +220,7 @@ function cellValue(item, key, onResearch) {
         {item.sma_golden_cross === true && item.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
         <ResearchAsterisk ticker={item.ticker} hasSitrep={item.has_sitrep} onResearch={onResearch} isDefense={item.is_defense} />
         {item.ticker}
+        <EarningsTile days={item.earnings_days} inWindow={item.earnings_in_window} />
         {item.has_sitrep && item.primary_lens && (
           <span style={{
             display: "inline-block",
@@ -601,7 +604,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
         >ALL</button>
         <span className="dte-filter-count">{sorted.length} rows · {uniqueTickers} tickers</span>
       </div>
-      <div className="prem-scanner-wrap">
+      <ScrollArrows>
         {sorted.length === 0 ? (
           <div className="empty">
             No tickers match this DTE filter.
@@ -649,7 +652,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
             </tbody>
           </table>
         )}
-      </div>
+      </ScrollArrows>
     </div>
   );
 }

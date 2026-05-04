@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { api } from "../api/client.js";
+import EarningsTile from "./EarningsTile.jsx";
 import ResearchButton from "./ResearchButton.jsx";
 
 function fmt(v, digits = 2) {
@@ -275,7 +276,10 @@ export default function TickerModal({ row, onClose, onResearch }) {
         <div className="modal-header">
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-              <div className="modal-ticker">{row.ticker}</div>
+              <div className="modal-ticker">
+                {row.ticker}
+                <EarningsTile days={row.earnings_days} inWindow={row.earnings_in_window} />
+              </div>
               {/* AI Universe metadata pills — only shown when ticker is in universe */}
               {(row.primary_lens || (row.lenses && row.lenses.length > 0) || row.category) && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", alignItems: "center" }}>

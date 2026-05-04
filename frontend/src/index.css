@@ -1347,6 +1347,9 @@ body {
 .company-name-table {
   display: block;
   max-width: 160px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .search-and-overview {
@@ -2015,7 +2018,7 @@ body {
 .excl-table td { padding: 3px 10px 3px 0; border-top: 1px solid rgba(148,163,184,0.06); }
 .excl-ticker  { color: var(--text-primary); font-weight: 600; min-width: 60px; }
 .excl-price   { color: var(--text-muted); min-width: 60px; font-variant-numeric: tabular-nums; }
-.excl-company { color: var(--text-muted); font-size: 11px; max-width: 180px; }
+.excl-company { color: var(--text-muted); font-size: 11px; max-width: 160px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .excl-reason  { color: #f59e0b; font-size: 11px; }
 
 /* PremiumScanner ASYMMETRIC badge */
@@ -2061,4 +2064,82 @@ body {
   box-shadow: 0 4px 16px rgba(0,0,0,0.5);
   white-space: normal;
   pointer-events: none;
+}
+
+/* ── Earnings tile ─────────────────────────────────────────────────────────── */
+
+.earn-tile {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 5px;
+  vertical-align: middle;
+  white-space: nowrap;
+  font-family: 'Courier New', Courier, monospace;
+  letter-spacing: 0.03em;
+}
+
+.earn-tile-hot {
+  background: rgba(239,68,68,0.18);
+  color: #f87171;
+  border: 1px solid rgba(239,68,68,0.4);
+}
+
+.earn-tile-warn {
+  background: rgba(255,255,255,0.06);
+  color: var(--text-muted);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.earn-tile-unknown {
+  background: transparent;
+  color: rgba(156,163,175,0.4);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* ── Scroll arrow buttons ──────────────────────────────────────────────────── */
+
+.scroll-arrows-bar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 2px 2px;
+  background: linear-gradient(to top, var(--bg) 70%, transparent);
+  pointer-events: none;
+}
+
+.scroll-arrow-btn {
+  pointer-events: auto;
+  background: rgba(139,92,246,0.2);
+  border: 1px solid rgba(139,92,246,0.35);
+  color: #a78bfa;
+  cursor: pointer;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, opacity 0.15s;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.scroll-arrow-btn:hover:not(:disabled) {
+  background: rgba(139,92,246,0.38);
+  color: #c4b5fd;
+}
+
+.scroll-arrow-btn:active:not(:disabled) {
+  background: rgba(139,92,246,0.5);
+}
+
+.scroll-arrow-disabled {
+  opacity: 0.22;
+  cursor: default;
 }

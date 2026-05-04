@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import CrossConflictWarning from "./CrossConflictWarning.jsx";
+import EarningsTile from "./EarningsTile.jsx";
 import ResearchAsterisk from "./ResearchAsterisk.jsx";
+import ScrollArrows from "./ScrollArrows.jsx";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -440,6 +442,7 @@ function cellValue(row, key, evalOtmLevel = 0, onResearch) {
         {row.sma_golden_cross === true && row.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
         <ResearchAsterisk ticker={row.ticker} hasSitrep={row.has_sitrep} onResearch={onResearch} isDefense={row.is_defense} />
         {row.ticker}
+        <EarningsTile days={row.earnings_days} inWindow={row.earnings_in_window} />
         {row.company_name && (
           <span className="company-name company-name-table">{row.company_name}</span>
         )}
@@ -828,7 +831,7 @@ export default function AsymmetricScanner({ rows, onRowClick, onResearch }) {
           onClick={() => setDteSelected(new Set())}
         >ALL</button>
       </div>
-      <div className="prem-scanner-wrap">
+      <ScrollArrows>
         {!hasAnyRows ? (
           <div className="empty">
             {fullPass.length === 0 && nm1Count === 0
@@ -872,7 +875,7 @@ export default function AsymmetricScanner({ rows, onRowClick, onResearch }) {
             </tbody>
           </table>
         )}
-      </div>
+      </ScrollArrows>
     </div>
   );
 }
