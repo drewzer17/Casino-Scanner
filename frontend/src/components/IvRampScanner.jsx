@@ -74,6 +74,23 @@ function cellValue(row, key, onResearch) {
   }
 }
 
+const EARN_BUCKETS = [
+  { key: "0-3d",   label: "0-3d",   test: d => d != null && d >= 0 && d <= 3  },
+  { key: "3-7d",   label: "3-7d",   test: d => d != null && d >  3 && d <= 7  },
+  { key: "7-14d",  label: "7-14d",  test: d => d != null && d >  7 && d <= 14 },
+  { key: "14-21d", label: "14-21d", test: d => d != null && d > 14 && d <= 21 },
+  { key: "21+",    label: "21+",    test: d => d != null && d > 21             },
+  { key: "none",   label: "None",   test: d => d == null                       },
+];
+
+function earnBucketMatch(days, buckets) {
+  for (const key of buckets) {
+    const b = EARN_BUCKETS.find(x => x.key === key);
+    if (b && b.test(days)) return true;
+  }
+  return false;
+}
+
 function sortValue(row, key) {
   switch (key) {
     case "ticker":          return row.ticker;
@@ -96,16 +113,16 @@ export default function IvRampScanner({ rows, onRowClick, onResearch }) {
   const [sortCol, setSortCol] = useState("iv_ramp_score");
   const [sortAsc, setSortAsc] = useState(false);
   const [flaggedOnly, setFlaggedOnly] = useState(true);
-  const [earnFilter, setEarnFilter] = useState(null);
+  const [earnBuckets, setEarnBuckets] = useState(new Set());
 
   const withHistory = rows.filter(r => r.iv_velocity_5d != null).length;
   const showBanner = rows.length === 0 || withHistory / rows.length < 0.8;
 
   const displayRows = flaggedOnly ? rows.filter(r => r.iv_ramp_flag) : rows;
 
-  const earnFiltered = earnFilter === null ? displayRows
-    : earnFilter === "none" ? displayRows.filter(r => r.earnings_days == null)
-    : displayRows.filter(r => r.earnings_days != null && r.earnings_days <= earnFilter);
+  const earnFiltered = earnBuckets.size === 0
+    ? displayRows
+    : displayRows.filter(r => earnBucketMatch(r.earnings_days, earnBuckets));
 
   const sorted = [...earnFiltered].sort((a, b) => {
     if (sortCol === "earnings") {
@@ -156,11 +173,21 @@ export default function IvRampScanner({ rows, onRowClick, onResearch }) {
       </div>
       <div className="dte-filter-row">
         <span className="dte-filter-label">EARNINGS</span>
-        <button className={`dte-filter-btn${earnFilter === null ? " active" : ""}`} onClick={() => setEarnFilter(null)}>ALL</button>
-        {[7, 14, 21, 30].map(d => (
-          <button key={d} className={`dte-filter-btn${earnFilter === d ? " active" : ""}`} onClick={() => setEarnFilter(d)}>≤{d}d</button>
+        <button
+          className={`dte-filter-btn${earnBuckets.size === 0 ? " active" : ""}`}
+          onClick={() => setEarnBuckets(new Set())}
+        >ALL</button>
+        {EARN_BUCKETS.map(b => (
+          <button
+            key={b.key}
+            className={`dte-filter-btn${earnBuckets.has(b.key) ? " active" : ""}`}
+            onClick={() => setEarnBuckets(prev => {
+              const n = new Set(prev);
+              n.has(b.key) ? n.delete(b.key) : n.add(b.key);
+              return n;
+            })}
+          >{b.label}</button>
         ))}
-        <button className={`dte-filter-btn${earnFilter === "none" ? " active" : ""}`} onClick={() => setEarnFilter("none")}>None</button>
       </div>
       <ScrollArrows>
         {sorted.length === 0 ? (

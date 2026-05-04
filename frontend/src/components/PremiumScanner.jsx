@@ -377,6 +377,25 @@ function sortValue(item, key) {
   }
 }
 
+// ── Earnings bucket filter ────────────────────────────────────────
+
+const EARN_BUCKETS = [
+  { key: "0-3d",   label: "0-3d",   test: d => d != null && d >= 0 && d <= 3  },
+  { key: "3-7d",   label: "3-7d",   test: d => d != null && d >  3 && d <= 7  },
+  { key: "7-14d",  label: "7-14d",  test: d => d != null && d >  7 && d <= 14 },
+  { key: "14-21d", label: "14-21d", test: d => d != null && d > 14 && d <= 21 },
+  { key: "21+",    label: "21+",    test: d => d != null && d > 21             },
+  { key: "none",   label: "None",   test: d => d == null                       },
+];
+
+function earnBucketMatch(days, buckets) {
+  for (const key of buckets) {
+    const b = EARN_BUCKETS.find(x => x.key === key);
+    if (b && b.test(days)) return true;
+  }
+  return false;
+}
+
 // ── Exclusion diagnostic ──────────────────────────────────────────
 
 function groupByReason(rows) {
@@ -446,7 +465,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const [sortAsc, setSortAsc] = useState(false);
   const [showExcl, setShowExcl] = useState(false);
   const [showAll, setShowAll] = useState(false);
-  const [earnFilter, setEarnFilter] = useState(null);
+  const [earnBuckets, setEarnBuckets] = useState(new Set());
 
   const toggleDte = (label) => {
     setDteSelected(prev => {
@@ -512,9 +531,9 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
     }
   }
 
-  const earnFiltered = earnFilter === null ? items
-    : earnFilter === "none" ? items.filter(i => i.earnings_days == null)
-    : items.filter(i => i.earnings_days != null && i.earnings_days <= earnFilter);
+  const earnFiltered = earnBuckets.size === 0
+    ? items
+    : items.filter(i => earnBucketMatch(i.earnings_days, earnBuckets));
 
   // ── Internal exclusions (rows that passed Dashboard but have no items) ──
   const passedTickerSet = new Set(items.map(i => i.ticker));
@@ -632,11 +651,21 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
       </div>
       <div className="dte-filter-row">
         <span className="dte-filter-label">EARNINGS</span>
-        <button className={`dte-filter-btn${earnFilter === null ? " active" : ""}`} onClick={() => setEarnFilter(null)}>ALL</button>
-        {[7, 14, 21, 30].map(d => (
-          <button key={d} className={`dte-filter-btn${earnFilter === d ? " active" : ""}`} onClick={() => setEarnFilter(d)}>≤{d}d</button>
+        <button
+          className={`dte-filter-btn${earnBuckets.size === 0 ? " active" : ""}`}
+          onClick={() => setEarnBuckets(new Set())}
+        >ALL</button>
+        {EARN_BUCKETS.map(b => (
+          <button
+            key={b.key}
+            className={`dte-filter-btn${earnBuckets.has(b.key) ? " active" : ""}`}
+            onClick={() => setEarnBuckets(prev => {
+              const n = new Set(prev);
+              n.has(b.key) ? n.delete(b.key) : n.add(b.key);
+              return n;
+            })}
+          >{b.label}</button>
         ))}
-        <button className={`dte-filter-btn${earnFilter === "none" ? " active" : ""}`} onClick={() => setEarnFilter("none")}>None</button>
       </div>
       <ScrollArrows>
         {sorted.length === 0 ? (
