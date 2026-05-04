@@ -1324,6 +1324,13 @@ body {
   font-weight: 700;
   color: var(--accent);
   font-size: 14px;
+  /* Cap column so lens pill + ticker content don't consume excessive horizontal
+     space. Longest pill ("Metrology / Inspection / Test" ~175px at 10px font)
+     + ticker (5 chars at 14px ~50px) + asterisk + earn tile + padding ≈ 300px.
+     320px gives ~20px headroom. overflow:hidden prevents any visual bleed. */
+  max-width: 320px;
+  width: 320px;
+  overflow: hidden;
 }
 
 .prem-scanner-th.compact-col { padding-left: 4px; padding-right: 4px; }
