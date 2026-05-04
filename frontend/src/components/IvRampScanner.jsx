@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import EarningsTile from "./EarningsTile.jsx";
 import ResearchAsterisk from "./ResearchAsterisk.jsx";
 import ScrollArrows from "./ScrollArrows.jsx";
 
@@ -17,6 +16,7 @@ function rampScoreCell(s) {
 
 const COLS = [
   { key: "ticker",          label: "TICKER",      align: "left" },
+  { key: "earnings",        label: "EARNINGS",    align: "center" },
   { key: "price",           label: "PRICE",       align: "right" },
   { key: "iv",              label: "IV",          align: "right" },
   { key: "iv_rank",         label: "IV RANK",     align: "right" },
@@ -35,7 +35,6 @@ function cellValue(row, key, onResearch) {
       <span>
         <ResearchAsterisk ticker={row.ticker} hasSitrep={row.has_sitrep} onResearch={onResearch} isDefense={row.is_defense} />
         {row.ticker}
-        <EarningsTile days={row.earnings_days} inWindow={row.earnings_in_window} />
         {row.company_name && (
           <span className="company-name company-name-table">{row.company_name}</span>
         )}
@@ -44,6 +43,14 @@ function cellValue(row, key, onResearch) {
         )}
       </span>
     );
+    case "earnings": {
+      const days = row.earnings_days;
+      const dte  = row.best_dte;
+      if (days == null) return <span className="earn-col-unknown">E ?</span>;
+      if (days <= 7 || (dte != null && days <= dte))
+        return <span className="earn-col-hot">E {days}</span>;
+      return <span className="earn-col-neutral">E {days}</span>;
+    }
     case "price":           return row.price != null ? `$${Number(row.price).toFixed(2)}` : "—";
     case "iv":              return row.iv != null ? `${(row.iv * 100).toFixed(1)}%` : "—";
     case "iv_rank":         return row.iv_rank != null ? `${Math.round(row.iv_rank)}%` : "—";
@@ -70,6 +77,7 @@ function cellValue(row, key, onResearch) {
 function sortValue(row, key) {
   switch (key) {
     case "ticker":          return row.ticker;
+    case "earnings":        return row.earnings_days ?? Infinity;
     case "price":           return row.price ?? -1;
     case "iv":              return row.iv ?? -1;
     case "iv_rank":         return row.iv_rank ?? -1;
@@ -88,13 +96,25 @@ export default function IvRampScanner({ rows, onRowClick, onResearch }) {
   const [sortCol, setSortCol] = useState("iv_ramp_score");
   const [sortAsc, setSortAsc] = useState(false);
   const [flaggedOnly, setFlaggedOnly] = useState(true);
+  const [earnFilter, setEarnFilter] = useState(null);
 
   const withHistory = rows.filter(r => r.iv_velocity_5d != null).length;
   const showBanner = rows.length === 0 || withHistory / rows.length < 0.8;
 
   const displayRows = flaggedOnly ? rows.filter(r => r.iv_ramp_flag) : rows;
 
-  const sorted = [...displayRows].sort((a, b) => {
+  const earnFiltered = earnFilter === null ? displayRows
+    : earnFilter === "none" ? displayRows.filter(r => r.earnings_days == null)
+    : displayRows.filter(r => r.earnings_days != null && r.earnings_days <= earnFilter);
+
+  const sorted = [...earnFiltered].sort((a, b) => {
+    if (sortCol === "earnings") {
+      const an = a.earnings_days == null;
+      const bn = b.earnings_days == null;
+      if (an && bn) return 0;
+      if (sortAsc) { if (an) return 1; if (bn) return -1; }
+      else         { if (an) return -1; if (bn) return 1; }
+    }
     const av = sortValue(a, sortCol);
     const bv = sortValue(b, sortCol);
     if (typeof av === "string" && typeof bv === "string")
@@ -105,6 +125,12 @@ export default function IvRampScanner({ rows, onRowClick, onResearch }) {
   });
 
   const handleSort = (key) => {
+    if (key === "earnings") {
+      if (sortCol !== "earnings") { setSortCol("earnings"); setSortAsc(true); }
+      else if (sortAsc) { setSortAsc(false); }
+      else { setSortCol("iv_ramp_score"); setSortAsc(false); }
+      return;
+    }
     if (sortCol === key) setSortAsc(v => !v);
     else { setSortCol(key); setSortAsc(false); }
   };
@@ -127,6 +153,14 @@ export default function IvRampScanner({ rows, onRowClick, onResearch }) {
           className={`dte-filter-btn${!flaggedOnly ? " active" : ""}`}
           onClick={() => setFlaggedOnly(false)}
         >Show All ({rows.length})</button>
+      </div>
+      <div className="dte-filter-row">
+        <span className="dte-filter-label">EARNINGS</span>
+        <button className={`dte-filter-btn${earnFilter === null ? " active" : ""}`} onClick={() => setEarnFilter(null)}>ALL</button>
+        {[7, 14, 21, 30].map(d => (
+          <button key={d} className={`dte-filter-btn${earnFilter === d ? " active" : ""}`} onClick={() => setEarnFilter(d)}>≤{d}d</button>
+        ))}
+        <button className={`dte-filter-btn${earnFilter === "none" ? " active" : ""}`} onClick={() => setEarnFilter("none")}>None</button>
       </div>
       <ScrollArrows>
         {sorted.length === 0 ? (

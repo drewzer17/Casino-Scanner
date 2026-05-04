@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import CrossConflictWarning from "./CrossConflictWarning.jsx";
-import EarningsTile from "./EarningsTile.jsx";
 import ResearchAsterisk from "./ResearchAsterisk.jsx";
 import ScrollArrows from "./ScrollArrows.jsx";
 
@@ -195,6 +194,7 @@ function getPutData(row, dteSelected) {
 
 const COLS = [
   { key: "ticker",     label: "Ticker",    align: "left" },
+  { key: "earnings",   label: "EARNINGS",  align: "center" },
   { key: "type",       label: "Type",      align: "left" },
   { key: "otm",        label: "OTM",       align: "center" },
   { key: "price",      label: "Price",     align: "right", compact: true },
@@ -220,7 +220,6 @@ function cellValue(item, key, onResearch) {
         {item.sma_golden_cross === true && item.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
         <ResearchAsterisk ticker={item.ticker} hasSitrep={item.has_sitrep} onResearch={onResearch} isDefense={item.is_defense} />
         {item.ticker}
-        <EarningsTile days={item.earnings_days} inWindow={item.earnings_in_window} />
         {item.has_sitrep && item.primary_lens && (
           <span style={{
             display: "inline-block",
@@ -244,6 +243,14 @@ function cellValue(item, key, onResearch) {
         )}
       </span>
     );
+    case "earnings": {
+      const days = item.earnings_days;
+      const dte  = item._d.dte;
+      if (days == null) return <span className="earn-col-unknown">E ?</span>;
+      if (days <= 7 || (dte != null && days <= dte))
+        return <span className="earn-col-hot">E {days}</span>;
+      return <span className="earn-col-neutral">E {days}</span>;
+    }
     case "type":       return (
       <span className={`prem-type-badge prem-type-${item._type.toLowerCase()}`}>
         {item._type}
@@ -339,6 +346,7 @@ function cellValue(item, key, onResearch) {
 function sortValue(item, key) {
   switch (key) {
     case "ticker":     return item.ticker;
+    case "earnings":   return item.earnings_days ?? Infinity;
     case "type":       return item._type;
     case "price":      return item.price ?? -1;
     case "premium":    return item._d.premium ?? -1;
@@ -438,6 +446,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const [sortAsc, setSortAsc] = useState(false);
   const [showExcl, setShowExcl] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [earnFilter, setEarnFilter] = useState(null);
 
   const toggleDte = (label) => {
     setDteSelected(prev => {
@@ -458,6 +467,12 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   };
 
   const handleSort = (key) => {
+    if (key === "earnings") {
+      if (sortCol !== "earnings") { setSortCol("earnings"); setSortAsc(true); }
+      else if (sortAsc) { setSortAsc(false); }
+      else { setSortCol("premium"); setSortAsc(false); }
+      return;
+    }
     if (sortCol === key) {
       setSortAsc(v => !v);
     } else {
@@ -497,6 +512,10 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
     }
   }
 
+  const earnFiltered = earnFilter === null ? items
+    : earnFilter === "none" ? items.filter(i => i.earnings_days == null)
+    : items.filter(i => i.earnings_days != null && i.earnings_days <= earnFilter);
+
   // ── Internal exclusions (rows that passed Dashboard but have no items) ──
   const passedTickerSet = new Set(items.map(i => i.ticker));
   const internalExcluded = baseRows
@@ -524,7 +543,14 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
 
   const allExcluded = [...(showAll ? [] : excludedRows), ...internalExcluded];
 
-  const sorted = [...items].sort((a, b) => {
+  const sorted = [...earnFiltered].sort((a, b) => {
+    if (sortCol === "earnings") {
+      const an = a.earnings_days == null;
+      const bn = b.earnings_days == null;
+      if (an && bn) return 0;
+      if (sortAsc) { if (an) return 1; if (bn) return -1; }
+      else         { if (an) return -1; if (bn) return 1; }
+    }
     const av = sortValue(a, sortCol);
     const bv = sortValue(b, sortCol);
     if (av < bv) return sortAsc ? -1 : 1;
@@ -604,6 +630,14 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
         >ALL</button>
         <span className="dte-filter-count">{sorted.length} rows · {uniqueTickers} tickers</span>
       </div>
+      <div className="dte-filter-row">
+        <span className="dte-filter-label">EARNINGS</span>
+        <button className={`dte-filter-btn${earnFilter === null ? " active" : ""}`} onClick={() => setEarnFilter(null)}>ALL</button>
+        {[7, 14, 21, 30].map(d => (
+          <button key={d} className={`dte-filter-btn${earnFilter === d ? " active" : ""}`} onClick={() => setEarnFilter(d)}>≤{d}d</button>
+        ))}
+        <button className={`dte-filter-btn${earnFilter === "none" ? " active" : ""}`} onClick={() => setEarnFilter("none")}>None</button>
+      </div>
       <ScrollArrows>
         {sorted.length === 0 ? (
           <div className="empty">
@@ -619,7 +653,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                 {COLS.map(col => (
                   <th
                     key={col.key}
-                    className={`prem-scanner-th${col.align === "right" ? " right" : ""}${sortCol === col.key ? " sorted" : ""}${col.compact ? " compact-col" : ""}`}
+                    className={`prem-scanner-th${col.align === "right" ? " right" : col.align === "center" ? " center" : ""}${sortCol === col.key ? " sorted" : ""}${col.compact ? " compact-col" : ""}`}
                     onClick={() => handleSort(col.key)}
                     style={col.groupEnd ? { borderRight: "1px solid rgba(255,255,255,0.15)" } : undefined}
                   >
@@ -641,7 +675,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                   {COLS.map(col => (
                     <td
                       key={col.key}
-                      className={`prem-scanner-td${col.align === "right" ? " right" : ""}${col.key === "ticker" ? " ticker-col" : ""}${col.key === "premium" ? " prem-col" : ""}${col.compact ? " compact-col" : ""}`}
+                      className={`prem-scanner-td${col.align === "right" ? " right" : col.align === "center" ? " center" : ""}${col.key === "ticker" ? " ticker-col" : ""}${col.key === "premium" ? " prem-col" : ""}${col.compact ? " compact-col" : ""}`}
                       style={col.groupEnd ? { borderRight: "1px solid rgba(255,255,255,0.15)" } : undefined}
                     >
                       {cellValue(item, col.key, onResearch)}

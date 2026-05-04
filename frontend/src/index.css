@@ -2149,8 +2149,29 @@ body {
 
 .earn-tile-unknown {
   background: transparent;
-  color: rgba(156,163,175,0.4);
+  color: #6b7280;
   border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* ── Earnings column cells ─────────────────────────────────────────────────── */
+
+.earn-col-hot {
+  color: #ef4444;
+  font-weight: 700;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.earn-col-neutral {
+  color: #9ca3af;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.earn-col-unknown {
+  color: #6b7280;
+  font-size: 0.85em;
+  white-space: nowrap;
 }
 
 /* ── Scroll arrow buttons ──────────────────────────────────────────────────── */

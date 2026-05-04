@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import CrossConflictWarning from "./CrossConflictWarning.jsx";
-import EarningsTile from "./EarningsTile.jsx";
 import ResearchAsterisk from "./ResearchAsterisk.jsx";
 import ScrollArrows from "./ScrollArrows.jsx";
 
@@ -409,6 +408,7 @@ function AsymExpansion({ row, onFullDetail }) {
 
 const COLS = [
   { key: "ticker",        label: "TICKER",      align: "left" },
+  { key: "earnings",      label: "EARNINGS",    align: "center" },
   { key: "type",          label: "SETUP",       align: "left" },
   { key: "score",         label: "SCORE",       align: "right", compact: true },
   { key: "price",         label: "PRICE",       align: "right" },
@@ -442,12 +442,19 @@ function cellValue(row, key, evalOtmLevel = 0, onResearch) {
         {row.sma_golden_cross === true && row.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
         <ResearchAsterisk ticker={row.ticker} hasSitrep={row.has_sitrep} onResearch={onResearch} isDefense={row.is_defense} />
         {row.ticker}
-        <EarningsTile days={row.earnings_days} inWindow={row.earnings_in_window} />
         {row.company_name && (
           <span className="company-name company-name-table">{row.company_name}</span>
         )}
       </span>
     );
+    case "earnings": {
+      const days = row.earnings_days;
+      const dte  = getRelevantDte(row);
+      if (days == null) return <span className="earn-col-unknown">E ?</span>;
+      if (days <= 7 || (dte != null && days <= dte))
+        return <span className="earn-col-hot">E {days}</span>;
+      return <span className="earn-col-neutral">E {days}</span>;
+    }
     case "type":
       if (row._nearMissInfo) return <NearMissBadge level={row._nearMissInfo.fails} setupType={nmType} />;
       return <TypeBadge type={row.asymmetric_type} />;
@@ -558,6 +565,7 @@ function sortValue(row, key) {
 
   switch (key) {
     case "ticker":   return row.ticker;
+    case "earnings": return row.earnings_days ?? Infinity;
     case "type":     return row._nearMissInfo ? `ZNM${row._nearMissInfo.fails}` : (row._evalType || row.asymmetric_type || "");
     case "score":    return row._score ?? 0;
     case "price":    return price ?? -1;
@@ -603,6 +611,7 @@ export default function AsymmetricScanner({ rows, onRowClick, onResearch }) {
   const [sortCol, setSortCol]           = useState("score");
   const [sortAsc, setSortAsc]           = useState(false);
   const [expandedRow, setExpandedRow]   = useState(null);
+  const [earnFilter, setEarnFilter]     = useState(null);
 
   const toggleDte = (label) => setDteSelected(prev => {
     const next = new Set(prev); if (next.has(label)) next.delete(label); else next.add(label); return next;
@@ -683,22 +692,37 @@ export default function AsymmetricScanner({ rows, onRowClick, onResearch }) {
     return true;
   }
 
+  const earnMatchFn = (r) => {
+    if (earnFilter === null) return true;
+    if (earnFilter === "none") return r.earnings_days == null;
+    return r.earnings_days != null && r.earnings_days <= earnFilter;
+  };
+
   // Apply filters to full passes
   const filteredPass = fullPass
     .filter(r => modeMatch(r, setupMode))
-    .filter(r => dteInAny(getRelevantDte(r), dteSelected));
+    .filter(r => dteInAny(getRelevantDte(r), dteSelected))
+    .filter(earnMatchFn);
 
   // Apply filters to near miss rows
   function filterNearMiss(nmRows) {
     return nmRows
       .filter(r => modeMatch(r, setupMode))
-      .filter(r => dteInAny(getRelevantDte(r), dteSelected));
+      .filter(r => dteInAny(getRelevantDte(r), dteSelected))
+      .filter(earnMatchFn);
   }
 
   const filteredNM1 = filterNearMiss(nearMiss1All);
   const filteredNM2 = filterNearMiss(nearMiss2All);
 
   const doSort = (arr) => [...arr].sort((a, b) => {
+    if (sortCol === "earnings") {
+      const an = a.earnings_days == null;
+      const bn = b.earnings_days == null;
+      if (an && bn) return 0;
+      if (sortAsc) { if (an) return 1; if (bn) return -1; }
+      else         { if (an) return -1; if (bn) return 1; }
+    }
     const av = sortValue(a, sortCol);
     const bv = sortValue(b, sortCol);
     if (typeof av === "string" && typeof bv === "string")
@@ -713,6 +737,12 @@ export default function AsymmetricScanner({ rows, onRowClick, onResearch }) {
   const sortedNM2  = doSort(filteredNM2);
 
   const handleSort = (key) => {
+    if (key === "earnings") {
+      if (sortCol !== "earnings") { setSortCol("earnings"); setSortAsc(true); }
+      else if (sortAsc) { setSortAsc(false); }
+      else { setSortCol("score"); setSortAsc(false); }
+      return;
+    }
     if (sortCol === key) setSortAsc(v => !v);
     else { setSortCol(key); setSortAsc(false); }
   };
@@ -830,6 +860,14 @@ export default function AsymmetricScanner({ rows, onRowClick, onResearch }) {
           className={`dte-filter-btn${dteSelected.size === 0 ? " active" : ""}`}
           onClick={() => setDteSelected(new Set())}
         >ALL</button>
+      </div>
+      <div className="dte-filter-row">
+        <span className="dte-filter-label">EARNINGS</span>
+        <button className={`dte-filter-btn${earnFilter === null ? " active" : ""}`} onClick={() => setEarnFilter(null)}>ALL</button>
+        {[7, 14, 21, 30].map(d => (
+          <button key={d} className={`dte-filter-btn${earnFilter === d ? " active" : ""}`} onClick={() => setEarnFilter(d)}>≤{d}d</button>
+        ))}
+        <button className={`dte-filter-btn${earnFilter === "none" ? " active" : ""}`} onClick={() => setEarnFilter("none")}>None</button>
       </div>
       <ScrollArrows>
         {!hasAnyRows ? (

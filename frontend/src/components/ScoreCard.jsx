@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import CrossConflictWarning from "./CrossConflictWarning.jsx";
-import EarningsTile from "./EarningsTile.jsx";
 import ResearchAsterisk from "./ResearchAsterisk.jsx";
 
 function pillClass(score) {
@@ -256,7 +255,6 @@ export default function ScoreCard({ row, onClick, showBucket = false, onResearch
             {row.sma_golden_cross === true && row.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
             <ResearchAsterisk ticker={row.ticker} hasSitrep={row.has_sitrep} onResearch={onResearch} isDefense={row.is_defense} />
             {row.ticker}
-            <EarningsTile days={row.earnings_days} inWindow={row.earnings_in_window} />
             {showBucket && bucketTag && (
               <span className={`bucket-tag ${bucketTag.cls}`}>{bucketTag.label}</span>
             )}

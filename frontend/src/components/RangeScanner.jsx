@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import CrossConflictWarning from "./CrossConflictWarning.jsx";
-import EarningsTile from "./EarningsTile.jsx";
 import ResearchAsterisk from "./ResearchAsterisk.jsx";
 import ScrollArrows from "./ScrollArrows.jsx";
 
@@ -18,6 +17,7 @@ function rangeScore(row) {
 
 const COLS = [
   { key: "ticker",       label: "Ticker",       align: "left" },
+  { key: "earnings",     label: "EARNINGS",     align: "center" },
   { key: "price",        label: "Price",        align: "right" },
   { key: "support_1",    label: "S1",           align: "right" },
   { key: "resistance_1", label: "R1",           align: "right" },
@@ -38,12 +38,19 @@ function cellValue(row, key, onResearch) {
           {row.sma_golden_cross === true && row.sma_regime === "DOWNTREND" && <CrossConflictWarning />}
           <ResearchAsterisk ticker={row.ticker} hasSitrep={row.has_sitrep} onResearch={onResearch} isDefense={row.is_defense} />
           {row.ticker}
-          <EarningsTile days={row.earnings_days} inWindow={row.earnings_in_window} />
           {row.company_name && (
             <span className="company-name company-name-table">{row.company_name}</span>
           )}
         </span>
       );
+    case "earnings": {
+      const days = row.earnings_days;
+      const dte  = row.best_dte;
+      if (days == null) return <span className="earn-col-unknown">E ?</span>;
+      if (days <= 7 || (dte != null && days <= dte))
+        return <span className="earn-col-hot">E {days}</span>;
+      return <span className="earn-col-neutral">E {days}</span>;
+    }
     case "price":
       return row.price != null ? `$${fmt(row.price)}` : "—";
     case "support_1":
@@ -83,6 +90,7 @@ function sortValue(row, key) {
   const rs = rangeScore(row);
   switch (key) {
     case "ticker":       return row.ticker;
+    case "earnings":     return row.earnings_days ?? Infinity;
     case "price":        return row.price ?? -1;
     case "support_1":    return row.support_1 ?? -1;
     case "resistance_1": return row.resistance_1 ?? Infinity;
@@ -99,8 +107,15 @@ function sortValue(row, key) {
 export default function RangeScanner({ rows, onRowClick, onResearch }) {
   const [sortCol, setSortCol] = useState("range_score");
   const [sortAsc, setSortAsc] = useState(true);
+  const [earnFilter, setEarnFilter] = useState(null);
 
   const handleSort = (key) => {
+    if (key === "earnings") {
+      if (sortCol !== "earnings") { setSortCol("earnings"); setSortAsc(true); }
+      else if (sortAsc) { setSortAsc(false); }
+      else { setSortCol("range_score"); setSortAsc(true); }
+      return;
+    }
     if (sortCol === key) {
       setSortAsc(v => !v);
     } else {
@@ -109,7 +124,18 @@ export default function RangeScanner({ rows, onRowClick, onResearch }) {
     }
   };
 
-  const sorted = [...rows].sort((a, b) => {
+  const earnFiltered = earnFilter === null ? rows
+    : earnFilter === "none" ? rows.filter(r => r.earnings_days == null)
+    : rows.filter(r => r.earnings_days != null && r.earnings_days <= earnFilter);
+
+  const sorted = [...earnFiltered].sort((a, b) => {
+    if (sortCol === "earnings") {
+      const an = a.earnings_days == null;
+      const bn = b.earnings_days == null;
+      if (an && bn) return 0;
+      if (sortAsc) { if (an) return 1; if (bn) return -1; }
+      else         { if (an) return -1; if (bn) return 1; }
+    }
     const av = sortValue(a, sortCol);
     const bv = sortValue(b, sortCol);
     if (typeof av === "string" && typeof bv === "string")
@@ -120,9 +146,18 @@ export default function RangeScanner({ rows, onRowClick, onResearch }) {
   });
 
   return (
-    <ScrollArrows>
-      {sorted.length === 0 ? (
-        <div className="empty">No tickers match the current filters.</div>
+    <div>
+      <div className="dte-filter-row">
+        <span className="dte-filter-label">EARNINGS</span>
+        <button className={`dte-filter-btn${earnFilter === null ? " active" : ""}`} onClick={() => setEarnFilter(null)}>ALL</button>
+        {[7, 14, 21, 30].map(d => (
+          <button key={d} className={`dte-filter-btn${earnFilter === d ? " active" : ""}`} onClick={() => setEarnFilter(d)}>≤{d}d</button>
+        ))}
+        <button className={`dte-filter-btn${earnFilter === "none" ? " active" : ""}`} onClick={() => setEarnFilter("none")}>None</button>
+      </div>
+      <ScrollArrows>
+        {sorted.length === 0 ? (
+          <div className="empty">No tickers match the current filters.</div>
       ) : (
         <table className="prem-scanner-table">
           <thead>
@@ -161,6 +196,7 @@ export default function RangeScanner({ rows, onRowClick, onResearch }) {
           </tbody>
         </table>
       )}
-    </ScrollArrows>
+      </ScrollArrows>
+    </div>
   );
 }
