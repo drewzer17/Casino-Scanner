@@ -33,6 +33,7 @@ class Settings:
     environment: str
     cors_origins: list[str]
     tradier_api_key: str
+    finnhub_api_key: str
 
 
 def load_settings() -> Settings:
@@ -50,6 +51,7 @@ def load_settings() -> Settings:
         cors_origins = ["*"]
 
     tradier_api_key = _clean(os.environ.get("TRADIER_API_KEY"))
+    finnhub_api_key = _clean(os.environ.get("FINNHUB_API_KEY"))
 
     return Settings(
         database_url=database_url,
@@ -58,6 +60,7 @@ def load_settings() -> Settings:
         environment=environment,
         cors_origins=cors_origins,
         tradier_api_key=tradier_api_key,
+        finnhub_api_key=finnhub_api_key,
     )
 
 

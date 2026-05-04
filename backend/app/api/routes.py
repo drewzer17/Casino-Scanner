@@ -1691,6 +1691,53 @@ def get_sitrep_panel(ticker: str, db: Session = Depends(get_db)):
     return data
 
 
+@router.get("/admin/refresh-earnings", include_in_schema=True)
+def admin_refresh_earnings(db: Session = Depends(get_db)) -> dict:
+    """Manually trigger a Finnhub earnings calendar refresh.
+
+    Forces a fresh fetch from Finnhub regardless of cache age,
+    then returns the number of rows upserted and a sample of tickers.
+    Use this after deploying the finnhub integration to populate the
+    cache for the first time, or to diagnose earnings data issues.
+    """
+    from ..services.finnhub_earnings import refresh_earnings_cache
+    from ..config import settings
+
+    if not settings.finnhub_api_key:
+        raise HTTPException(
+            status_code=503,
+            detail="FINNHUB_API_KEY not configured — add it to Railway environment variables",
+        )
+    try:
+        upserted = refresh_earnings_cache(db)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Finnhub refresh failed: {exc}")
+
+    # Return a sample so the caller can eyeball the data
+    from sqlalchemy import text as _text
+    rows = db.execute(
+        _text("""
+            SELECT ticker, next_earnings_date
+            FROM earnings_calendar
+            WHERE next_earnings_date >= CURRENT_DATE
+            ORDER BY next_earnings_date
+            LIMIT 20
+        """)
+    ).fetchall()
+    sample = [{"ticker": r.ticker, "date": str(r.next_earnings_date)} for r in rows]
+
+    total = db.execute(
+        _text("SELECT COUNT(*) FROM earnings_calendar WHERE next_earnings_date >= CURRENT_DATE")
+    ).scalar() or 0
+
+    return {
+        "status": "ok",
+        "upserted": upserted,
+        "total_upcoming": total,
+        "sample_next_20": sample,
+    }
+
+
 @router.get("/winner-frequency", include_in_schema=True)
 def get_winner_frequency():
     """Return pre-computed winner frequency data (from scripts/analyze_winners.py)."""

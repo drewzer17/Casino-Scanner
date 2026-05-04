@@ -129,6 +129,18 @@ class TickerUniverse(Base):
     )
 
 
+class EarningsCalendar(Base):
+    """One row per ticker — stores the next upcoming earnings date.
+
+    Populated/refreshed by the finnhub_earnings service (≤24h TTL).
+    """
+    __tablename__ = "earnings_calendar"
+
+    ticker: Mapped[str] = mapped_column(String(16), primary_key=True)
+    next_earnings_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class IvHistory(Base):
     __tablename__ = "iv_history"
 

@@ -1535,10 +1535,12 @@ def run_scan(
     run.tickers_total = len(universe)
     db.commit()
 
-    # Build earnings lookup once for the entire scan (3 calendar API calls total)
+    # Build earnings lookup once for the entire scan.
+    # Uses Finnhub calendar API with 24h DB cache (falls back to empty on error).
     earnings_lookup: dict[str, int] = {}
     try:
-        earnings_lookup = build_earnings_lookup()
+        from ..services.finnhub_earnings import get_earnings_lookup
+        earnings_lookup = get_earnings_lookup(db)
     except Exception as exc:
         logger.warning("earnings lookup failed, catalyst scores will be 0: %s", exc)
 
