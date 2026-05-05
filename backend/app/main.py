@@ -46,7 +46,7 @@ def _on_startup() -> None:
     init_db()
     # Sync ticker universe CSV → DB (idempotent, safe to run on every boot)
     from .database import SessionLocal
-    from .universe import sync_universe_from_csv
+    from .universe import sync_universe_from_csv, check_ai_universe_drift
     _db = SessionLocal()
     try:
         sync_universe_from_csv(_db)
@@ -55,6 +55,12 @@ def _on_startup() -> None:
         _logging.getLogger(__name__).warning("Universe CSV sync failed on startup: %s", _exc)
     finally:
         _db.close()
+    # Warn if ai_buildout_universe.json and ticker_universe.csv (ai_sector) have drifted
+    try:
+        check_ai_universe_drift()
+    except Exception as _exc:
+        import logging as _logging
+        _logging.getLogger(__name__).warning("AI universe drift check failed: %s", _exc)
     start_scheduler()
 
 
