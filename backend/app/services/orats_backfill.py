@@ -51,7 +51,7 @@ def _fetch_ivrank_batch(
 
     for attempt in range(1, _MAX_RETRIES + 1):
         try:
-            with httpx.Client(timeout=30.0) as client:
+            with httpx.Client(timeout=30.0, follow_redirects=True) as client:
                 resp = client.get(f"{_ORATS_BASE}/datav2/hist/ivrank", params=params)
 
             if resp.status_code == 401:
