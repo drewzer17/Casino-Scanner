@@ -280,6 +280,7 @@ def _iv_rank_from_db(db: "Session", ticker: str, current_iv: float | None) -> fl
     Returns None (caller falls back to 50.0 placeholder) when:
       - current_iv is None/zero
       - fewer than 30 rows in iv_history for this ticker
+      - latest row is more than 7 days old (stale history)
       - any DB error
     """
     if current_iv is None or current_iv <= 0:
@@ -289,7 +290,7 @@ def _iv_rank_from_db(db: "Session", ticker: str, current_iv: float | None) -> fl
         cutoff = (date.today() - timedelta(days=365)).isoformat()
         rows = db.execute(
             _text(
-                "SELECT iv FROM iv_history "
+                "SELECT iv, recorded_date FROM iv_history "
                 "WHERE ticker = :t AND recorded_date >= :cutoff "
                 "ORDER BY recorded_date"
             ),
@@ -300,7 +301,15 @@ def _iv_rank_from_db(db: "Session", ticker: str, current_iv: float | None) -> fl
         return None
 
     if len(rows) < 30:
-        return None   # not enough history — caller uses 50.0 placeholder
+        return None
+
+    latest_date = max(r.recorded_date for r in rows)
+    if (date.today() - latest_date).days > 7:
+        logger.warning(
+            "iv_history stale for %s: latest row is %s (%d days old)",
+            ticker, latest_date, (date.today() - latest_date).days,
+        )
+        return None
 
     ivs = [float(r.iv) for r in rows]
     below_or_equal = sum(1 for iv in ivs if iv <= current_iv)
@@ -1018,8 +1027,17 @@ class ScanRowResult:
     term_structure: float | None = None
 
 
-def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None = None) -> ScanRowResult | None:
-    """Scan one ticker via Tradier. price and earn_days may be pre-fetched by the caller."""
+def scan_ticker(
+    ticker: str,
+    price: float | None = None,
+    earn_days: int | None = None,
+    is_ai: bool = False,
+) -> list[ScanRowResult]:
+    """Scan one ticker via Tradier. price and earn_days may be pre-fetched by the caller.
+
+    Returns a list of ScanRowResult — one per expiry for AI sector tickers, one for others.
+    Returns an empty list on failure (options-less ticker, no price, etc.).
+    """
     try:
         # 1. Price — fall back to individual quote if not pre-fetched
         if price is None:
@@ -1028,7 +1046,7 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
             raw = q.get("last")
             if not _is_valid(raw):
                 logger.debug("%s: no price from Tradier", ticker)
-                return None
+                return []
             price = float(raw)
 
         # 2. Historical OHLCV bars → HV + SMA + S/R
@@ -1077,7 +1095,7 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
         exps = fetch_expirations(ticker)
         if not exps:
             logger.debug("%s: no options chain — skipping", ticker)
-            return None
+            return []
 
         # IV expiry: 21-45d window, used for IV rank + chain quality metrics
         iv_exp = _nearest_expiry(exps)
@@ -1125,27 +1143,42 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
             except Exception as exc:
                 logger.debug("%s: 25-delta IV extraction failed: %s", ticker, exc)
 
-        # Premium expiry: nearest single expiry in 7-30d window (avoids multi-fetch timeout).
-        # Full multi-expiry table is fetched on demand when user opens the detail modal.
-        prem_exps = _expirations_for_premium(exps)
-        prem_exp_tuple = prem_exps[0] if prem_exps else None
-        if prem_exp_tuple is None and iv_exp:
-            iv_dte = (datetime.strptime(iv_exp, "%Y-%m-%d").date() - date.today()).days
-            prem_exp_tuple = (iv_dte, iv_exp)
+        # IV rank (shared across all expiries for this ticker)
+        iv_rank = _iv_rank_from_history(closes, atm_iv)
+        if iv_rank is None and atm_iv is not None:
+            iv_rank = 50.0  # neutral placeholder until we have 30d of IV history
 
-        best_atm_premium: float | None = None
-        best_otm1: float | None = None
-        best_otm2: float | None = None
-        best_expiry: str | None = None
-        best_dte: int | None = None
-        best_strike: float | None = None
-        best_put_premium: float | None = None
-        best_put_strike: float | None = None
-        best_put_expiry: str | None = None
-        best_put_dte: int | None = None
+        # Build the expiry list to score.
+        # AI sector: all expiries Tradier returned (DTE >= 1), unfiltered.
+        # Non-AI: nearest single expiry in 7-30d window, falling back to iv_exp.
+        today_d = date.today()
+        if is_ai:
+            exp_list: list[tuple[int, str]] = sorted(
+                (((datetime.strptime(e, "%Y-%m-%d").date() - today_d).days, e)
+                 for e in exps
+                 if (datetime.strptime(e, "%Y-%m-%d").date() - today_d).days >= 1),
+            )
+        else:
+            prem_exps = _expirations_for_premium(exps)
+            single = prem_exps[0] if prem_exps else None
+            if single is None and iv_exp:
+                iv_dte = (datetime.strptime(iv_exp, "%Y-%m-%d").date() - today_d).days
+                single = (iv_dte, iv_exp)
+            exp_list = [single] if single else []
 
-        if prem_exp_tuple:
-            dte, exp = prem_exp_tuple
+        results: list[ScanRowResult] = []
+
+        for exp_tuple in exp_list:
+            dte, exp = exp_tuple
+
+            # Fetch chain for this expiry (reuse cache when possible)
+            best_atm_premium: float | None = None
+            best_otm1: float | None = None
+            best_otm2: float | None = None
+            best_strike: float | None = None
+            best_put_premium: float | None = None
+            best_put_strike: float | None = None
+
             try:
                 if exp not in chain_cache:
                     chain_cache[exp] = fetch_chain(ticker, exp)
@@ -1154,10 +1187,7 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
                 best_atm_premium = _contract_mid(atm_c)
                 best_otm1 = _contract_mid(otm1_c)
                 best_otm2 = _contract_mid(otm2_c)
-                best_expiry = exp
-                best_dte = dte
                 best_strike = round(float(atm_c["strike"]), 2) if atm_c else None
-                # ATM put from same chain
                 _puts = sorted(
                     [o for o in chain if o.get("option_type") == "put" and _is_valid(o.get("strike")) and _is_sane_contract(o, price)],
                     key=lambda o: float(o["strike"]),
@@ -1167,188 +1197,174 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
                     _p = _puts[_pi]
                     best_put_premium = _contract_mid(_p)
                     best_put_strike = round(float(_p["strike"]), 2)
-                    best_put_expiry = exp
-                    best_put_dte = dte
             except Exception as exc:
-                logger.debug("%s: premium chain fetch failed (%s): %s", ticker, exp, exc)
+                logger.debug("%s: chain fetch failed (%s): %s", ticker, exp, exc)
 
-        # Fall back to IV expiry data if premium fetch failed
-        if best_atm_premium is None and iv_exp and iv_exp in chain_cache:
-            iv_chain = chain_cache[iv_exp]
-            atm_c, otm1_c, otm2_c = _pick_call_strikes(iv_chain, price)
-            best_atm_premium = _contract_mid(atm_c)
-            best_otm1 = _contract_mid(otm1_c)
-            best_otm2 = _contract_mid(otm2_c)
-            best_expiry = iv_exp
-            if iv_exp:
-                best_dte = (datetime.strptime(iv_exp, "%Y-%m-%d").date() - date.today()).days
-            best_strike = round(float(atm_c["strike"]), 2) if atm_c else None
-            # ATM put from fallback IV chain
-            _puts = sorted(
-                [o for o in iv_chain if o.get("option_type") == "put" and _is_valid(o.get("strike")) and _is_sane_contract(o, price)],
-                key=lambda o: float(o["strike"]),
+            # For non-AI, fall back to IV expiry chain if premium fetch failed
+            if not is_ai and best_atm_premium is None and iv_exp and iv_exp in chain_cache:
+                iv_chain = chain_cache[iv_exp]
+                atm_c, otm1_c, otm2_c = _pick_call_strikes(iv_chain, price)
+                best_atm_premium = _contract_mid(atm_c)
+                best_otm1 = _contract_mid(otm1_c)
+                best_otm2 = _contract_mid(otm2_c)
+                exp = iv_exp
+                dte = (datetime.strptime(iv_exp, "%Y-%m-%d").date() - today_d).days
+                best_strike = round(float(atm_c["strike"]), 2) if atm_c else None
+                _puts = sorted(
+                    [o for o in iv_chain if o.get("option_type") == "put" and _is_valid(o.get("strike")) and _is_sane_contract(o, price)],
+                    key=lambda o: float(o["strike"]),
+                )
+                if _puts:
+                    _pi = min(range(len(_puts)), key=lambda i: abs(float(_puts[i]["strike"]) - price))
+                    _p = _puts[_pi]
+                    best_put_premium = _contract_mid(_p)
+                    best_put_strike = round(float(_p["strike"]), 2)
+
+            # Per-expiry scoring (premium_pct varies by expiry)
+            premium_pct = (best_atm_premium / price) if (best_atm_premium and price) else None
+            iv_ramp = (
+                iv_rank is not None and iv_rank >= 70
+                and earn_days is not None and 0 < earn_days <= 21
             )
-            if _puts:
-                _pi = min(range(len(_puts)), key=lambda i: abs(float(_puts[i]["strike"]) - price))
-                _p = _puts[_pi]
-                best_put_premium = _contract_mid(_p)
-                best_put_strike = round(float(_p["strike"]), 2)
-                best_put_expiry = iv_exp
-                best_put_dte = best_dte
+            metrics = TickerMetrics(
+                iv_rank=iv_rank,
+                premium_pct=premium_pct,
+                premium_otm2=best_otm2,
+                iv=atm_iv,
+                hv=hv,
+                earnings_days=earn_days,
+                sector_macro_catalyst=False,
+                iv_ramp=iv_ramp,
+                unusual_volume=False,
+                open_interest=atm_oi,
+                bid_ask_spread_pct=spread_pct,
+            )
+            breakdown = score_ticker(metrics)
+            sma_adj = _sma_score_modifier(price, sma_50, sma_200, regime, golden_cross)
+            final_score = round(max(0.0, min(100.0, breakdown.total + sma_adj)), 2)
+            bucket = assign_bucket(final_score, iv_rank, premium_pct, earn_days)
 
-        atm_premium = best_atm_premium
-        premium_otm1 = best_otm1
-        premium_otm2 = best_otm2
+            safety_score = _calc_safety_score(
+                best_otm2, atm_iv, hv, price,
+                supports[0]["price"] if supports else None,
+                bars, earn_days,
+            )
 
-        # IV rank: use rolling-vol approximation if we have closes; else 50 placeholder
-        iv_rank = _iv_rank_from_history(closes, atm_iv)
-        if iv_rank is None and atm_iv is not None:
-            iv_rank = 50.0  # neutral placeholder until we have 30d of IV history
+            cc_score = _calc_cc_score(
+                price=price,
+                sma_200=sma_200,
+                sma_50=sma_50,
+                sma_golden_cross=golden_cross,
+                resistance_1=resistances[0]["price"] if resistances else None,
+                price_vs_sma200_pct=price_vs_sma200_pct,
+                price_vs_sma50_pct=price_vs_sma50_pct,
+                iv_rank=iv_rank,
+                atm_call_premium=best_atm_premium,
+                iv=atm_iv,
+                hv=hv,
+                premium_pct=premium_pct,
+                open_interest=atm_oi,
+                bid_ask_spread_pct=spread_pct,
+                support_1=supports[0]["price"] if supports else None,
+                sma_regime=regime,
+            )
 
-        # Use best ATM premium across all expirations for % scoring
-        premium_pct = (atm_premium / price) if (atm_premium and price) else None
-        unusual_vol = False
+            csp_score = _calc_csp_score(
+                price=price,
+                sma_200=sma_200,
+                sma_50=sma_50,
+                sma_golden_cross=golden_cross,
+                sma_regime=regime,
+                support_1=supports[0]["price"] if supports else None,
+                support_1_strength=supports[0]["strength"] if supports else None,
+                support_2=supports[1]["price"] if len(supports) > 1 else None,
+                iv_rank=iv_rank,
+                atm_put_premium=best_put_premium,
+                iv=atm_iv,
+                hv=hv,
+                premium_pct=premium_pct,
+                open_interest=atm_oi,
+                bid_ask_spread_pct=spread_pct,
+            )
 
-        # earn_days is pre-fetched from the earnings calendar lookup in run_scan
-        iv_ramp = (
-            iv_rank is not None and iv_rank >= 70
-            and earn_days is not None and 0 < earn_days <= 21
-        )
+            results.append(ScanRowResult(
+                ticker=ticker,
+                metrics=metrics,
+                price=price,
+                atm_call_premium=best_atm_premium,
+                premium_otm1=round(best_otm1, 4) if best_otm1 else None,
+                premium_otm2=round(best_otm2, 4) if best_otm2 else None,
+                score=final_score,
+                bucket=bucket,
+                breakdown_iv_rank=breakdown.iv_rank,
+                breakdown_premium=breakdown.premium,
+                breakdown_iv_hv=breakdown.iv_hv,
+                breakdown_catalyst=breakdown.catalyst,
+                breakdown_chain=breakdown.chain,
+                safety_score=safety_score,
+                iv=atm_iv,
+                # Expiry-specific fields
+                best_expiry=exp,
+                best_dte=dte,
+                best_strike=best_strike,
+                expiry_data=None,
+                # ATM put
+                atm_put_premium=round(best_put_premium, 4) if best_put_premium else None,
+                best_put_strike=best_put_strike,
+                best_put_expiry=exp,
+                best_put_dte=dte,
+                # SMA
+                sma_200=round(sma_200, 4) if sma_200 else None,
+                sma_50=round(sma_50, 4) if sma_50 else None,
+                price_vs_sma200_pct=round(price_vs_sma200_pct, 2) if price_vs_sma200_pct is not None else None,
+                price_vs_sma50_pct=round(price_vs_sma50_pct, 2) if price_vs_sma50_pct is not None else None,
+                sma_regime=regime,
+                sma_golden_cross=golden_cross,
+                # S/R
+                support_1=round(supports[0]["price"], 2) if len(supports) > 0 else None,
+                support_1_strength=supports[0]["strength"] if len(supports) > 0 else None,
+                support_2=round(supports[1]["price"], 2) if len(supports) > 1 else None,
+                support_2_strength=supports[1]["strength"] if len(supports) > 1 else None,
+                resistance_1=round(resistances[0]["price"], 2) if len(resistances) > 0 else None,
+                resistance_1_strength=resistances[0]["strength"] if len(resistances) > 0 else None,
+                resistance_2=round(resistances[1]["price"], 2) if len(resistances) > 1 else None,
+                resistance_2_strength=resistances[1]["strength"] if len(resistances) > 1 else None,
+                cc_score=cc_score,
+                csp_score=csp_score,
+                # Phase 1 Risk Quality fields
+                ema_20=round(ema_20, 4) if ema_20 is not None else None,
+                ema_50=round(ema_50, 4) if ema_50 is not None else None,
+                distribution_days_25=distribution_days_25,
+                iv_25d_put=round(iv_25d_put, 4) if iv_25d_put is not None else None,
+                iv_25d_call=round(iv_25d_call, 4) if iv_25d_call is not None else None,
+                put_skew=put_skew,
+            ))
 
-        metrics = TickerMetrics(
-            iv_rank=iv_rank,
-            premium_pct=premium_pct,
-            premium_otm2=premium_otm2,
-            iv=atm_iv,
-            hv=hv,
-            earnings_days=earn_days,
-            sector_macro_catalyst=False,
-            iv_ramp=iv_ramp,
-            unusual_volume=unusual_vol,
-            open_interest=atm_oi,
-            bid_ask_spread_pct=spread_pct,
-        )
-        breakdown = score_ticker(metrics)
+        return results
 
-        # SMA modifier: small ±5 adjustment baked into the final score
-        sma_adj = _sma_score_modifier(price, sma_50, sma_200, regime, golden_cross)
-        final_score = round(max(0.0, min(100.0, breakdown.total + sma_adj)), 2)
-
-        bucket = assign_bucket(final_score, iv_rank, premium_pct, earn_days)
-
-        safety_score = _calc_safety_score(
-            premium_otm2, atm_iv, hv, price,
-            supports[0]["price"] if supports else None,
-            bars, earn_days,
-        )
-
-        cc_score = _calc_cc_score(
-            price=price,
-            sma_200=sma_200,
-            sma_50=sma_50,
-            sma_golden_cross=golden_cross,
-            resistance_1=resistances[0]["price"] if resistances else None,
-            price_vs_sma200_pct=price_vs_sma200_pct,
-            price_vs_sma50_pct=price_vs_sma50_pct,
-            iv_rank=iv_rank,
-            atm_call_premium=atm_premium,
-            iv=atm_iv,
-            hv=hv,
-            premium_pct=premium_pct,
-            open_interest=atm_oi,
-            bid_ask_spread_pct=spread_pct,
-            support_1=supports[0]["price"] if supports else None,
-            sma_regime=regime,
-        )
-
-        csp_score = _calc_csp_score(
-            price=price,
-            sma_200=sma_200,
-            sma_50=sma_50,
-            sma_golden_cross=golden_cross,
-            sma_regime=regime,
-            support_1=supports[0]["price"] if supports else None,
-            support_1_strength=supports[0]["strength"] if supports else None,
-            support_2=supports[1]["price"] if len(supports) > 1 else None,
-            iv_rank=iv_rank,
-            atm_put_premium=best_put_premium,
-            iv=atm_iv,
-            hv=hv,
-            premium_pct=premium_pct,
-            open_interest=atm_oi,
-            bid_ask_spread_pct=spread_pct,
-        )
-
-        return ScanRowResult(
-            ticker=ticker,
-            metrics=metrics,
-            price=price,
-            atm_call_premium=atm_premium,
-            premium_otm1=round(premium_otm1, 4) if premium_otm1 else None,
-            premium_otm2=round(premium_otm2, 4) if premium_otm2 else None,
-            score=final_score,
-            bucket=bucket,
-            breakdown_iv_rank=breakdown.iv_rank,
-            breakdown_premium=breakdown.premium,
-            breakdown_iv_hv=breakdown.iv_hv,
-            breakdown_catalyst=breakdown.catalyst,
-            breakdown_chain=breakdown.chain,
-            safety_score=safety_score,
-            iv=atm_iv,
-            # Multi-expiry
-            best_expiry=best_expiry,
-            best_dte=best_dte,
-            best_strike=best_strike,
-            expiry_data=None,
-            # ATM put
-            atm_put_premium=round(best_put_premium, 4) if best_put_premium else None,
-            best_put_strike=best_put_strike,
-            best_put_expiry=best_put_expiry,
-            best_put_dte=best_put_dte,
-            # SMA
-            sma_200=round(sma_200, 4) if sma_200 else None,
-            sma_50=round(sma_50, 4) if sma_50 else None,
-            price_vs_sma200_pct=round(price_vs_sma200_pct, 2) if price_vs_sma200_pct is not None else None,
-            price_vs_sma50_pct=round(price_vs_sma50_pct, 2) if price_vs_sma50_pct is not None else None,
-            sma_regime=regime,
-            sma_golden_cross=golden_cross,
-            # S/R
-            support_1=round(supports[0]["price"], 2) if len(supports) > 0 else None,
-            support_1_strength=supports[0]["strength"] if len(supports) > 0 else None,
-            support_2=round(supports[1]["price"], 2) if len(supports) > 1 else None,
-            support_2_strength=supports[1]["strength"] if len(supports) > 1 else None,
-            resistance_1=round(resistances[0]["price"], 2) if len(resistances) > 0 else None,
-            resistance_1_strength=resistances[0]["strength"] if len(resistances) > 0 else None,
-            resistance_2=round(resistances[1]["price"], 2) if len(resistances) > 1 else None,
-            resistance_2_strength=resistances[1]["strength"] if len(resistances) > 1 else None,
-            cc_score=cc_score,
-            csp_score=csp_score,
-            # Phase 1 Risk Quality fields
-            ema_20=round(ema_20, 4) if ema_20 is not None else None,
-            ema_50=round(ema_50, 4) if ema_50 is not None else None,
-            distribution_days_25=distribution_days_25,
-            iv_25d_put=round(iv_25d_put, 4) if iv_25d_put is not None else None,
-            iv_25d_call=round(iv_25d_call, 4) if iv_25d_call is not None else None,
-            put_skew=put_skew,
-        )
     except Exception as exc:
         logger.warning("scan_ticker failed for %s: %s", ticker, exc)
-        return None
+        return []
 
 
 # ── Timeout wrapper ───────────────────────────────────────────────────────────
 
-def _scan_with_timeout(ticker: str, price: float | None = None, earn_days: int | None = None) -> ScanRowResult | None:
+def _scan_with_timeout(
+    ticker: str,
+    price: float | None = None,
+    earn_days: int | None = None,
+    is_ai: bool = False,
+) -> list[ScanRowResult]:
     with ThreadPoolExecutor(max_workers=1) as pool:
-        future = pool.submit(scan_ticker, ticker, price, earn_days)
+        future = pool.submit(scan_ticker, ticker, price, earn_days, is_ai)
         try:
             return future.result(timeout=TICKER_TIMEOUT)
         except FuturesTimeout:
             logger.warning("ticker %s timed out after %ds", ticker, TICKER_TIMEOUT)
-            return None
+            return []
         except Exception as exc:
             logger.warning("ticker %s raised unexpectedly: %s", ticker, exc)
-            return None
+            return []
 
 
 # ── IV Ramp Detection ─────────────────────────────────────────────────────────
@@ -1541,15 +1557,29 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
 
 # ── Main scan orchestrator ────────────────────────────────────────────────────
 
-def scan_ticker_extensive(ticker: str, price: float | None = None, earn_days: int | None = None) -> ScanRowResult | None:
+def scan_ticker_extensive(
+    ticker: str,
+    price: float | None = None,
+    earn_days: int | None = None,
+    is_ai: bool = False,
+) -> list[ScanRowResult]:
     """Extensive scan: runs normal scan_ticker then also fetches nearest weekly expiry.
 
-    Weekly = earliest available expiry that is NOT the one already used by the base scan.
-    Both entries are stored in expiry_data JSON so the Premium Scanner DTE filter can use them.
+    For AI sector tickers (is_ai=True): scan_ticker already stores every expiry as its own
+    row, so we skip the extra weekly fetch and return the multi-expiry list directly.
+
+    For non-AI tickers: weekly + monthly expiries are stored in expiry_data JSON so the
+    Premium Scanner DTE filter can use them.
     """
-    result = scan_ticker(ticker, price, earn_days)
-    if result is None:
-        return None
+    results = scan_ticker(ticker, price, earn_days, is_ai=is_ai)
+    if not results:
+        return []
+
+    # AI tickers: all expiries already scored — nothing more to do
+    if is_ai:
+        return results
+
+    result = results[0]
 
     try:
         exps = fetch_expirations(ticker)
@@ -1637,20 +1667,25 @@ def scan_ticker_extensive(ticker: str, price: float | None = None, earn_days: in
     except Exception as exc:
         logger.debug("%s: extensive extra fetch failed: %s", ticker, exc)
 
-    return result
+    return [result]
 
 
-def _scan_extensive_with_timeout(ticker: str, price: float | None = None, earn_days: int | None = None) -> ScanRowResult | None:
+def _scan_extensive_with_timeout(
+    ticker: str,
+    price: float | None = None,
+    earn_days: int | None = None,
+    is_ai: bool = False,
+) -> list[ScanRowResult]:
     with ThreadPoolExecutor(max_workers=1) as pool:
-        future = pool.submit(scan_ticker_extensive, ticker, price, earn_days)
+        future = pool.submit(scan_ticker_extensive, ticker, price, earn_days, is_ai)
         try:
             return future.result(timeout=TICKER_TIMEOUT)
         except FuturesTimeout:
             logger.warning("ticker %s (extensive) timed out after %ds", ticker, TICKER_TIMEOUT)
-            return None
+            return []
         except Exception as exc:
             logger.warning("ticker %s (extensive) raised unexpectedly: %s", ticker, exc)
-            return None
+            return []
 
 
 def run_scan(
@@ -1684,6 +1719,17 @@ def run_scan(
             universe = load_universe()
     if limit is not None:
         universe = universe[:limit]
+
+    # Build AI sector set once — these tickers get a row per expiry instead of one
+    ai_tickers: set[str] = set()
+    try:
+        from ..universe import ticker_sources_from_db
+        for t, sources in ticker_sources_from_db(db).items():
+            if any(s in ("ai_sector", "ai_nuclear") for s in sources):
+                ai_tickers.add(t)
+        logger.info("AI sector tickers: %d (will store one row per expiry)", len(ai_tickers))
+    except Exception as exc:
+        logger.warning("ai_tickers lookup failed, all tickers treated as non-AI: %s", exc)
 
     # Find or create a ScanRun
     existing_run = db.execute(
@@ -1769,13 +1815,16 @@ def run_scan(
                     cat_debug_logged + 1, ticker, earn_days_val, ticker in earnings_lookup,
                 )
                 cat_debug_logged += 1
-            result = scanner_fn(ticker, price=prices.get(ticker), earn_days=earn_days_val)
-            if result is None:
+            is_ai = ticker in ai_tickers
+            results = scanner_fn(ticker, price=prices.get(ticker), earn_days=earn_days_val, is_ai=is_ai)
+            if not results:
                 errored += 1
             else:
-                result.company_name = company_names.get(ticker)
+                company_name = company_names.get(ticker)
+                for result in results:
+                    result.company_name = company_name
+                    _persist_result(db, run.id, result)
                 scanned += 1
-                _persist_result(db, run.id, result)
 
         run.tickers_scanned = scanned
         run.tickers_errored = errored
