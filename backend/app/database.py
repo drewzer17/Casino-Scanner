@@ -117,6 +117,30 @@ def init_db() -> None:
     # scan_slot column added in v10 (tracks which scheduled slot triggered the run)
     _add_column_if_missing("ALTER TABLE scan_runs ADD COLUMN scan_slot VARCHAR(16)")
 
+    # Phase 1 Risk Quality data layer — v11
+    # EMA indicators
+    for _ddl in [
+        "ALTER TABLE scan_results ADD COLUMN ema_20 FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN ema_50 FLOAT",
+    ]:
+        _add_column_if_missing(_ddl)
+    # Distribution day count
+    _add_column_if_missing("ALTER TABLE scan_results ADD COLUMN distribution_days_25 INTEGER")
+    # 25-delta IV and put skew
+    for _ddl in [
+        "ALTER TABLE scan_results ADD COLUMN iv_25d_put FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN iv_25d_call FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN put_skew FLOAT",
+    ]:
+        _add_column_if_missing(_ddl)
+    # Term structure (front vs back month ATM IV)
+    for _ddl in [
+        "ALTER TABLE scan_results ADD COLUMN iv_front_month FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN iv_back_month FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN term_structure FLOAT",
+    ]:
+        _add_column_if_missing(_ddl)
+
     # Asymmetric setup flags added in v9
     for _ddl in [
         "ALTER TABLE scan_results ADD COLUMN asymmetric_cc_flag BOOLEAN DEFAULT FALSE",

@@ -102,6 +102,17 @@ class ScanResult(Base):
     iv_ramp_score: Mapped[int] = mapped_column(Integer, default=0)
     iv_ramp_flag: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    # Phase 1 Risk Quality data layer
+    ema_20: Mapped[float | None] = mapped_column(Float, nullable=True)
+    ema_50: Mapped[float | None] = mapped_column(Float, nullable=True)
+    distribution_days_25: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    iv_25d_put: Mapped[float | None] = mapped_column(Float, nullable=True)   # IV at 25-delta put
+    iv_25d_call: Mapped[float | None] = mapped_column(Float, nullable=True)  # IV at 25-delta call
+    put_skew: Mapped[float | None] = mapped_column(Float, nullable=True)     # iv_25d_put - iv_25d_call
+    iv_front_month: Mapped[float | None] = mapped_column(Float, nullable=True)  # ATM IV, nearest expiry
+    iv_back_month: Mapped[float | None] = mapped_column(Float, nullable=True)   # ATM IV, second expiry
+    term_structure: Mapped[float | None] = mapped_column(Float, nullable=True)  # iv_back - iv_front (+= contango)
+
     # Asymmetric setup flags (computed during scan from convergence of multiple criteria)
     asymmetric_cc_flag: Mapped[bool] = mapped_column(Boolean, default=False)
     asymmetric_csp_flag: Mapped[bool] = mapped_column(Boolean, default=False)

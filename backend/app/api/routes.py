@@ -1785,16 +1785,26 @@ def get_winner_frequency():
         return json.load(f)
 
 
-@router.get("/admin/test-orats-key", include_in_schema=False)
-def test_orats_key():
-    """Temporary endpoint — verify ORATS_API_KEY is set in Railway env. Remove after verification."""
-    import os
-    key = os.environ.get("ORATS_API_KEY")
-    if not key:
-        return {"status": "missing"}
+@router.post("/admin/backfill-iv-history", include_in_schema=False)
+def trigger_backfill_iv_history(background_tasks: BackgroundTasks) -> dict:
+    """Trigger a one-time ORATS historical IV backfill into iv_history table.
+
+    Runs in background — check Railway logs for progress and results.
+    Safe to re-run (idempotent via ON CONFLICT DO UPDATE).
+    """
+    def _run() -> None:
+        from ..services.orats_backfill import backfill_iv_history
+        _db = SessionLocal()
+        try:
+            summary = backfill_iv_history(_db)
+            logger.info("ORATS backfill complete: %s", summary)
+        except Exception as exc:
+            logger.exception("ORATS backfill failed: %s", exc)
+        finally:
+            _db.close()
+
+    background_tasks.add_task(_run)
     return {
-        "status": "set",
-        "length": len(key),
-        "first_4_chars": key[:4],
-        "last_4_chars": key[-4:],
+        "status": "backfill_started",
+        "message": "IV history backfill running in background. Check Railway logs for progress.",
     }

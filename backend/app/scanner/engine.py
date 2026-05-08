@@ -31,7 +31,7 @@ from typing import Iterable
 import json
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import select, text as _text
 from sqlalchemy.orm import Session
 
 from .. import models
@@ -272,12 +272,62 @@ def _iv_rank_from_history(closes: list[float], current_iv: float | None) -> floa
     return max(0.0, min(100.0, (current_iv - lo) / (hi - lo) * 100))
 
 
+def _iv_rank_from_db(db: "Session", ticker: str, current_iv: float | None) -> float | None:
+    """Compute IV percentile rank using iv_history table.
+
+    Formula: count(historical IVs <= current_iv) / total_count * 100
+
+    Returns None (caller falls back to 50.0 placeholder) when:
+      - current_iv is None/zero
+      - fewer than 30 rows in iv_history for this ticker
+      - any DB error
+    """
+    if current_iv is None or current_iv <= 0:
+        return None
+    try:
+        from datetime import timedelta
+        cutoff = (date.today() - timedelta(days=365)).isoformat()
+        rows = db.execute(
+            _text(
+                "SELECT iv FROM iv_history "
+                "WHERE ticker = :t AND recorded_date >= :cutoff "
+                "ORDER BY recorded_date"
+            ),
+            {"t": ticker, "cutoff": cutoff},
+        ).fetchall()
+    except Exception as exc:
+        logger.debug("iv_history query failed for %s: %s", ticker, exc)
+        return None
+
+    if len(rows) < 30:
+        return None   # not enough history — caller uses 50.0 placeholder
+
+    ivs = [float(r.iv) for r in rows]
+    below_or_equal = sum(1 for iv in ivs if iv <= current_iv)
+    return round(below_or_equal / len(ivs) * 100.0, 1)
+
+
 # ── SMA helpers ───────────────────────────────────────────────────────────────
 
 def _calc_sma(closes: list[float], period: int) -> float | None:
     if len(closes) < period:
         return None
     return sum(closes[-period:]) / period
+
+
+def _calc_ema(closes: list[float], period: int) -> float | None:
+    """Exponential Moving Average using standard smoothing factor 2/(period+1).
+
+    Seeded with the SMA of the first ``period`` values, then applies EMA formula
+    to all subsequent closes.  Returns None if not enough data.
+    """
+    if len(closes) < period:
+        return None
+    smoothing = 2.0 / (period + 1)
+    ema = sum(closes[:period]) / period   # seed = SMA of first window
+    for price in closes[period:]:
+        ema = price * smoothing + ema * (1.0 - smoothing)
+    return ema
 
 
 def _sma_regime(price: float, sma_50: float | None, sma_200: float | None) -> str | None:
@@ -312,6 +362,39 @@ def _sma_score_modifier(
     if golden_cross is False:          # death cross
         adj -= 2.0
     return max(-5.0, min(5.0, adj))
+
+
+def _count_distribution_days(bars: list[Bar]) -> int:
+    """Count distribution days in the last 25 trading sessions.
+
+    A distribution day is defined as:
+      - Close < prior_close * 0.998  (down ≥ 0.2%), AND
+      - Volume > rolling 50-day average volume (computed ending at the prior session)
+
+    Returns 0 if there isn't enough history.
+    """
+    n = len(bars)
+    if n < 52:   # need 50-bar vol window + at least 2 sessions to compare
+        return 0
+    count = 0
+    start_idx = max(1, n - 25)
+    for i in range(start_idx, n):
+        bar = bars[i]
+        prior = bars[i - 1]
+        if prior.close <= 0 or bar.close <= 0:
+            continue
+        pct_change = (bar.close - prior.close) / prior.close
+        if pct_change >= -0.002:   # not down enough
+            continue
+        # Rolling 50-day avg volume ending at the prior session (exclusive of today's bar)
+        vol_start = max(0, i - 50)
+        vol_bars = bars[vol_start:i]
+        if not vol_bars:
+            continue
+        avg_vol = sum(b.volume for b in vol_bars) / len(vol_bars)
+        if avg_vol > 0 and bar.volume > avg_vol:
+            count += 1
+    return count
 
 
 # ── Support / Resistance detection ───────────────────────────────────────────
@@ -625,6 +708,44 @@ def _is_sane_contract(contract: dict, price: float) -> bool:
     return True
 
 
+def _find_25delta_iv(options: list[dict], option_type: str) -> float | None:
+    """Return IV (smv_vol) of the option contract closest to 25-delta.
+
+    Target delta: +0.25 for calls, -0.25 for puts.
+    Requires greeks.delta to be present in the contract — returns None for
+    illiquid names where Tradier doesn't populate greeks.
+    """
+    target = 0.25 if option_type == "call" else -0.25
+    best_diff: float | None = None
+    best_iv: float | None = None
+
+    for c in options:
+        if c.get("option_type") != option_type:
+            continue
+        # Basic contract validity: standard size + standard strike
+        contract_size = c.get("contract_size")
+        if contract_size is not None and int(contract_size) != 100:
+            continue
+        strike_raw = c.get("strike")
+        if not _is_valid(strike_raw):
+            continue
+        if not _is_standard_strike(float(strike_raw)):
+            continue
+        greeks = c.get("greeks") or {}
+        delta_raw = greeks.get("delta")
+        if not _is_valid(delta_raw):
+            continue
+        delta = float(delta_raw)
+        diff = abs(delta - target)
+        if best_diff is None or diff < best_diff:
+            iv_raw = greeks.get("smv_vol") or greeks.get("mid_iv") or greeks.get("iv")
+            if _is_valid(iv_raw):
+                best_diff = diff
+                best_iv = float(iv_raw)
+
+    return best_iv
+
+
 # ── Safety score ─────────────────────────────────────────────────────────────
 
 def _calc_safety_score(
@@ -885,6 +1006,16 @@ class ScanRowResult:
     # CC / CSP attractiveness scores
     cc_score: int | None = None
     csp_score: int | None = None
+    # Phase 1 Risk Quality fields
+    ema_20: float | None = None
+    ema_50: float | None = None
+    distribution_days_25: int | None = None
+    iv_25d_put: float | None = None
+    iv_25d_call: float | None = None
+    put_skew: float | None = None
+    iv_front_month: float | None = None
+    iv_back_month: float | None = None
+    term_structure: float | None = None
 
 
 def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None = None) -> ScanRowResult | None:
@@ -913,6 +1044,13 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
         price_vs_sma50_pct = ((price - sma_50) / sma_50 * 100) if sma_50 else None
         regime = _sma_regime(price, sma_50, sma_200)
         golden_cross = (sma_50 > sma_200) if (sma_50 and sma_200) else None
+
+        # EMA calculations (Phase 1 Risk Quality)
+        ema_20 = _calc_ema(closes, 20)
+        ema_50 = _calc_ema(closes, 50)
+
+        # Distribution day count — last 25 sessions (Phase 1 Risk Quality)
+        distribution_days_25 = _count_distribution_days(bars)
 
         # Support / Resistance detection
         supports, resistances = _find_support_resistance(bars, price)
@@ -973,6 +1111,19 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
                         atm_oi = int(float(oi_raw))
             except Exception as exc:
                 logger.debug("%s: IV chain fetch failed (%s): %s", ticker, iv_exp, exc)
+
+        # 25-delta IV extraction from IV-expiry chain (Phase 1 Risk Quality)
+        iv_25d_call: float | None = None
+        iv_25d_put: float | None = None
+        put_skew: float | None = None
+        if iv_exp and iv_exp in chain_cache:
+            try:
+                iv_25d_call = _find_25delta_iv(chain_cache[iv_exp], "call")
+                iv_25d_put  = _find_25delta_iv(chain_cache[iv_exp], "put")
+                if iv_25d_put is not None and iv_25d_call is not None:
+                    put_skew = round(iv_25d_put - iv_25d_call, 4)
+            except Exception as exc:
+                logger.debug("%s: 25-delta IV extraction failed: %s", ticker, exc)
 
         # Premium expiry: nearest single expiry in 7-30d window (avoids multi-fetch timeout).
         # Full multi-expiry table is fetched on demand when user opens the detail modal.
@@ -1172,6 +1323,13 @@ def scan_ticker(ticker: str, price: float | None = None, earn_days: int | None =
             resistance_2_strength=resistances[1]["strength"] if len(resistances) > 1 else None,
             cc_score=cc_score,
             csp_score=csp_score,
+            # Phase 1 Risk Quality fields
+            ema_20=round(ema_20, 4) if ema_20 is not None else None,
+            ema_50=round(ema_50, 4) if ema_50 is not None else None,
+            distribution_days_25=distribution_days_25,
+            iv_25d_put=round(iv_25d_put, 4) if iv_25d_put is not None else None,
+            iv_25d_call=round(iv_25d_call, 4) if iv_25d_call is not None else None,
+            put_skew=put_skew,
         )
     except Exception as exc:
         logger.warning("scan_ticker failed for %s: %s", ticker, exc)
@@ -1212,7 +1370,6 @@ def _calc_iv_ramp_metrics(
     if current_iv is None or current_iv <= 0:
         return empty
     try:
-        from sqlalchemy import text as _text
         rows = db.execute(
             _text("SELECT iv FROM iv_history WHERE ticker = :t ORDER BY recorded_date DESC LIMIT 30"),
             {"t": ticker},
@@ -1291,8 +1448,12 @@ def _calc_iv_ramp_metrics(
 # ── DB persistence ────────────────────────────────────────────────────────────
 
 def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
+    # Replace placeholder IV rank with real percentile from iv_history when available
+    real_iv_rank = _iv_rank_from_db(db, result.ticker, result.metrics.iv)
+    iv_rank_to_store = real_iv_rank if real_iv_rank is not None else result.metrics.iv_rank
+
     iv_ramp = _calc_iv_ramp_metrics(
-        db, result.ticker, result.metrics.iv, result.metrics.iv_rank,
+        db, result.ticker, result.metrics.iv, iv_rank_to_store,
         result.sma_golden_cross, result.sma_regime,
     )
     db.add(models.ScanResult(
@@ -1300,7 +1461,7 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
         ticker=result.ticker,
         company_name=result.company_name,
         price=result.price,
-        iv_rank=result.metrics.iv_rank,
+        iv_rank=iv_rank_to_store,
         iv=result.metrics.iv,
         hv=result.metrics.hv,
         atm_call_premium=result.atm_call_premium,
@@ -1350,12 +1511,21 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
         csp_score=result.csp_score,
         # IV ramp metrics (computed from iv_history)
         **iv_ramp,
+        # Phase 1 Risk Quality fields
+        ema_20=result.ema_20,
+        ema_50=result.ema_50,
+        distribution_days_25=result.distribution_days_25,
+        iv_25d_put=result.iv_25d_put,
+        iv_25d_call=result.iv_25d_call,
+        put_skew=result.put_skew,
+        iv_front_month=result.iv_front_month,
+        iv_back_month=result.iv_back_month,
+        term_structure=result.term_structure,
     ))
 
     # Record IV snapshot for IV rank history (one row per ticker per day)
     if result.metrics.iv is not None:
         try:
-            from sqlalchemy import text as _text
             today_str = str(date.today())
             db.execute(
                 _text(
@@ -1409,6 +1579,13 @@ def scan_ticker_extensive(ticker: str, price: float | None = None, earn_days: in
                 w_atm, _, _ = _pick_call_strikes(w_chain, w_price)
                 w_atm_prem = _contract_mid(w_atm)
                 w_atm_strike = round(float(w_atm["strike"]), 2) if w_atm else None
+                # Term structure: capture front-month ATM IV from this (shorter) expiry
+                if w_atm:
+                    w_greeks = w_atm.get("greeks") or {}
+                    w_iv_raw = (w_greeks.get("smv_vol") or w_greeks.get("mid_iv")
+                                or w_greeks.get("iv"))
+                    if _is_valid(w_iv_raw):
+                        result.iv_front_month = round(float(w_iv_raw), 4)
                 w_puts = sorted(
                     [o for o in w_chain if o.get("option_type") == "put" and _is_valid(o.get("strike")) and _is_sane_contract(o, w_price)],
                     key=lambda o: float(o["strike"]),
@@ -1428,6 +1605,12 @@ def scan_ticker_extensive(ticker: str, price: float | None = None, earn_days: in
                 })
             except Exception as exc:
                 logger.debug("%s: weekly chain fetch failed (%s): %s", ticker, weekly_exp, exc)
+
+        # Term structure: back-month IV = the base scan's iv (from the 21-45d IV expiry)
+        # front-month is set above from the weekly chain; back-month is the longer expiry IV.
+        if result.iv_front_month is not None and result.iv is not None:
+            result.iv_back_month = result.iv
+            result.term_structure = round(result.iv - result.iv_front_month, 4)
 
         # Add the base (monthly) expiry entry so both are queryable in Premium Scanner
         if result.best_expiry:
