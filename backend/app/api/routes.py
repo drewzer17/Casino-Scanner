@@ -489,7 +489,7 @@ def trigger_scan(
         bg_db = SessionLocal()
         try:
             from ..scanner.engine import run_scan
-            run_id = run_scan(bg_db, limit=limit, cancel_event=_scan_cancel)
+            run_id = run_scan(bg_db, limit=limit, cancel_event=_scan_cancel, scan_slot="manual")
             logger.info("background scan finished run_id=%s", run_id)
         except Exception as exc:
             logger.exception("background scan failed: %s", exc)
@@ -540,7 +540,7 @@ def trigger_scan_extensive(
         bg_db = SessionLocal()
         try:
             from ..scanner.engine import run_scan_extensive
-            run_id = run_scan_extensive(bg_db, limit=limit, cancel_event=_scan_cancel)
+            run_id = run_scan_extensive(bg_db, limit=limit, cancel_event=_scan_cancel, scan_slot="manual")
             logger.info("background extensive scan finished run_id=%s", run_id)
         except Exception as exc:
             logger.exception("background extensive scan failed: %s", exc)

@@ -19,6 +19,7 @@ class ScanRun(Base):
     tickers_scanned: Mapped[int] = mapped_column(Integer, default=0)
     tickers_errored: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(String(32), default="running")
+    scan_slot: Mapped[str | None] = mapped_column(String(16), nullable=True)  # "am" | "pm" | "manual"
 
 
 class ScanResult(Base):

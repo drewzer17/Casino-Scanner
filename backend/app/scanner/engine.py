@@ -1476,6 +1476,7 @@ def run_scan(
     limit: int | None = None,
     scanner_fn=None,
     cancel_event: "threading.Event | None" = None,
+    scan_slot: str | None = None,
 ) -> int:
     """Crash-resilient, resumable scan. Returns ScanRun id.
 
@@ -1524,6 +1525,7 @@ def run_scan(
             started_at=datetime.utcnow(),
             status="running",
             tickers_total=len(universe),
+            scan_slot=scan_slot,
         )
         db.add(run)
         db.commit()
@@ -1617,6 +1619,7 @@ def run_scan_extensive(
     tickers: list[str] | None = None,
     limit: int | None = None,
     cancel_event: "threading.Event | None" = None,
+    scan_slot: str | None = None,
 ) -> int:
     """Extensive scan: normal scan + nearest weekly expiry chain per ticker."""
     return run_scan(
@@ -1625,6 +1628,7 @@ def run_scan_extensive(
         limit=limit,
         scanner_fn=_scan_extensive_with_timeout,
         cancel_event=cancel_event,
+        scan_slot=scan_slot,
     )
 
 

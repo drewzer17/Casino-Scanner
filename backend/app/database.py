@@ -114,6 +114,9 @@ def init_db() -> None:
     ]:
         _add_column_if_missing(_ddl)
 
+    # scan_slot column added in v10 (tracks which scheduled slot triggered the run)
+    _add_column_if_missing("ALTER TABLE scan_runs ADD COLUMN scan_slot VARCHAR(16)")
+
     # Asymmetric setup flags added in v9
     for _ddl in [
         "ALTER TABLE scan_results ADD COLUMN asymmetric_cc_flag BOOLEAN DEFAULT FALSE",
