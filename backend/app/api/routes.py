@@ -1783,3 +1783,18 @@ def get_winner_frequency():
         )
     with open(path) as f:
         return json.load(f)
+
+
+@router.get("/admin/test-orats-key", include_in_schema=False)
+def test_orats_key():
+    """Temporary endpoint — verify ORATS_API_KEY is set in Railway env. Remove after verification."""
+    import os
+    key = os.environ.get("ORATS_API_KEY")
+    if not key:
+        return {"status": "missing"}
+    return {
+        "status": "set",
+        "length": len(key),
+        "first_4_chars": key[:4],
+        "last_4_chars": key[-4:],
+    }
