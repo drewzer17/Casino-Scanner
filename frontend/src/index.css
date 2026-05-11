@@ -1322,12 +1322,15 @@ body {
 /* ── Premium Scanner table ─────────────────────────────────────── */
 .prem-scanner-wrap {
   overflow-x: auto;
-  /* overflow-y must be 'clip' (not the default 'visible') so it doesn't get
-     promoted to 'auto' by the CSS spec, which would make the div a vertical
-     scroll container and break position:sticky on <th> elements. 'clip' trims
-     overflow without creating a new scroll container, leaving vertical stickiness
-     relative to the page/viewport. */
-  overflow-y: clip;
+  /* overflow-y:auto makes THIS div the Y scroll container. position:sticky on <th>
+     then pins to THIS container's top, which is always visible. The alternative
+     (overflow-y:clip to let sticky pin to the viewport) is broken in Chrome:
+     Chromium bug #1393141 — overflow-x:auto + overflow-y:clip still blocks sticky.
+     Fix: constrain height so the table rows scroll inside the wrapper while headers
+     stick at the top of the wrapper. */
+  overflow-y: auto;
+  max-height: calc(100vh - 420px);
+  min-height: 300px;
   margin-top: 12px;
 }
 
@@ -2645,7 +2648,7 @@ body {
 }
 
 /* Positions table */
-.pos-table-wrap { overflow-x: auto; overflow-y: clip; }
+.pos-table-wrap { overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 280px); min-height: 200px; }
 .pos-table {
   width: 100%;
   border-collapse: collapse;
@@ -2729,7 +2732,7 @@ body {
 .pos-results-hint { font-size: 12px; color: var(--text-muted); margin: 0 0 12px; }
 
 /* Scan results table */
-.pos-scan-table-wrap { overflow-x: auto; overflow-y: clip; }
+.pos-scan-table-wrap { overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 280px); min-height: 200px; }
 .pos-scan-table {
   width: 100%;
   border-collapse: collapse;
