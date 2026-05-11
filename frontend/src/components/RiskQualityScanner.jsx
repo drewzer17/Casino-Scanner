@@ -3,6 +3,46 @@ import EarningsTile from "./EarningsTile.jsx";
 import ResearchAsterisk from "./ResearchAsterisk.jsx";
 import ScrollArrows from "./ScrollArrows.jsx";
 
+// ── DTE ranges (same as PremiumScanner, excluding LEAPS — those use the toggle) ──
+const DTE_RANGES_RQ = [
+  { label: "≤3",    min: 0,  max: 3  },
+  { label: "4-7",   min: 4,  max: 7  },
+  { label: "10-17", min: 10, max: 17 },
+  { label: "21-30", min: 21, max: 30 },
+  { label: "31-61", min: 31, max: 61 },
+];
+
+const OTM_LEVELS_RQ = ["ATM", "1", "2", "3", "4", "5"];
+
+function guessStrikeInc(price) {
+  if (!price) return 5;
+  if (price < 5)    return 0.5;
+  if (price < 25)   return 1;
+  if (price < 50)   return 2.5;
+  if (price < 500)  return 5;
+  if (price < 1000) return 10;
+  return 25;
+}
+
+function calcOtmLvl(strike, price, isCSP) {
+  if (strike == null || !price) return null;
+  const inc = guessStrikeInc(price);
+  const diff = isCSP ? (price - strike) : (strike - price);
+  return Math.round(diff / inc);
+}
+
+function otmKey(level) {
+  if (level == null || level <= 0) return "ATM";
+  return String(Math.min(level, 5));
+}
+
+function fmtLeapsTs(iso) {
+  if (!iso) return "Never scanned";
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
+    ", " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
 // ── Grade & VRP helpers ───────────────────────────────────────────────────────
 
 export const GRADE_ORDER = { A: 1, B: 2, C: 3, F: 4 };
@@ -180,10 +220,18 @@ export default function RiskQualityScanner({
   onVrpFilter,
   onStrategyFilter,
   onAddToPositions,
+  leapsRows = [],
+  leapsScannedAt = null,
 }) {
   const [sortCol, setSortCol] = useState("grade");
   const [sortAsc, setSortAsc] = useState(true);
   const [earnFilter, setEarnFilter] = useState(new Set());
+
+  // New filters matching PremiumScanner
+  const [typeFilter, setTypeFilter]     = useState("ALL");  // "ALL" | "CC" | "CSP"
+  const [otmSelected, setOtmSelected]   = useState(new Set());
+  const [dteSelected, setDteSelected]   = useState(new Set());
+  const [showLeaps, setShowLeaps]       = useState(false);
 
   const handleSort = (key) => {
     if (key === "fail") return; // not sortable
@@ -211,6 +259,27 @@ export default function RiskQualityScanner({
       });
       if (!match) return false;
     }
+    // TYPE filter
+    if (typeFilter !== "ALL") {
+      if (typeFilter === "CC"  && !r._isCC) return false;
+      if (typeFilter === "CSP" &&  r._isCC) return false;
+    }
+    // OTM filter
+    if (otmSelected.size > 0) {
+      const level = calcOtmLvl(r._strike, r.price, !r._isCC);
+      const key = otmKey(level);
+      if (!otmSelected.has(key)) return false;
+    }
+    // DTE filter
+    if (dteSelected.size > 0) {
+      const dte = r._dte;
+      if (dte == null) return false;
+      const inRange = [...dteSelected].some(lbl => {
+        const range = DTE_RANGES_RQ.find(x => x.label === lbl);
+        return range && dte >= range.min && dte <= range.max;
+      });
+      if (!inRange) return false;
+    }
     return true;
   });
 
@@ -226,6 +295,12 @@ export default function RiskQualityScanner({
   } else {
     sorted = sortRqRows(filtered, sortCol, sortAsc);
   }
+
+  // Merge LEAPS rows when toggle is ON (always shown regardless of DTE/OTM/type filter)
+  const enrichedLeaps = showLeaps && leapsRows.length > 0
+    ? leapsRows.map(r => ({ ...enrichRow(r), _isLeaps: true }))
+    : [];
+  const displayRows = enrichedLeaps.length > 0 ? [...sorted, ...enrichedLeaps] : sorted;
 
   // Count grades for display
   const gradeCounts = { A: 0, B: 0, C: 0, F: 0 };
@@ -283,6 +358,60 @@ export default function RiskQualityScanner({
         ))}
       </div>
       <div className="dte-filter-row">
+        <span className="dte-filter-label">TYPE</span>
+        {["ALL", "CC", "CSP"].map(opt => (
+          <button
+            key={opt}
+            className={`dte-filter-btn${typeFilter === opt ? " active" : ""}`}
+            onClick={() => setTypeFilter(opt)}
+          >{opt}</button>
+        ))}
+      </div>
+      <div className="dte-filter-row">
+        <span className="dte-filter-label">OTM</span>
+        {OTM_LEVELS_RQ.map(lvl => (
+          <button
+            key={lvl}
+            className={`dte-filter-btn${otmSelected.has(lvl) ? " active" : ""}`}
+            onClick={() => setOtmSelected(prev => {
+              const n = new Set(prev);
+              n.has(lvl) ? n.delete(lvl) : n.add(lvl);
+              return n;
+            })}
+          >{lvl}</button>
+        ))}
+        <button
+          className={`dte-filter-btn${otmSelected.size === 0 ? " active" : ""}`}
+          onClick={() => setOtmSelected(new Set())}
+        >ALL</button>
+      </div>
+      <div className="dte-filter-row">
+        <span className="dte-filter-label">DTE</span>
+        {DTE_RANGES_RQ.map(r => (
+          <button
+            key={r.label}
+            className={`dte-filter-btn${dteSelected.has(r.label) ? " active" : ""}`}
+            onClick={() => setDteSelected(prev => {
+              const n = new Set(prev);
+              n.has(r.label) ? n.delete(r.label) : n.add(r.label);
+              return n;
+            })}
+          >{r.label}</button>
+        ))}
+        <button
+          className={`dte-filter-btn${dteSelected.size === 0 ? " active" : ""}`}
+          onClick={() => setDteSelected(new Set())}
+        >ALL</button>
+        <button
+          className={`leaps-toggle-btn${showLeaps ? " active" : ""}`}
+          onClick={() => setShowLeaps(v => !v)}
+          title="Show LEAPS (180–365 DTE) from the most recent LEAPS scan"
+        >LEAPS</button>
+        {showLeaps && (
+          <span className="leaps-scan-ts">Last: {fmtLeapsTs(leapsScannedAt)}</span>
+        )}
+      </div>
+      <div className="dte-filter-row">
         <span className="dte-filter-label">EARNINGS</span>
         <button
           className={`dte-filter-btn${earnFilter.size === 0 ? " active" : ""}`}
@@ -299,12 +428,12 @@ export default function RiskQualityScanner({
             })}
           >{b.label}</button>
         ))}
-        <span className="dte-filter-count">{sorted.length} rows · {new Set(sorted.map(r => r.ticker)).size} tickers</span>
+        <span className="dte-filter-count">{displayRows.length} rows · {new Set(displayRows.map(r => r.ticker)).size} tickers</span>
       </div>
 
       {/* ── Table ── */}
       <ScrollArrows>
-        {sorted.length === 0 ? (
+        {displayRows.length === 0 ? (
           <div className="empty">No results match these filters.</div>
         ) : (
           <table className="prem-scanner-table rq-table">
@@ -326,13 +455,13 @@ export default function RiskQualityScanner({
               </tr>
             </thead>
             <tbody>
-              {sorted.map((row, idx) => {
-                const opacity = rowOpacity(row.risk_grade);
-                const key = `${row.ticker}-${row.best_expiry || row.best_put_expiry || idx}`;
+              {displayRows.map((row, idx) => {
+                const opacity = row._isLeaps ? 1.0 : rowOpacity(row.risk_grade);
+                const key = `${row.ticker}-${row._isLeaps ? "leaps-" : ""}${row.best_expiry || row.best_put_expiry || idx}`;
                 return (
                   <tr
                     key={key}
-                    className="prem-scanner-row rq-row"
+                    className={`prem-scanner-row rq-row${row._isLeaps ? " leaps-row" : ""}`}
                     style={{ opacity }}
                     onMouseEnter={e => { if (opacity < 1) e.currentTarget.style.opacity = "1"; }}
                     onMouseLeave={e => { if (opacity < 1) e.currentTarget.style.opacity = String(opacity); }}
@@ -365,7 +494,9 @@ export default function RiskQualityScanner({
                     </td>
                     {/* DTE */}
                     <td className="prem-scanner-td right">
-                      {row._dte != null ? `${row._dte}d` : "—"}
+                      {row._isLeaps
+                        ? <span className="leaps-dte-badge">{row._dte != null ? `${row._dte}d ` : ""}LEAPS</span>
+                        : (row._dte != null ? `${row._dte}d` : "—")}
                     </td>
                     {/* Premium $ */}
                     <td className="prem-scanner-td right prem-col">

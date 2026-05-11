@@ -85,4 +85,8 @@ export const api = {
   // My Positions — Quick Scan
   scanPositions: () => post("/api/scan/positions"),
   scanPositionsLatest: () => get("/api/scan/positions/latest"),
+
+  // LEAPS — on-demand scan
+  scanLeaps: () => post("/api/scan/leaps"),
+  scanLeapsLatest: () => get("/api/scan/leaps/latest"),
 };

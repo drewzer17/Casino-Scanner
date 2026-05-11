@@ -139,6 +139,9 @@ class ScanResult(Base):
     asymmetric_any_flag: Mapped[bool] = mapped_column(Boolean, default=False)
     asymmetric_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
+    # LEAPS flag — True when this row was produced by the on-demand LEAPS scan (180-365 DTE)
+    is_leaps: Mapped[bool] = mapped_column(Boolean, default=False)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 

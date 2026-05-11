@@ -1044,6 +1044,7 @@ class ScanRowResult:
     event_ramp_eligible: bool = False
     technical_location_eligible: bool = False
     income_grind_eligible: bool = False
+    is_leaps: bool = False                      # True when row came from on-demand LEAPS scan
 
 
 def scan_ticker(
@@ -1051,11 +1052,14 @@ def scan_ticker(
     price: float | None = None,
     earn_days: int | None = None,
     is_ai: bool = False,
+    leaps_only: bool = False,
 ) -> list[ScanRowResult]:
     """Scan one ticker via Tradier. price and earn_days may be pre-fetched by the caller.
 
     Returns a list of ScanRowResult — one per expiry for AI sector tickers, one for others.
     Returns an empty list on failure (options-less ticker, no price, etc.).
+
+    leaps_only=True: only score expiries in 180-365 DTE range (LEAPS on-demand scan).
     """
     try:
         # 1. Price — fall back to individual quote if not pre-fetched
@@ -1185,18 +1189,28 @@ def scan_ticker(
             iv_rank = 50.0  # neutral placeholder until we have 30d of IV history
 
         # Build the expiry list to score.
-        # LEAPS (>90 DTE) are not income opportunities — cap all expiry lists at 90d.
-        # AI sector: expiries in 1-90 DTE range, falling back to nearest if none qualify.
-        # Non-AI: nearest single expiry in 1-30d window, falling back to iv_exp if ≤90d.
-        MAX_PREMIUM_DTE = 90
+        # Regular scans: cap at 60 DTE — LEAPS are never income opportunities in normal view.
+        # LEAPS on-demand scan (leaps_only=True): only 180-365 DTE range.
+        MAX_PREMIUM_DTE = 60
+        LEAPS_MIN_DTE   = 180
+        LEAPS_MAX_DTE   = 365
         today_d = date.today()
-        if is_ai:
+
+        if leaps_only:
+            # On-demand LEAPS scan: only expiries in 180-365 DTE window
             exp_list: list[tuple[int, str]] = sorted(
+                (((datetime.strptime(e, "%Y-%m-%d").date() - today_d).days, e)
+                 for e in exps
+                 if LEAPS_MIN_DTE <= (datetime.strptime(e, "%Y-%m-%d").date() - today_d).days <= LEAPS_MAX_DTE),
+            )
+            # No fallback for LEAPS — if no 180-365 DTE expiry exists, skip ticker
+        elif is_ai:
+            exp_list = sorted(
                 (((datetime.strptime(e, "%Y-%m-%d").date() - today_d).days, e)
                  for e in exps
                  if 1 <= (datetime.strptime(e, "%Y-%m-%d").date() - today_d).days <= MAX_PREMIUM_DTE),
             )
-            # Fallback: if no expiry within 90d exists, use the nearest one (single row)
+            # Fallback: if no sub-60d expiry exists, use the nearest one (single row)
             if not exp_list:
                 all_near = sorted(
                     (((datetime.strptime(e, "%Y-%m-%d").date() - today_d).days, e)
@@ -1209,7 +1223,7 @@ def scan_ticker(
             single = prem_exps[0] if prem_exps else None
             if single is None and iv_exp:
                 iv_dte = (datetime.strptime(iv_exp, "%Y-%m-%d").date() - today_d).days
-                # Only use iv_exp as premium fallback if it's not a LEAPS expiry
+                # Only use iv_exp as premium fallback if it is within the regular DTE cap
                 if iv_dte <= MAX_PREMIUM_DTE:
                     single = (iv_dte, iv_exp)
             exp_list = [single] if single else []
@@ -1389,6 +1403,7 @@ def scan_ticker(
                 # Phase 2 pre-computed inputs (not persisted directly)
                 range_score=range_score,
                 recent_bars=recent_bars_for_rv,
+                is_leaps=leaps_only,
             ))
 
         return results
@@ -1415,6 +1430,28 @@ def _scan_with_timeout(
             return []
         except Exception as exc:
             logger.warning("ticker %s raised unexpectedly: %s", ticker, exc)
+            return []
+
+
+def _scan_leaps_with_timeout(
+    ticker: str,
+    price: float | None = None,
+    earn_days: int | None = None,
+    is_ai: bool = False,
+) -> list[ScanRowResult]:
+    """Like _scan_with_timeout but passes leaps_only=True to scan_ticker.
+
+    Only scores expiries in the 180-365 DTE LEAPS range and marks rows is_leaps=True.
+    """
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(scan_ticker, ticker, price, earn_days, is_ai, True)
+        try:
+            return future.result(timeout=TICKER_TIMEOUT)
+        except FuturesTimeout:
+            logger.warning("ticker %s (LEAPS) timed out after %ds", ticker, TICKER_TIMEOUT)
+            return []
+        except Exception as exc:
+            logger.warning("ticker %s (LEAPS) raised unexpectedly: %s", ticker, exc)
             return []
 
 
@@ -1604,6 +1641,7 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
         event_ramp_eligible=result.event_ramp_eligible,
         technical_location_eligible=result.technical_location_eligible,
         income_grind_eligible=result.income_grind_eligible,
+        is_leaps=result.is_leaps,
     ))
 
     # Record IV snapshot for IV rank history (one row per ticker per day)

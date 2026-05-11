@@ -145,6 +145,7 @@ class ScanResultOut(BaseModel):
     soft_fail_count: float | None = None
     soft_fail_details: list[str] = []
     high_beta_moderate: bool = False         # Moderate VRP + rv20 > 35% proxy
+    is_leaps: bool = False                   # True when row came from LEAPS on-demand scan
 
 
 class ScanLatestOut(BaseModel):
@@ -206,6 +207,14 @@ class PositionScanOut(BaseModel):
     """Response from POST /api/scan/positions and GET /api/scan/positions/latest."""
     run_id: int | None = None
     scanned_at: datetime | None = None
+    results: list[ScanResultOut] = []
+
+
+class LeapsScanOut(BaseModel):
+    """Response from POST /api/scan/leaps and GET /api/scan/leaps/latest."""
+    run_id: int | None = None
+    scanned_at: datetime | None = None
+    tickers_scanned: int = 0
     results: list[ScanResultOut] = []
 
 

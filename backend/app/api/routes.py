@@ -16,6 +16,7 @@ from .. import models
 from ..database import SessionLocal, get_db
 from ..schemas import (
     ExpiryRow,
+    LeapsScanOut,
     MoverOut,
     MoversOut,
     PositionIn,
@@ -316,6 +317,7 @@ def _to_out(
         soft_fail_count=_san(row.soft_fail_count),
         soft_fail_details=_parse_json_list(row.soft_fail_details),
         high_beta_moderate=bool(row.high_beta_moderate),
+        is_leaps=bool(row.is_leaps) if row.is_leaps is not None else False,
     )
 
 
@@ -450,7 +452,13 @@ def movers(db: Session = Depends(get_db), limit: int = 5, days: int = 7) -> Move
     )
 
     if previous is None:
-        top = sorted(latest_rows, key=lambda r: r.score, reverse=True)[:limit]
+        # Deduplicate by ticker (shortest DTE) before sorting
+        seen: dict[str, models.ScanResult] = {}
+        for r in latest_rows:
+            ex = seen.get(r.ticker)
+            if ex is None or (r.best_dte or 9999) < (ex.best_dte or 9999):
+                seen[r.ticker] = r
+        top = sorted(seen.values(), key=lambda r: r.score, reverse=True)[:limit]
         gainers = [
             MoverOut(ticker=r.ticker, score=r.score, prev_score=None, delta=r.score,
                      bucket=r.bucket, prev_bucket=None)
@@ -462,10 +470,23 @@ def movers(db: Session = Depends(get_db), limit: int = 5, days: int = 7) -> Move
         db.execute(select(models.ScanResult).where(models.ScanResult.run_id == previous.id))
         .scalars().all()
     )
-    prev_by_ticker = {r.ticker: (r.score, r.bucket) for r in prev_rows}
+
+    # Deduplicate by ticker — for multi-expiry AI tickers keep the row with shortest DTE.
+    # This prevents the same ticker appearing multiple times in the movers list.
+    def _dedup_by_shortest_dte(rows):
+        best: dict[str, models.ScanResult] = {}
+        for r in rows:
+            existing = best.get(r.ticker)
+            if existing is None or (r.best_dte or 9999) < (existing.best_dte or 9999):
+                best[r.ticker] = r
+        return best
+
+    deduped_latest = _dedup_by_shortest_dte(latest_rows)
+    deduped_prev   = _dedup_by_shortest_dte(prev_rows)
+    prev_by_ticker = {t: (r.score, r.bucket) for t, r in deduped_prev.items()}
 
     deltas: list[MoverOut] = []
-    for r in latest_rows:
+    for r in deduped_latest.values():
         prev = prev_by_ticker.get(r.ticker)
         prev_score = prev[0] if prev else None
         prev_bucket = prev[1] if prev else None
@@ -602,9 +623,11 @@ def scan_status(db: Session = Depends(get_db)) -> dict:
     if run is None:
         return {"status": "no_scans_yet", "message": "Hit GET /api/scan/run to start the first scan."}
 
-    # ScanResult rows committed so far — the engine commits every 25 tickers
+    # Count unique tickers scanned so far (AI tickers generate multiple rows per expiry
+    # so we must use COUNT DISTINCT to avoid the numerator exceeding tickers_total)
+    from sqlalchemy import distinct
     committed = db.execute(
-        select(func.count()).select_from(models.ScanResult)
+        select(func.count(distinct(models.ScanResult.ticker)))
         .where(models.ScanResult.run_id == run.id)
     ).scalar() or 0
 
@@ -2061,5 +2084,102 @@ def scan_positions_latest(db: Session = Depends(get_db)) -> PositionScanOut:
     return PositionScanOut(
         run_id=run.id,
         scanned_at=run.finished_at,
+        results=results,
+    )
+
+
+# ── LEAPS on-demand scan ──────────────────────────────────────────────────────
+
+@router.post("/scan/leaps", response_model=LeapsScanOut)
+def scan_leaps(db: Session = Depends(get_db)) -> LeapsScanOut:
+    """Synchronously scan AI sector tickers for LEAPS expiries (180-365 DTE).
+
+    Creates a scan_run with scan_type='leaps'. Rows are marked is_leaps=TRUE
+    and are NOT included in the main scanner views (which filter scan_type = 'full').
+    """
+    # Reject if a full scan is already running
+    running = db.execute(
+        select(models.ScanRun).where(models.ScanRun.status == "running").limit(1)
+    ).scalar_one_or_none()
+    if running:
+        raise HTTPException(
+            status_code=409,
+            detail="A full scan is currently running. Wait for it to complete before running a LEAPS scan.",
+        )
+
+    # Fetch AI sector tickers from ticker_universe
+    ai_rows = db.execute(
+        select(models.TickerUniverse.ticker)
+        .where(
+            models.TickerUniverse.active == True,  # noqa: E712
+            models.TickerUniverse.source.in_(["ai_sector", "ai_nuclear"]),
+        )
+        .distinct()
+    ).scalars().all()
+
+    ai_tickers = list(ai_rows)
+    if not ai_tickers:
+        raise HTTPException(status_code=400, detail="No AI sector tickers found in universe")
+
+    from ..scanner.engine import run_scan, _scan_leaps_with_timeout
+    run_id = run_scan(
+        db,
+        tickers=ai_tickers,
+        scanner_fn=_scan_leaps_with_timeout,
+        scan_type="leaps",
+    )
+
+    result_rows = (
+        db.execute(
+            select(models.ScanResult)
+            .where(models.ScanResult.run_id == run_id)
+            .order_by(models.ScanResult.score.desc())
+        )
+        .scalars().all()
+    )
+
+    run_obj = db.execute(
+        select(models.ScanRun).where(models.ScanRun.id == run_id)
+    ).scalar_one_or_none()
+
+    results = [_to_out(r) for r in result_rows]
+    return LeapsScanOut(
+        run_id=run_id,
+        scanned_at=run_obj.finished_at if run_obj else datetime.utcnow(),
+        tickers_scanned=len(set(r.ticker for r in result_rows)),
+        results=results,
+    )
+
+
+@router.get("/scan/leaps/latest", response_model=LeapsScanOut)
+def scan_leaps_latest(db: Session = Depends(get_db)) -> LeapsScanOut:
+    """Return results from the most recent LEAPS on-demand scan."""
+    run = db.execute(
+        select(models.ScanRun)
+        .where(
+            models.ScanRun.status == "completed",
+            models.ScanRun.scan_type == "leaps",
+        )
+        .order_by(models.ScanRun.finished_at.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+
+    if run is None:
+        return LeapsScanOut(run_id=None, scanned_at=None, tickers_scanned=0, results=[])
+
+    result_rows = (
+        db.execute(
+            select(models.ScanResult)
+            .where(models.ScanResult.run_id == run.id)
+            .order_by(models.ScanResult.score.desc())
+        )
+        .scalars().all()
+    )
+
+    results = [_to_out(r) for r in result_rows]
+    return LeapsScanOut(
+        run_id=run.id,
+        scanned_at=run.finished_at,
+        tickers_scanned=len(set(r.ticker for r in result_rows)),
         results=results,
     )

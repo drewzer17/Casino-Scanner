@@ -65,7 +65,6 @@ const DTE_RANGES = [
   { label: "10-17", min: 10, max: 17 },
   { label: "21-30", min: 21, max: 30 },
   { label: "31-61", min: 31, max: 61 },
-  { label: "61+",   min: 62, max: Infinity },
 ];
 
 function dteInAny(dte, dteSelected) {
@@ -353,7 +352,10 @@ function cellValue(item, key, onResearch) {
       ? <span style={{ fontSize: "0.88em" }}>{fmt(item._d.premiumPct * 100)}%</span> : "—";
     case "strike":
       return item._d.strike != null ? `$${fmt(item._d.strike, 0)}` : "—";
-    case "dte":        return item._d.dte != null ? `${item._d.dte}d` : "—";
+    case "dte":
+      if (item._isLeaps)
+        return <span className="leaps-dte-badge">{item._d.dte != null ? `${item._d.dte}d ` : ""}LEAPS</span>;
+      return item._d.dte != null ? `${item._d.dte}d` : "—";
     case "oi":
       return item.open_interest != null
         ? item.open_interest >= 1000
@@ -513,7 +515,14 @@ function ExclusionTable({ allExcluded }) {
 
 // ── Component ─────────────────────────────────────────────────────
 
-export default function PremiumScanner({ rows, onRowClick, allScanRows = [], excludedRows = [], onResearch, onAddToPositions }) {
+function fmtLeapsTs(iso) {
+  if (!iso) return "Never scanned";
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
+    ", " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
+export default function PremiumScanner({ rows, onRowClick, allScanRows = [], excludedRows = [], onResearch, onAddToPositions, leapsRows = [], leapsScannedAt = null }) {
   const [dteSelected, setDteSelected] = useState(new Set()); // empty = ALL
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [otmSelected, setOtmSelected] = useState(new Set()); // empty = ALL
@@ -523,6 +532,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const [showAll, setShowAll] = useState(false);
   const [earnBuckets, setEarnBuckets] = useState(new Set());
   const [showRiskCols, setShowRiskCols] = useState(false); // Risk Quality expand toggle
+  const [showLeaps, setShowLeaps] = useState(false);
 
   const toggleDte = (label) => {
     setDteSelected(prev => {
@@ -588,9 +598,39 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
     }
   }
 
+  // Append LEAPS items when toggle is ON (bypass DTE filter — LEAPS are 180-365 DTE)
+  if (showLeaps && leapsRows.length > 0) {
+    for (const row of leapsRows) {
+      if (typeFilter !== "CSP") {
+        const callD = getCallData(row, new Set());
+        if (callD) {
+          if (otmSelected.size === 0 || otmSelected.has("ATM"))
+            items.push({ ...row, _d: callD, _type: "CC", _key: `${row.ticker}-LEAPS-CC-ATM`, _otmLevel: 0, _isLeaps: true });
+        }
+        for (const oc of getOtmCallsFromExpiry(row, new Set())) {
+          const key = otmLevelKey(oc.level);
+          if (otmSelected.size === 0 || otmSelected.has(key))
+            items.push({ ...row, _d: oc, _type: "CC", _key: `${row.ticker}-LEAPS-CC-${oc.level}`, _otmLevel: oc.level, _isLeaps: true });
+        }
+      }
+      if (typeFilter !== "CC") {
+        const putD = getPutData(row, new Set());
+        if (putD) {
+          if (otmSelected.size === 0 || otmSelected.has("ATM"))
+            items.push({ ...row, _d: putD, _type: "CSP", _key: `${row.ticker}-LEAPS-CSP-ATM`, _otmLevel: 0, _isLeaps: true });
+        }
+        for (const op of getOtmPutsFromExpiry(row, new Set())) {
+          const key = otmLevelKey(op.level);
+          if (otmSelected.size === 0 || otmSelected.has(key))
+            items.push({ ...row, _d: op, _type: "CSP", _key: `${row.ticker}-LEAPS-CSP-${op.level}`, _otmLevel: op.level, _isLeaps: true });
+        }
+      }
+    }
+  }
+
   const earnFiltered = earnBuckets.size === 0
     ? items
-    : items.filter(i => earnBucketMatch(i.earnings_days, earnBuckets));
+    : items.filter(i => i._isLeaps || earnBucketMatch(i.earnings_days, earnBuckets));
 
   // ── Internal exclusions (rows that passed Dashboard but have no items) ──
   const passedTickerSet = new Set(items.map(i => i.ticker));
@@ -712,6 +752,14 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
           className={`dte-filter-btn${dteSelected.size === 0 ? " active" : ""}`}
           onClick={() => setDteSelected(new Set())}
         >ALL</button>
+        <button
+          className={`leaps-toggle-btn${showLeaps ? " active" : ""}`}
+          onClick={() => setShowLeaps(v => !v)}
+          title="Show LEAPS (180–365 DTE) from the most recent LEAPS scan"
+        >LEAPS</button>
+        {showLeaps && (
+          <span className="leaps-scan-ts">Last: {fmtLeapsTs(leapsScannedAt)}</span>
+        )}
         <span className="dte-filter-count">{sorted.length} rows · {uniqueTickers} tickers</span>
       </div>
       <div className="dte-filter-row">
@@ -783,7 +831,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                   return (
                     <tr
                       key={item._key}
-                      className="prem-scanner-row"
+                      className={`prem-scanner-row${item._isLeaps ? " leaps-row" : ""}`}
                       style={rowStyle}
                       onMouseEnter={e => { if (showRiskCols && rowStyle.opacity < 1) e.currentTarget.style.opacity = "1"; }}
                       onMouseLeave={e => { if (showRiskCols && rowStyle.opacity < 1) e.currentTarget.style.opacity = String(rowStyle.opacity); }}

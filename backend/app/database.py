@@ -219,6 +219,10 @@ def init_db() -> None:
     )
     _add_column_if_missing("ALTER TABLE scan_runs ADD COLUMN scan_type VARCHAR(20) DEFAULT 'full'")
 
+    # LEAPS flag — v15
+    # is_leaps = TRUE for rows produced by the on-demand LEAPS scan (180-365 DTE)
+    _add_column_if_missing("ALTER TABLE scan_results ADD COLUMN is_leaps BOOLEAN DEFAULT FALSE")
+
 
 def _add_column_if_missing(ddl: str) -> None:
     from sqlalchemy import text

@@ -1322,6 +1322,12 @@ body {
 /* ── Premium Scanner table ─────────────────────────────────────── */
 .prem-scanner-wrap {
   overflow-x: auto;
+  /* overflow-y must be 'clip' (not the default 'visible') so it doesn't get
+     promoted to 'auto' by the CSS spec, which would make the div a vertical
+     scroll container and break position:sticky on <th> elements. 'clip' trims
+     overflow without creating a new scroll container, leaving vertical stickiness
+     relative to the page/viewport. */
+  overflow-y: clip;
   margin-top: 12px;
 }
 
@@ -2639,7 +2645,7 @@ body {
 }
 
 /* Positions table */
-.pos-table-wrap { overflow-x: auto; }
+.pos-table-wrap { overflow-x: auto; overflow-y: clip; }
 .pos-table {
   width: 100%;
   border-collapse: collapse;
@@ -2723,7 +2729,7 @@ body {
 .pos-results-hint { font-size: 12px; color: var(--text-muted); margin: 0 0 12px; }
 
 /* Scan results table */
-.pos-scan-table-wrap { overflow-x: auto; }
+.pos-scan-table-wrap { overflow-x: auto; overflow-y: clip; }
 .pos-scan-table {
   width: 100%;
   border-collapse: collapse;
@@ -2749,3 +2755,68 @@ body {
 .pos-scan-ticker-text { font-weight: 700; color: var(--text); }
 .pos-scan-co { display: block; font-size: 11px; color: var(--text-muted); margin-top: 1px; }
 .pos-scan-price, .pos-scan-ivrank, .pos-scan-score { font-variant-numeric: tabular-nums; }
+
+/* ── LEAPS rows ─────────────────────────────────────────────────────────────── */
+.prem-scanner-row.leaps-row { background: rgba(139, 92, 246, 0.04); }
+.prem-scanner-row.leaps-row:hover { background: rgba(139, 92, 246, 0.09); }
+.rq-row.leaps-row { background: rgba(139, 92, 246, 0.04); }
+.rq-row.leaps-row:hover { background: rgba(139, 92, 246, 0.09); }
+
+.leaps-dte-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #a78bfa;
+  background: rgba(139, 92, 246, 0.18);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: 4px;
+  padding: 1px 5px;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+
+/* LEAPS toggle button */
+.leaps-toggle-btn {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 5px;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  background: transparent;
+  color: #a78bfa;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s;
+  letter-spacing: 0.02em;
+}
+.leaps-toggle-btn.active {
+  background: rgba(139, 92, 246, 0.22);
+  border-color: #a78bfa;
+}
+.leaps-toggle-btn:hover { background: rgba(139, 92, 246, 0.12); }
+
+.leaps-scan-ts {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: 6px;
+  font-style: italic;
+}
+
+/* LEAPS scan button in header */
+.leaps-header-scan-btn {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 7px;
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  background: rgba(139, 92, 246, 0.1);
+  color: #c4b5fd;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.leaps-header-scan-btn:hover { background: rgba(139, 92, 246, 0.2); }
+.leaps-header-scan-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.leaps-header-scan-btn.scanning { animation: pulse 1.8s ease-in-out infinite; }

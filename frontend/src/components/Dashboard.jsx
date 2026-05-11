@@ -265,6 +265,12 @@ export default function Dashboard() {
   const [posScanRunning, setPosScanRunning] = useState(false);
   const [posScanLabel, setPosScanLabel] = useState(null); // null = idle
 
+  // LEAPS on-demand scan state
+  const [leapsRows, setLeapsRows] = useState([]);          // results from latest LEAPS scan
+  const [leapsScannedAt, setLeapsScannedAt] = useState(null); // ISO string or null
+  const [leapsScanRunning, setLeapsScanRunning] = useState(false);
+  const [leapsScanLabel, setLeapsScanLabel] = useState(null);
+
   // Earnings refresh state
   const [earningsStatus, setEarningsStatus] = useState(null);   // { last_refresh, rows_count, human_readable }
   const [earningsRefreshing, setEarningsRefreshing] = useState(false);
@@ -329,6 +335,15 @@ export default function Dashboard() {
 
     api.earningsStatus()
       .then((s) => { if (!cancelled) setEarningsStatus(s); })
+      .catch(() => {});
+
+    api.scanLeapsLatest()
+      .then((d) => {
+        if (!cancelled && d.results && d.results.length > 0) {
+          setLeapsRows(d.results);
+          setLeapsScannedAt(d.scanned_at || null);
+        }
+      })
       .catch(() => {});
 
     return () => {
@@ -453,6 +468,32 @@ export default function Dashboard() {
     } finally {
       setPosScanRunning(false);
       setPosScanLabel(null);
+    }
+  };
+
+  const handleScanLeaps = async () => {
+    if (leapsScanRunning || scanning) return;
+    setLeapsScanRunning(true);
+    setLeapsScanLabel("Scanning LEAPS…");
+    try {
+      const result = await api.scanLeaps();
+      setLeapsRows(result.results || []);
+      setLeapsScannedAt(result.scanned_at || null);
+      if (posToastTimerRef.current) clearTimeout(posToastTimerRef.current);
+      setPosToast({ text: `LEAPS scan complete — ${result.tickers_scanned || 0} tickers`, ok: true });
+      posToastTimerRef.current = setTimeout(() => setPosToast(null), 5000);
+    } catch (e) {
+      if (posToastTimerRef.current) clearTimeout(posToastTimerRef.current);
+      const msg = e.message || "";
+      if (msg.includes("409") || msg.toLowerCase().includes("full scan")) {
+        setPosToast({ text: "Full scan in progress — try again after it finishes", ok: false });
+      } else {
+        setPosToast({ text: `LEAPS scan failed: ${msg.slice(0, 80)}`, ok: false });
+      }
+      posToastTimerRef.current = setTimeout(() => setPosToast(null), 5000);
+    } finally {
+      setLeapsScanRunning(false);
+      setLeapsScanLabel(null);
     }
   };
 
@@ -865,6 +906,14 @@ export default function Dashboard() {
           >
             {posScanRunning ? (posScanLabel || "Scanning…") : "⚡ Scan Positions"}
           </button>
+          <button
+            className={`leaps-header-scan-btn${leapsScanRunning ? " scanning" : ""}`}
+            onClick={handleScanLeaps}
+            disabled={leapsScanRunning || scanning}
+            title="Scan AI sector tickers for LEAPS options (180-365 DTE)"
+          >
+            {leapsScanRunning ? (leapsScanLabel || "Scanning LEAPS…") : "📊 Scan LEAPS"}
+          </button>
           <div className="earnings-refresh-wrap">
             <button
               className="earnings-refresh-btn"
@@ -1172,7 +1221,8 @@ export default function Dashboard() {
       {view === "premium" ? (
         <PremiumScanner rows={viewRows} onRowClick={setSelectedRow}
           allScanRows={allRows} excludedRows={excludedRows} onResearch={setPanelTicker}
-          onAddToPositions={handleAddToPositions} />
+          onAddToPositions={handleAddToPositions}
+          leapsRows={leapsRows} leapsScannedAt={leapsScannedAt} />
       ) : view === "range" ? (
         <RangeScanner rows={viewRows} onRowClick={setSelectedRow} onResearch={setPanelTicker}
           onAddToPositions={handleAddToPositions} />
@@ -1194,6 +1244,8 @@ export default function Dashboard() {
           onVrpFilter={setRqVrpFilter}
           onStrategyFilter={setRqStrategyFilter}
           onAddToPositions={handleAddToPositions}
+          leapsRows={leapsRows}
+          leapsScannedAt={leapsScannedAt}
         />
       ) : view === "positions" ? (
         <MyPositions allRows={allRows} onRowClick={setSelectedRow} />
