@@ -1033,12 +1033,14 @@ class ScanRowResult:
     vrp_state: str | None = None
     vrp_spread: float | None = None
     realized_vol_20d: float | None = None
+    realized_vol_60d: float | None = None       # Phase 3: 60d RV for backtesting
     strategy_type: str | None = None
     secondary_edge: list | None = None
     hard_fail_reasons: list | None = None
     strong_fail_reasons: list | None = None
     soft_fail_count: float | None = None
     soft_fail_details: list | None = None
+    high_beta_moderate: bool = False            # Phase 3: Moderate VRP + high RV proxy
     event_ramp_eligible: bool = False
     technical_location_eligible: bool = False
     income_grind_eligible: bool = False
@@ -1072,9 +1074,11 @@ def scan_ticker(
         log_ret = _log_returns(closes)
         hv = _annualized_vol(log_ret, HV_WINDOW)
 
-        # Phase 2: capture last 25 bars as (date_str, close) for realized vol
+        # Phase 2/3: capture last 65 bars as (date_str, close) for realized vol.
+        # 65 bars gives enough data for both the 20d window (needs ~21 bars) and
+        # the 60d window (needs ≥45 bars, ideally 61) in risk_quality.py.
         recent_bars_for_rv: list[tuple[str, float]] = [
-            (b.date, b.close) for b in bars[-25:]
+            (b.date, b.close) for b in bars[-65:]
         ]
 
         # Phase 2: range_score — price position in 52-week high/low range (0-100)
@@ -1577,12 +1581,14 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
         vrp_state=result.vrp_state,
         vrp_spread=result.vrp_spread,
         realized_vol_20d=result.realized_vol_20d,
+        realized_vol_60d=result.realized_vol_60d,
         strategy_type=result.strategy_type,
         secondary_edge=json.dumps(result.secondary_edge) if result.secondary_edge else None,
         hard_fail_reasons=json.dumps(result.hard_fail_reasons) if result.hard_fail_reasons else None,
         strong_fail_reasons=json.dumps(result.strong_fail_reasons) if result.strong_fail_reasons else None,
         soft_fail_count=result.soft_fail_count,
         soft_fail_details=json.dumps(result.soft_fail_details) if result.soft_fail_details else None,
+        high_beta_moderate=result.high_beta_moderate,
         event_ramp_eligible=result.event_ramp_eligible,
         technical_location_eligible=result.technical_location_eligible,
         income_grind_eligible=result.income_grind_eligible,
@@ -1812,6 +1818,14 @@ def run_scan(
         db.add(run)
         db.commit()
         db.refresh(run)
+        # Snapshot current scoring thresholds so Phase 4 backtest analysis can
+        # reconstruct exactly which values were in effect for this run.
+        try:
+            from .risk_quality import SCORING_CONFIG
+            run.scoring_config = json.dumps(SCORING_CONFIG)
+            db.commit()
+        except Exception as _sc_exc:
+            logger.warning("scoring_config snapshot failed: %s", _sc_exc)
         remaining = list(universe)
         scanned = errored = 0
         logger.info("new scan run_id=%s, %d tickers", run.id, len(remaining))
@@ -1914,12 +1928,14 @@ def run_scan(
                         result.vrp_state = rq.get("vrp_state")
                         result.vrp_spread = rq.get("vrp_spread")
                         result.realized_vol_20d = rq.get("realized_vol_20d")
+                        result.realized_vol_60d = rq.get("realized_vol_60d")
                         result.strategy_type = rq.get("strategy_type")
                         result.secondary_edge = rq.get("secondary_edge") or []
                         result.hard_fail_reasons = rq.get("hard_fail_reasons") or []
                         result.strong_fail_reasons = rq.get("strong_fail_reasons") or []
                         result.soft_fail_count = rq.get("soft_fail_count")
                         result.soft_fail_details = rq.get("soft_fail_details") or []
+                        result.high_beta_moderate = rq.get("high_beta_moderate", False)
                         result.event_ramp_eligible = rq.get("event_ramp_eligible", False)
                         result.technical_location_eligible = rq.get("technical_location_eligible", False)
                         result.income_grind_eligible = rq.get("income_grind_eligible", False)

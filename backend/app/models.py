@@ -20,6 +20,7 @@ class ScanRun(Base):
     tickers_errored: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(String(32), default="running")
     scan_slot: Mapped[str | None] = mapped_column(String(16), nullable=True)  # "am" | "pm" | "manual"
+    scoring_config: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON snapshot of thresholds
 
 
 class ScanResult(Base):
@@ -118,6 +119,7 @@ class ScanResult(Base):
     vrp_state: Mapped[str | None] = mapped_column(String(10), nullable=True)
     vrp_spread: Mapped[float | None] = mapped_column(Float, nullable=True)
     realized_vol_20d: Mapped[float | None] = mapped_column(Float, nullable=True)
+    realized_vol_60d: Mapped[float | None] = mapped_column(Float, nullable=True)  # Phase 3 addition
     strategy_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
     secondary_edge: Mapped[str | None] = mapped_column(Text, nullable=True)       # JSON list
     hard_fail_reasons: Mapped[str | None] = mapped_column(Text, nullable=True)    # JSON list
@@ -127,6 +129,7 @@ class ScanResult(Base):
     event_ramp_eligible: Mapped[bool] = mapped_column(Boolean, default=False)
     technical_location_eligible: Mapped[bool] = mapped_column(Boolean, default=False)
     income_grind_eligible: Mapped[bool] = mapped_column(Boolean, default=False)
+    high_beta_moderate: Mapped[bool] = mapped_column(Boolean, default=False)  # Phase 3 addition
 
     # Asymmetric setup flags (computed during scan from convergence of multiple criteria)
     asymmetric_cc_flag: Mapped[bool] = mapped_column(Boolean, default=False)

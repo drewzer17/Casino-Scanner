@@ -21,6 +21,50 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
+# Scoring thresholds — extracted as named constants so every scan run can
+# snapshot exactly which values were used (stored in scan_runs.scoring_config).
+# ---------------------------------------------------------------------------
+
+VRP_RICH_THRESHOLD     = 15      # vrp_spread > 15  → Rich
+VRP_MODERATE_THRESHOLD = 5       # vrp_spread >= 5  → Moderate
+VRP_WEAK_THRESHOLD     = 0       # vrp_spread >= 0  → Weak
+
+HARD_FAIL_BACKWARDATION_THRESHOLD = 15   # iv_front - iv_back > 15 pp → hard fail
+HARD_FAIL_PUT_SKEW_THRESHOLD      = 25   # put_skew > 25 vol pts → hard fail
+STRONG_FAIL_PUT_SKEW_THRESHOLD    = 15   # 15 < put_skew ≤ 25 → strong fail
+STRONG_FAIL_IV_RANK_THRESHOLD     = 25   # iv_rank < 25 → strong/soft fail check
+
+SOFT_FAIL_DISTRIBUTION_DAYS_THRESHOLD = 5     # dist_days > 5 → soft fail
+SOFT_FAIL_STRIKE_ALIGNMENT_PCT        = 0.03  # |strike - S/R| / price > 3% → soft
+MILD_BACKWARDATION_RANGE = (5, 15)            # 5 ≤ backwardation ≤ 15 → soft fail
+
+RV_WINDOW_SHORT               = 20   # 20-day realized vol window
+RV_WINDOW_LONG                = 60   # 60-day realized vol window (stored for backtesting)
+POST_EARNINGS_RV_EXCLUSION_DAYS = 10  # exclude gap return within 10 days post-earnings
+HIGH_BETA_THRESHOLD           = 1.3  # intended beta threshold (proxy used: rv20 > 35%)
+HIGH_BETA_RV_PROXY_THRESHOLD  = 35.0 # rv20 > 35% used as high-beta proxy
+
+# Flat dict exported for engine.py to write into scan_runs.scoring_config
+SCORING_CONFIG: dict = {
+    "vrp_bands": {
+        "rich":     VRP_RICH_THRESHOLD,
+        "moderate": VRP_MODERATE_THRESHOLD,
+        "weak":     VRP_WEAK_THRESHOLD,
+    },
+    "hard_fail_backwardation_threshold":     HARD_FAIL_BACKWARDATION_THRESHOLD,
+    "hard_fail_put_skew_threshold":          HARD_FAIL_PUT_SKEW_THRESHOLD,
+    "strong_fail_put_skew_threshold":        STRONG_FAIL_PUT_SKEW_THRESHOLD,
+    "strong_fail_iv_rank_threshold":         STRONG_FAIL_IV_RANK_THRESHOLD,
+    "soft_fail_distribution_days_threshold": SOFT_FAIL_DISTRIBUTION_DAYS_THRESHOLD,
+    "soft_fail_strike_alignment_pct":        SOFT_FAIL_STRIKE_ALIGNMENT_PCT,
+    "mild_backwardation_range":              list(MILD_BACKWARDATION_RANGE),
+    "rv_window_short":                       RV_WINDOW_SHORT,
+    "rv_window_long":                        RV_WINDOW_LONG,
+    "post_earnings_rv_exclusion_days":       POST_EARNINGS_RV_EXCLUSION_DAYS,
+    "high_beta_threshold":                   HIGH_BETA_THRESHOLD,
+}
+
+# ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
 
@@ -113,13 +157,49 @@ def _realized_vol_20d(
 
 
 def _vrp_label(spread: float) -> str:
-    if spread > 15:
+    if spread > VRP_RICH_THRESHOLD:
         return "Rich"
-    if spread >= 5:
+    if spread >= VRP_MODERATE_THRESHOLD:
         return "Moderate"
-    if spread >= 0:
+    if spread >= VRP_WEAK_THRESHOLD:
         return "Weak"
     return "Negative"
+
+
+def _realized_vol_60d(recent_bars: list[tuple[str, float]]) -> float | None:
+    """Annualized 60-day realized volatility from bar (date_str, close) pairs.
+
+    No post-earnings gap exclusion — one gap day is diluted across 60 returns.
+    recent_bars must be sorted ascending (oldest first).
+
+    Returns None if fewer than 45 entries are available.
+    Returns vol as a percentage (e.g. 42.1 means 42.1%).
+    """
+    if len(recent_bars) < 45:
+        return None
+
+    # Use up to the most recent 61 entries (gives up to 60 log returns)
+    sample = recent_bars[-61:]
+    returns: list[float] = []
+    for i in range(1, len(sample)):
+        prev_close = sample[i - 1][1]
+        curr_close = sample[i][1]
+        if prev_close <= 0 or curr_close <= 0:
+            continue
+        try:
+            returns.append(math.log(curr_close / prev_close))
+        except (ValueError, ZeroDivisionError):
+            continue
+
+    if len(returns) < 44:   # 45 entries → 44 usable returns minimum
+        return None
+
+    n = len(returns)
+    mean = sum(returns) / n
+    variance = sum((r - mean) ** 2 for r in returns) / (n - 1)
+    std_dev = math.sqrt(variance) if variance > 0 else 0.0
+    annualized = std_dev * math.sqrt(252)
+    return round(annualized * 100, 2)   # percentage
 
 
 # ---------------------------------------------------------------------------
@@ -161,12 +241,14 @@ def compute_risk_quality(
         "vrp_state": None,
         "vrp_spread": None,
         "realized_vol_20d": None,
+        "realized_vol_60d": None,
         "strategy_type": None,
         "secondary_edge": [],
         "hard_fail_reasons": [],
         "strong_fail_reasons": [],
         "soft_fail_count": 0.0,
         "soft_fail_details": [],
+        "high_beta_moderate": False,
         "event_ramp_eligible": False,
         "technical_location_eligible": False,
         "income_grind_eligible": False,
@@ -209,6 +291,9 @@ def compute_risk_quality(
         rv = _realized_vol_20d(recent_bars, earnings_date)
         out["realized_vol_20d"] = rv
 
+        # 60-day realized vol (stored for Phase 4 backtesting; not used in grading)
+        out["realized_vol_60d"] = _realized_vol_60d(recent_bars)
+
         # ── Step 4: VRP State ─────────────────────────────────────────────────
 
         if atm_iv_pct is not None and rv is not None:
@@ -217,6 +302,14 @@ def compute_risk_quality(
             out["vrp_state"] = _vrp_label(spread)
 
         vrp_state_val: str | None = out["vrp_state"]
+
+        # High-beta Moderate flag (informational only — not used in grading).
+        # True when VRP is Moderate and realized_vol_20d > 35% (proxy for high beta).
+        out["high_beta_moderate"] = bool(
+            vrp_state_val == "Moderate"
+            and rv is not None
+            and rv > HIGH_BETA_RV_PROXY_THRESHOLD
+        )
 
         # ── Step 5: Strategy Classification ──────────────────────────────────
 
@@ -291,11 +384,11 @@ def compute_risk_quality(
         # Check 2: Extreme Backwardation
         if iv_front_pct is not None and iv_back_pct is not None:
             backwardation = iv_front_pct - iv_back_pct
-            if backwardation > 15:
+            if backwardation > HARD_FAIL_BACKWARDATION_THRESHOLD:
                 hard_fail.append("extreme_backwardation")
 
         # Check 3: Extreme Put Skew
-        if put_skew_pct is not None and put_skew_pct > 25:
+        if put_skew_pct is not None and put_skew_pct > HARD_FAIL_PUT_SKEW_THRESHOLD:
             hard_fail.append("extreme_put_skew")
 
         # Check 4: VRP Gate for Income Grind
@@ -314,13 +407,13 @@ def compute_risk_quality(
         # ---- Strong Fails ----
 
         # Check 5: IV Rank Low + VRP state
-        if iv_rank is not None and iv_rank < 25:
+        if iv_rank is not None and iv_rank < STRONG_FAIL_IV_RANK_THRESHOLD:
             if vrp_state_val in ("Weak", "Negative", None):
                 strong_fail.append("low_iv_rank_weak_vrp")
             # Rich/Moderate + low iv_rank → becomes Soft 5 below
 
-        # Check 6: Elevated Put Skew (15 < skew <= 25 vol points)
-        if put_skew_pct is not None and 15 < put_skew_pct <= 25:
+        # Check 6: Elevated Put Skew (STRONG_FAIL < skew ≤ HARD_FAIL vol points)
+        if put_skew_pct is not None and STRONG_FAIL_PUT_SKEW_THRESHOLD < put_skew_pct <= HARD_FAIL_PUT_SKEW_THRESHOLD:
             strong_fail.append("put_skew_elevated")
 
         # Check 7: earnings_overlap_technical already captured in strong_fail above
@@ -337,7 +430,7 @@ def compute_risk_quality(
                     soft_details.append("trend_csp")
 
         # Soft 2: Distribution Days (with cluster rule)
-        if dist_days is not None and dist_days > 5:
+        if dist_days is not None and dist_days > SOFT_FAIL_DISTRIBUTION_DAYS_THRESHOLD:
             if "trend_csp" in soft_details:
                 soft_count += 0.5  # correlated cluster — already counted 1.0 for Soft 1
             else:
@@ -353,7 +446,7 @@ def compute_risk_quality(
 
             if candidates:
                 nearest = min(candidates, key=lambda lvl: abs(lvl - best_strike))
-                if abs(best_strike - nearest) / price > 0.03:
+                if abs(best_strike - nearest) / price > SOFT_FAIL_STRIKE_ALIGNMENT_PCT:
                     soft_count += 1.0
                     soft_details.append("strike_misaligned")
             # else: no S/R data — skip (Price Discovery)
@@ -362,13 +455,14 @@ def compute_risk_quality(
         if strategy_type == "Income Grind":
             if iv_front_pct is not None and iv_back_pct is not None:
                 backwardation = iv_front_pct - iv_back_pct
-                if 5 <= backwardation <= 15:
+                _mild_lo, _mild_hi = MILD_BACKWARDATION_RANGE
+                if _mild_lo <= backwardation <= _mild_hi:
                     soft_count += 1.0
                     soft_details.append("mild_backwardation")
 
         # Soft 5: Low IV Rank with Rich/Moderate VRP
         if vrp_state_val in ("Rich", "Moderate"):
-            if iv_rank is not None and iv_rank < 25:
+            if iv_rank is not None and iv_rank < STRONG_FAIL_IV_RANK_THRESHOLD:
                 soft_count += 1.0
                 soft_details.append("low_iv_rank_rich_vrp")
 

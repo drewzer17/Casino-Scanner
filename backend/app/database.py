@@ -188,6 +188,17 @@ def init_db() -> None:
     ]:
         _add_column_if_missing(_ddl)
 
+    # Phase 3 additions — v13
+    # realized_vol_60d: 60-day RV for backtesting analysis (not used in grading)
+    # high_beta_moderate: informational flag (Moderate VRP + rv20 > 35%)
+    # scoring_config: JSON snapshot of thresholds used in each scan run
+    for _ddl in [
+        "ALTER TABLE scan_results ADD COLUMN realized_vol_60d FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN high_beta_moderate BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE scan_runs ADD COLUMN scoring_config TEXT",
+    ]:
+        _add_column_if_missing(_ddl)
+
 
 def _add_column_if_missing(ddl: str) -> None:
     from sqlalchemy import text
