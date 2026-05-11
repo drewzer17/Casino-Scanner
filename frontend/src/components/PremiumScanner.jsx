@@ -536,10 +536,12 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
 
   const toggleDte = (label) => {
     setDteSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(label)) next.delete(label);
-      else next.add(label);
-      return next;
+      // Exclusive selection: clicking the already-selected range deselects (ALL);
+      // clicking any other range replaces the current selection entirely.
+      // This prevents the additive-multi-select bug where e.g. "4-7" + "31-61"
+      // both active causes 32d/38d rows to appear when user expects only 4-7d.
+      if (prev.size === 1 && prev.has(label)) return new Set(); // deselect → ALL
+      return new Set([label]); // select exclusively
     });
   };
 
