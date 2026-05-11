@@ -302,12 +302,14 @@ def _to_out(
         vrp_state=row.vrp_state,
         vrp_spread=_san(row.vrp_spread),
         realized_vol_20d=_san(row.realized_vol_20d),
+        realized_vol_60d=_san(row.realized_vol_60d),
         strategy_type=row.strategy_type,
         secondary_edge=_parse_json_list(row.secondary_edge),
         hard_fail_reasons=_parse_json_list(row.hard_fail_reasons),
         strong_fail_reasons=_parse_json_list(row.strong_fail_reasons),
         soft_fail_count=_san(row.soft_fail_count),
         soft_fail_details=_parse_json_list(row.soft_fail_details),
+        high_beta_moderate=bool(row.high_beta_moderate),
     )
 
 

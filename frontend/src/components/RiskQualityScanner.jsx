@@ -37,7 +37,7 @@ function GradePill({ grade }) {
   );
 }
 
-function VrpBadge({ state, spread }) {
+function VrpBadge({ state, spread, highBeta }) {
   if (!state) return <span className="rq-grade-null">—</span>;
   const sign = spread != null && spread >= 0 ? "+" : "";
   const spreadStr = spread != null ? `${sign}${spread.toFixed(1)}` : null;
@@ -46,6 +46,16 @@ function VrpBadge({ state, spread }) {
       <span className="rq-vrp-badge" style={{ background: VRP_COLORS[state] ?? "#6b7280" }}>
         {state}
       </span>
+      {highBeta && (
+        <span style={{
+          marginLeft: "4px",
+          fontSize: "9px",
+          fontWeight: 800,
+          color: "#4ade80",
+          verticalAlign: "middle",
+          letterSpacing: "0.02em",
+        }}>β+</span>
+      )}
       {spreadStr && <div className="rq-vrp-spread">{spreadStr}</div>}
     </div>
   );
@@ -338,7 +348,7 @@ export default function RiskQualityScanner({
                     {/* Grade */}
                     <td className="prem-scanner-td center"><GradePill grade={row.risk_grade} /></td>
                     {/* VRP */}
-                    <td className="prem-scanner-td center"><VrpBadge state={row.vrp_state} spread={row.vrp_spread} /></td>
+                    <td className="prem-scanner-td center"><VrpBadge state={row.vrp_state} spread={row.vrp_spread} highBeta={row.high_beta_moderate} /></td>
                     {/* Strategy */}
                     <td className="prem-scanner-td center"><StrategyTag strategyType={row.strategy_type} secondaryEdge={row.secondary_edge} /></td>
                     {/* Score */}

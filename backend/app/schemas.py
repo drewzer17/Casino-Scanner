@@ -137,12 +137,14 @@ class ScanResultOut(BaseModel):
     vrp_state: str | None = None             # Rich / Moderate / Weak / Negative
     vrp_spread: float | None = None          # IV_pct - RV_pct (percentage points)
     realized_vol_20d: float | None = None    # annualized 20-day realized vol (%)
+    realized_vol_60d: float | None = None    # annualized 60-day realized vol (%)
     strategy_type: str | None = None         # Income Grind / Event Ramp / Technical Location
     secondary_edge: list[str] = []
     hard_fail_reasons: list[str] = []
     strong_fail_reasons: list[str] = []
     soft_fail_count: float | None = None
     soft_fail_details: list[str] = []
+    high_beta_moderate: bool = False         # Moderate VRP + rv20 > 35% proxy
 
 
 class ScanLatestOut(BaseModel):

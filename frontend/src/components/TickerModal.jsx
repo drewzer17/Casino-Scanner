@@ -175,6 +175,11 @@ function RiskQualitySection({ row }) {
               <span className="modal-key">VRP State</span>
               <span className="modal-val">
                 <RqVrpPill state={row.vrp_state} spread={row.vrp_spread} />
+                {row.high_beta_moderate && (
+                  <div style={{ fontSize: "11px", fontStyle: "italic", color: "#4ade80", marginTop: "3px" }}>
+                    High-beta Moderate — this spread may be more durable than Rich on a low-vol name
+                  </div>
+                )}
               </span>
             </div>
             <div className="rq-modal-kv">
@@ -184,9 +189,16 @@ function RiskQualitySection({ row }) {
               </span>
             </div>
             <div className="rq-modal-kv">
-              <span className="modal-key">Realized Vol 20d</span>
+              <span className="modal-key">Realized Vol</span>
               <span className="modal-val">
                 {row.realized_vol_20d != null ? `${row.realized_vol_20d.toFixed(1)}%` : "—"}
+                <span style={{ color: "var(--text-muted)", fontSize: "10px", marginLeft: "5px" }}>20d</span>
+                {row.realized_vol_60d != null && (
+                  <span style={{ marginLeft: "8px" }}>
+                    {row.realized_vol_60d.toFixed(1)}%
+                    <span style={{ color: "var(--text-muted)", fontSize: "10px", marginLeft: "3px" }}>60d</span>
+                  </span>
+                )}
               </span>
             </div>
           </div>
