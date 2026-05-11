@@ -571,6 +571,32 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
 
   const baseRows = showAll ? allScanRows : rows;
 
+  // ── DIAGNOSTIC (remove after fix) ────────────────────────────────
+  if (dteSelected.size > 0 && baseRows.length > 0) {
+    const s = baseRows[0];
+    console.log('[DTE-DIAG] dteSelected:', [...dteSelected]);
+    console.log('[DTE-DIAG] row[0] keys:', Object.keys(s).filter(k => k.includes('dte') || k.includes('DTE') || k.includes('expiry') || k.includes('premium')));
+    console.log('[DTE-DIAG] row[0].best_dte:', s.best_dte, typeof s.best_dte);
+    console.log('[DTE-DIAG] row[0].best_put_dte:', s.best_put_dte, typeof s.best_put_dte);
+    console.log('[DTE-DIAG] row[0].expiry_data:', s.expiry_data);
+    console.log('[DTE-DIAG] row[0].atm_call_premium:', s.atm_call_premium, 'atm_put_premium:', s.atm_put_premium);
+    // Sample getCallData result
+    const testCall = getCallData(s, dteSelected);
+    console.log('[DTE-DIAG] getCallData(row[0], dteSelected):', testCall);
+    // Check a row that appears to escape the filter (look for rows where call returns non-null)
+    const escaper = baseRows.find(r => {
+      const cd = getCallData(r, dteSelected);
+      return cd && !dteInAny(cd.dte, dteSelected);
+    });
+    if (escaper) {
+      const cd = getCallData(escaper, dteSelected);
+      console.warn('[DTE-DIAG] ESCAPER FOUND:', escaper.ticker, 'best_dte:', escaper.best_dte, 'expiry_data:', escaper.expiry_data, 'returned dte:', cd?.dte, 'passes dteInAny:', dteInAny(cd?.dte, dteSelected));
+    } else {
+      console.log('[DTE-DIAG] No escapers found — filter is working on rows. Issue may be in Dashboard prop.');
+    }
+  }
+  // ── END DIAGNOSTIC ───────────────────────────────────────────────
+
   // Expand each ticker into rows: ATM + each OTM level available in expiry_data
   const items = [];
   for (const row of baseRows) {
