@@ -132,6 +132,18 @@ class ScanResultOut(BaseModel):
     subcategory: str | None = None
     is_defense: bool = False   # True when primary_lens = "Defense & Aerospace"
 
+    # Phase 2 Risk Quality (eligibility booleans intentionally omitted — backtest only)
+    risk_grade: str | None = None            # A / B / C / F
+    vrp_state: str | None = None             # Rich / Moderate / Weak / Negative
+    vrp_spread: float | None = None          # IV_pct - RV_pct (percentage points)
+    realized_vol_20d: float | None = None    # annualized 20-day realized vol (%)
+    strategy_type: str | None = None         # Income Grind / Event Ramp / Technical Location
+    secondary_edge: list[str] = []
+    hard_fail_reasons: list[str] = []
+    strong_fail_reasons: list[str] = []
+    soft_fail_count: float | None = None
+    soft_fail_details: list[str] = []
+
 
 class ScanLatestOut(BaseModel):
     run_id: int

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { api } from "../api/client.js";
 import EarningsTile from "./EarningsTile.jsx";
 import ResearchButton from "./ResearchButton.jsx";
+import { formatFailKey } from "./RiskQualityScanner.jsx";
 
 function fmt(v, digits = 2) {
   if (v == null) return "—";
@@ -106,6 +107,112 @@ function WheelLeg({ label, suggestion, effectiveBasis, profitIfCalled }) {
 }
 
 const OTM_LABELS = ["1 OTM", "2 OTM", "3 OTM", "4 OTM"];
+
+// ── Risk Quality section helpers ─────────────────────────────────────────────
+
+const GRADE_COLORS_MODAL = { A: "#3fc27f", B: "#f0d000", C: "#f0a030", F: "#e0525e" };
+const VRP_COLORS_MODAL   = { Rich: "#4ade80", Moderate: "#facc15", Weak: "#fb923c", Negative: "#f87171" };
+
+function RqGradePill({ grade }) {
+  if (!grade) return <span className="rq-grade-null">—</span>;
+  return (
+    <span className="rq-grade-pill" style={{ background: GRADE_COLORS_MODAL[grade] }}>
+      {grade}
+    </span>
+  );
+}
+
+function RqVrpPill({ state, spread }) {
+  if (!state) return <span className="rq-grade-null">—</span>;
+  const sign = spread != null && spread >= 0 ? "+" : "";
+  const spreadStr = spread != null ? ` (${sign}${spread.toFixed(1)}pp)` : "";
+  return (
+    <span className="rq-vrp-badge" style={{ background: VRP_COLORS_MODAL[state] ?? "#6b7280" }}>
+      {state}{spreadStr}
+    </span>
+  );
+}
+
+function RqStrategyPill({ strategyType, secondaryEdge }) {
+  if (!strategyType) return <span className="rq-grade-null">—</span>;
+  const hasSecTech = (secondaryEdge || []).includes("TechnicalLocation");
+  if (strategyType === "Event Ramp")
+    return <span className="rq-strategy-tag rq-strategy-event">{hasSecTech ? "Event + Tech" : "Event Ramp"}</span>;
+  if (strategyType === "Technical Location")
+    return <span className="rq-strategy-tag rq-strategy-tech">Technical Location</span>;
+  return <span className="rq-strategy-tag rq-strategy-income">Income Grind</span>;
+}
+
+function RqFailList({ items, className, emptyText }) {
+  if (!items || items.length === 0) return <span className="rq-grade-null">{emptyText ?? "None"}</span>;
+  return (
+    <ul className="rq-modal-fail-list">
+      {items.map((k) => (
+        <li key={k} className={className}>{formatFailKey(k)}</li>
+      ))}
+    </ul>
+  );
+}
+
+function RiskQualitySection({ row }) {
+  const hasData = !!row.risk_grade;
+
+  return (
+    <div className="rq-modal-section">
+      <div className="modal-section-title">Risk Quality</div>
+
+      {!hasData ? (
+        <div className="rq-modal-nodata">Insufficient data — run a scan to populate Risk Quality scores.</div>
+      ) : (
+        <>
+          {/* Summary row: Grade | VRP | Strategy | Realized Vol */}
+          <div className="rq-modal-summary-row">
+            <div className="rq-modal-kv">
+              <span className="modal-key">Grade</span>
+              <span className="modal-val"><RqGradePill grade={row.risk_grade} /></span>
+            </div>
+            <div className="rq-modal-kv">
+              <span className="modal-key">VRP State</span>
+              <span className="modal-val">
+                <RqVrpPill state={row.vrp_state} spread={row.vrp_spread} />
+              </span>
+            </div>
+            <div className="rq-modal-kv">
+              <span className="modal-key">Strategy</span>
+              <span className="modal-val">
+                <RqStrategyPill strategyType={row.strategy_type} secondaryEdge={row.secondary_edge} />
+              </span>
+            </div>
+            <div className="rq-modal-kv">
+              <span className="modal-key">Realized Vol 20d</span>
+              <span className="modal-val">
+                {row.realized_vol_20d != null ? `${row.realized_vol_20d.toFixed(1)}%` : "—"}
+              </span>
+            </div>
+          </div>
+
+          {/* Factor Assessment */}
+          <div className="rq-modal-factors">
+            <div className="rq-modal-factor-col">
+              <div className="rq-modal-factor-label rq-fail-hard-label">Hard Fails</div>
+              <RqFailList items={row.hard_fail_reasons} className="rq-fail-hard" emptyText="None" />
+            </div>
+            <div className="rq-modal-factor-col">
+              <div className="rq-modal-factor-label rq-fail-strong-label">Strong Fails</div>
+              <RqFailList items={row.strong_fail_reasons} className="rq-fail-strong" emptyText="None" />
+            </div>
+            <div className="rq-modal-factor-col">
+              <div className="rq-modal-factor-label rq-fail-soft-label">
+                Soft Fails {row.soft_fail_count != null ? `(${row.soft_fail_count})` : ""}
+              </div>
+              <RqFailList items={row.soft_fail_details} className="rq-fail-soft" emptyText="None" />
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function ChainsTable({ expirations, price }) {
   if (!expirations || expirations.length === 0) return null;
@@ -501,6 +608,9 @@ export default function TickerModal({ row, onClose, onResearch }) {
             </div>
           </div>
         </div>
+
+        {/* ── Risk Quality section (full width) ── */}
+        <RiskQualitySection row={row} />
 
         {/* ── Live multi-expiry table (full width, fetched on demand) ── */}
         <div className="expiry-section">

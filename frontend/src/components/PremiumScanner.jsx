@@ -2,6 +2,62 @@ import React, { useState } from "react";
 import CrossConflictWarning from "./CrossConflictWarning.jsx";
 import ResearchAsterisk from "./ResearchAsterisk.jsx";
 import ScrollArrows from "./ScrollArrows.jsx";
+import { GRADE_COLORS, formatFailKey } from "./RiskQualityScanner.jsx";
+
+const VRP_COLORS_PS = { Rich: "#4ade80", Moderate: "#facc15", Weak: "#fb923c", Negative: "#f87171" };
+
+// Risk Quality inline cells for Premium Scanner expand mode
+function RqGradeCell({ grade }) {
+  if (!grade) return <span style={{ color: "var(--text-muted)" }}>—</span>;
+  return (
+    <span style={{
+      display: "inline-block",
+      background: GRADE_COLORS[grade],
+      color: "#fff",
+      fontWeight: 700,
+      fontSize: "11px",
+      padding: "2px 7px",
+      borderRadius: "999px",
+      minWidth: 20,
+      textAlign: "center",
+    }}>{grade}</span>
+  );
+}
+function RqVrpCell({ state, spread }) {
+  if (!state) return <span style={{ color: "var(--text-muted)" }}>—</span>;
+  const sign = spread != null && spread >= 0 ? "+" : "";
+  return (
+    <div style={{ textAlign: "center" }}>
+      <span style={{
+        display: "inline-block",
+        background: VRP_COLORS_PS[state] ?? "#6b7280",
+        color: state === "Rich" || state === "Negative" ? "#fff" : "#000",
+        fontSize: "10px",
+        fontWeight: 700,
+        padding: "2px 5px",
+        borderRadius: "3px",
+      }}>{state}</span>
+      {spread != null && (
+        <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: 1 }}>
+          {sign}{spread.toFixed(1)}
+        </div>
+      )}
+    </div>
+  );
+}
+function RqStrategyCell({ strategyType, secondaryEdge }) {
+  if (!strategyType) return <span style={{ color: "var(--text-muted)" }}>—</span>;
+  const hasSecTech = (secondaryEdge || []).includes("TechnicalLocation");
+  if (strategyType === "Event Ramp") return (
+    <span style={{ fontSize: "11px", fontWeight: 700, color: "#f59e0b" }}>
+      {hasSecTech ? "Event+Tech" : "Event"}
+    </span>
+  );
+  if (strategyType === "Technical Location") return (
+    <span style={{ fontSize: "11px", fontWeight: 700, color: "#4a90d9" }}>Tech</span>
+  );
+  return <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Income</span>;
+}
 
 const DTE_RANGES = [
   { label: "≤3",    min: 0,  max: 3  },
@@ -466,6 +522,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const [showExcl, setShowExcl] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [earnBuckets, setEarnBuckets] = useState(new Set());
+  const [showRiskCols, setShowRiskCols] = useState(false); // Risk Quality expand toggle
 
   const toggleDte = (label) => {
     setDteSelected(prev => {
@@ -607,6 +664,14 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
         >
           {showAll ? "SHOW ALL (on)" : "SHOW ALL"}
         </button>
+        <button
+          className="excl-toggle-btn"
+          style={showRiskCols ? { background: "#5b21b6", borderColor: "#5b21b6", color: "#fff" } : {}}
+          onClick={() => setShowRiskCols(v => !v)}
+          title="Show/hide Risk Quality columns (Grade, VRP, Strategy)"
+        >
+          {showRiskCols ? "Risk ▼" : "Risk ▶"}
+        </button>
       </div>
       {showExcl && <ExclusionTable allExcluded={allExcluded} />}
 
@@ -675,46 +740,87 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
               ? " Run an Extensive Scan to populate short-term weekly data."
               : ""}
           </div>
-        ) : (
-          <table className="prem-scanner-table">
-            <thead>
-              <tr>
-                {COLS.map(col => (
-                  <th
-                    key={col.key}
-                    className={`prem-scanner-th${col.align === "right" ? " right" : col.align === "center" ? " center" : ""}${sortCol === col.key ? " sorted" : ""}${col.compact ? " compact-col" : ""}`}
-                    onClick={() => handleSort(col.key)}
-                    style={col.groupEnd ? { borderRight: "1px solid rgba(255,255,255,0.15)" } : undefined}
-                  >
-                    {col.label}
-                    {sortCol === col.key && (
-                      <span className="sort-arrow">{sortAsc ? " ▲" : " ▼"}</span>
-                    )}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map(item => (
-                <tr
-                  key={item._key}
-                  className="prem-scanner-row"
-                  onClick={() => onRowClick && onRowClick(item)}
-                >
-                  {COLS.map(col => (
-                    <td
+        ) : (() => {
+          // Build visible columns: Risk cols insert after Ticker when expanded
+          const RQ_COLS = [
+            { key: "rq_grade",    label: "Grade",    align: "center" },
+            { key: "rq_vrp",      label: "VRP",      align: "center" },
+            { key: "rq_strategy", label: "Strategy", align: "center" },
+          ];
+          const visibleCols = showRiskCols
+            ? [COLS[0], ...RQ_COLS, ...COLS.slice(1)]
+            : COLS;
+
+          return (
+            <table className="prem-scanner-table">
+              <thead>
+                <tr>
+                  {visibleCols.map(col => (
+                    <th
                       key={col.key}
-                      className={`prem-scanner-td${col.align === "right" ? " right" : col.align === "center" ? " center" : ""}${col.key === "ticker" ? " ticker-col" : ""}${col.key === "premium" ? " prem-col" : ""}${col.compact ? " compact-col" : ""}`}
-                      style={col.groupEnd ? { borderRight: "1px solid rgba(255,255,255,0.15)" } : undefined}
+                      className={`prem-scanner-th${col.align === "right" ? " right" : col.align === "center" ? " center" : ""}${sortCol === col.key ? " sorted" : ""}${col.compact ? " compact-col" : ""}`}
+                      onClick={() => col.key.startsWith("rq_") ? undefined : handleSort(col.key)}
+                      style={{
+                        ...(col.groupEnd ? { borderRight: "1px solid rgba(255,255,255,0.15)" } : {}),
+                        ...(col.key.startsWith("rq_") ? { cursor: "default", color: "#7c3aed" } : {}),
+                      }}
                     >
-                      {cellValue(item, col.key, onResearch)}
-                    </td>
+                      {col.label}
+                      {sortCol === col.key && !col.key.startsWith("rq_") && (
+                        <span className="sort-arrow">{sortAsc ? " ▲" : " ▼"}</span>
+                      )}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody>
+                {sorted.map(item => {
+                  const grade = item.risk_grade;
+                  const rowStyle = showRiskCols
+                    ? { opacity: grade === "F" ? 0.45 : grade === "C" ? 0.7 : 1.0, transition: "opacity 0.15s" }
+                    : {};
+                  return (
+                    <tr
+                      key={item._key}
+                      className="prem-scanner-row"
+                      style={rowStyle}
+                      onMouseEnter={e => { if (showRiskCols && rowStyle.opacity < 1) e.currentTarget.style.opacity = "1"; }}
+                      onMouseLeave={e => { if (showRiskCols && rowStyle.opacity < 1) e.currentTarget.style.opacity = String(rowStyle.opacity); }}
+                      onClick={() => onRowClick && onRowClick(item)}
+                    >
+                      {visibleCols.map(col => {
+                        if (col.key === "rq_grade") return (
+                          <td key="rq_grade" className="prem-scanner-td center">
+                            <RqGradeCell grade={item.risk_grade} />
+                          </td>
+                        );
+                        if (col.key === "rq_vrp") return (
+                          <td key="rq_vrp" className="prem-scanner-td center">
+                            <RqVrpCell state={item.vrp_state} spread={item.vrp_spread} />
+                          </td>
+                        );
+                        if (col.key === "rq_strategy") return (
+                          <td key="rq_strategy" className="prem-scanner-td center">
+                            <RqStrategyCell strategyType={item.strategy_type} secondaryEdge={item.secondary_edge} />
+                          </td>
+                        );
+                        return (
+                          <td
+                            key={col.key}
+                            className={`prem-scanner-td${col.align === "right" ? " right" : col.align === "center" ? " center" : ""}${col.key === "ticker" ? " ticker-col" : ""}${col.key === "premium" ? " prem-col" : ""}${col.compact ? " compact-col" : ""}`}
+                            style={col.groupEnd ? { borderRight: "1px solid rgba(255,255,255,0.15)" } : undefined}
+                          >
+                            {cellValue(item, col.key, onResearch)}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          );
+        })()}
       </ScrollArrows>
     </div>
   );

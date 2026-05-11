@@ -104,6 +104,8 @@ import { calcAsymmetricFlags } from "../utils/asymmetric.js";
 import IvRampScanner from "./IvRampScanner.jsx";
 import PremiumScanner from "./PremiumScanner.jsx";
 import RangeScanner from "./RangeScanner.jsx";
+import RiskQualityScanner from "./RiskQualityScanner.jsx";
+import { GRADE_COLORS } from "./RiskQualityScanner.jsx";
 import ScoreCard from "./ScoreCard.jsx";
 import TickerModal from "./TickerModal.jsx";
 import ResearchPanel from "./ResearchPanel.jsx";
@@ -152,8 +154,9 @@ const BUCKET_LABEL = {
   watchlist: "Watchlist",
 };
 
-function TopMovers({ movers }) {
+function TopMovers({ movers, view, riskGradeMap }) {
   if (!movers || (movers.gainers.length === 0 && movers.losers.length === 0)) return null;
+  const showGrade = view === "riskquality";
 
   const renderList = (list, isGain) =>
     list.map((m) => (
@@ -165,6 +168,11 @@ function TopMovers({ movers }) {
             <> · <span style={{ color: isGain ? "var(--green)" : "var(--red)" }}>
               {BUCKET_LABEL[m.prev_bucket] ?? m.prev_bucket} → {BUCKET_LABEL[m.bucket] ?? m.bucket}
             </span></>
+          )}
+          {showGrade && riskGradeMap && riskGradeMap[m.ticker] && (
+            <span style={{ color: GRADE_COLORS[riskGradeMap[m.ticker]], fontWeight: 700, marginLeft: 4 }}>
+              · {riskGradeMap[m.ticker]}
+            </span>
           )}
         </span>
         <span className={`mover-delta ${isGain ? "gain" : "loss"}`}>
@@ -200,7 +208,7 @@ export default function Dashboard() {
   const [premTimeframe, setPremTimeframe] = useState(30);
   const [showAll, setShowAll] = useState(false);
   const [asymOnly, setAsymOnly] = useState(false);
-  const [view, setView] = useState("cards"); // "cards" | "premium" | "range" | "ivramp" | "asymmetric" | "markethealth"
+  const [view, setView] = useState("cards"); // "cards" | "premium" | "range" | "ivramp" | "asymmetric" | "riskquality" | "markethealth"
   const [scanMode, setScanMode] = useState(null); // "normal" | "extensive" | null
   const [sourceFilter, setSourceFilter] = useState("all");
   const [assetTypeFilter, setAssetTypeFilter] = useState("all"); // "all" | "stocks" | "etfs"
@@ -237,6 +245,11 @@ export default function Dashboard() {
   const [s2DistRange, setS2DistRange] = useState([0, 999]);
   const [spreadRange, setSpreadRange] = useState([0, 500]);
   const [ivRampScoreRange, setIvRampScoreRange] = useState([0, 100]);
+
+  // Risk Quality view filters (persist during session)
+  const [rqGradeFilter,    setRqGradeFilter]    = useState("all");
+  const [rqVrpFilter,      setRqVrpFilter]      = useState("all");
+  const [rqStrategyFilter, setRqStrategyFilter] = useState("all");
 
   // Scan trigger state
   const [scanning, setScanning] = useState(false);
@@ -669,6 +682,14 @@ export default function Dashboard() {
       ? sortRows(filteredAll, sort, premTimeframe)
       : sortRows((data[active] || []).filter(combinedFilter), sort, premTimeframe);
 
+  // Build risk_grade lookup for TopMovers (best grade per ticker from allRows)
+  const riskGradeMap = {};
+  for (const r of allRows) {
+    if (r.risk_grade && !riskGradeMap[r.ticker]) {
+      riskGradeMap[r.ticker] = r.risk_grade;
+    }
+  }
+
   return (
     <>
       <div className="header">
@@ -703,6 +724,12 @@ export default function Dashboard() {
               onClick={() => setView(v => v === "asymmetric" ? "cards" : "asymmetric")}
             >
               {view === "asymmetric" ? "← Cards" : "⬟ Asymmetric Setups"}
+            </button>
+            <button
+              className={`rq-view-btn${view === "riskquality" ? " active" : ""}`}
+              onClick={() => setView(v => v === "riskquality" ? "cards" : "riskquality")}
+            >
+              {view === "riskquality" ? "← Cards" : "◈ Risk Quality"}
             </button>
             {/* TODO: MarketHealth side-tabled — restore button when feature is ready
             <button
@@ -1044,7 +1071,7 @@ export default function Dashboard() {
       )}
 
       {/* TODO: MarketHealth side-tabled — guard restored to always-true */}
-      {<TopMovers movers={movers} />}
+      {<TopMovers movers={movers} view={view} riskGradeMap={riskGradeMap} />}
 
       {view === "premium" ? (
         <PremiumScanner rows={viewRows} onRowClick={setSelectedRow}
@@ -1055,6 +1082,18 @@ export default function Dashboard() {
         <IvRampScanner rows={viewRows} onRowClick={setSelectedRow} onResearch={setPanelTicker} />
       ) : view === "asymmetric" ? (
         <AsymmetricScanner rows={viewRows} onRowClick={setSelectedRow} onResearch={setPanelTicker} />
+      ) : view === "riskquality" ? (
+        <RiskQualityScanner
+          rows={viewRows}
+          onRowClick={setSelectedRow}
+          onResearch={setPanelTicker}
+          gradeFilter={rqGradeFilter}
+          vrpFilter={rqVrpFilter}
+          strategyFilter={rqStrategyFilter}
+          onGradeFilter={setRqGradeFilter}
+          onVrpFilter={setRqVrpFilter}
+          onStrategyFilter={setRqStrategyFilter}
+        />
       ) : /* TODO: MarketHealth side-tabled — render branch removed until feature is ready */ (
         <>
           <div className="tabs-row">
