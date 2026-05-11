@@ -1025,6 +1025,23 @@ class ScanRowResult:
     iv_front_month: float | None = None
     iv_back_month: float | None = None
     term_structure: float | None = None
+    # Derived in scan_ticker for Phase 2 (not persisted directly)
+    range_score: float | None = None          # 0-100, price position in 52-week range
+    recent_bars: list | None = None           # [(date_str, close), ...] last 25 bars
+    # Phase 2 Risk Quality scoring engine fields (populated in run_scan loop)
+    risk_grade: str | None = None
+    vrp_state: str | None = None
+    vrp_spread: float | None = None
+    realized_vol_20d: float | None = None
+    strategy_type: str | None = None
+    secondary_edge: list | None = None
+    hard_fail_reasons: list | None = None
+    strong_fail_reasons: list | None = None
+    soft_fail_count: float | None = None
+    soft_fail_details: list | None = None
+    event_ramp_eligible: bool = False
+    technical_location_eligible: bool = False
+    income_grind_eligible: bool = False
 
 
 def scan_ticker(
@@ -1054,6 +1071,21 @@ def scan_ticker(
         closes = [b.close for b in bars]
         log_ret = _log_returns(closes)
         hv = _annualized_vol(log_ret, HV_WINDOW)
+
+        # Phase 2: capture last 25 bars as (date_str, close) for realized vol
+        recent_bars_for_rv: list[tuple[str, float]] = [
+            (b.date, b.close) for b in bars[-25:]
+        ]
+
+        # Phase 2: range_score — price position in 52-week high/low range (0-100)
+        range_score: float | None = None
+        if len(bars) >= 20:
+            year_lows = [b.low for b in bars]
+            year_highs = [b.high for b in bars]
+            yr_low = min(year_lows)
+            yr_high = max(year_highs)
+            if yr_high > yr_low:
+                range_score = round((price - yr_low) / (yr_high - yr_low) * 100, 1)
 
         # SMA calculations
         sma_200 = _calc_sma(closes, 200)
@@ -1338,6 +1370,9 @@ def scan_ticker(
                 iv_25d_put=round(iv_25d_put, 4) if iv_25d_put is not None else None,
                 iv_25d_call=round(iv_25d_call, 4) if iv_25d_call is not None else None,
                 put_skew=put_skew,
+                # Phase 2 pre-computed inputs (not persisted directly)
+                range_score=range_score,
+                recent_bars=recent_bars_for_rv,
             ))
 
         return results
@@ -1537,6 +1572,20 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
         iv_front_month=result.iv_front_month,
         iv_back_month=result.iv_back_month,
         term_structure=result.term_structure,
+        # Phase 2 Risk Quality
+        risk_grade=result.risk_grade,
+        vrp_state=result.vrp_state,
+        vrp_spread=result.vrp_spread,
+        realized_vol_20d=result.realized_vol_20d,
+        strategy_type=result.strategy_type,
+        secondary_edge=json.dumps(result.secondary_edge) if result.secondary_edge else None,
+        hard_fail_reasons=json.dumps(result.hard_fail_reasons) if result.hard_fail_reasons else None,
+        strong_fail_reasons=json.dumps(result.strong_fail_reasons) if result.strong_fail_reasons else None,
+        soft_fail_count=result.soft_fail_count,
+        soft_fail_details=json.dumps(result.soft_fail_details) if result.soft_fail_details else None,
+        event_ramp_eligible=result.event_ramp_eligible,
+        technical_location_eligible=result.technical_location_eligible,
+        income_grind_eligible=result.income_grind_eligible,
     ))
 
     # Record IV snapshot for IV rank history (one row per ticker per day)
@@ -1720,16 +1769,20 @@ def run_scan(
     if limit is not None:
         universe = universe[:limit]
 
-    # Build AI sector set once — these tickers get a row per expiry instead of one
+    # Build AI sector set + ticker→source lookup in one DB call
     ai_tickers: set[str] = set()
+    ticker_source_lookup: dict[str, str] = {}
     try:
         from ..universe import ticker_sources_from_db
-        for t, sources in ticker_sources_from_db(db).items():
+        _src_map = ticker_sources_from_db(db)
+        for t, sources in _src_map.items():
+            if sources:
+                ticker_source_lookup[t] = sources[0]
             if any(s in ("ai_sector", "ai_nuclear") for s in sources):
                 ai_tickers.add(t)
         logger.info("AI sector tickers: %d (will store one row per expiry)", len(ai_tickers))
     except Exception as exc:
-        logger.warning("ai_tickers lookup failed, all tickers treated as non-AI: %s", exc)
+        logger.warning("ai_tickers / ticker_source_lookup failed: %s", exc)
 
     # Find or create a ScanRun
     existing_run = db.execute(
@@ -1769,9 +1822,11 @@ def run_scan(
     # Build earnings lookup once for the entire scan.
     # Uses Finnhub calendar API with 24h DB cache (falls back to empty on error).
     earnings_lookup: dict[str, int] = {}
+    earnings_date_lookup: dict[str, date] = {}
     try:
-        from ..services.finnhub_earnings import get_earnings_lookup
+        from ..services.finnhub_earnings import get_earnings_lookup, get_earnings_date_lookup
         earnings_lookup = get_earnings_lookup(db)
+        earnings_date_lookup = get_earnings_date_lookup(db)
     except Exception as exc:
         logger.warning("earnings lookup failed, catalyst scores will be 0: %s", exc)
 
@@ -1821,8 +1876,55 @@ def run_scan(
                 errored += 1
             else:
                 company_name = company_names.get(ticker)
+                earn_date = earnings_date_lookup.get(ticker)
+                ticker_src = ticker_source_lookup.get(ticker, "")
                 for result in results:
                     result.company_name = company_name
+                    # Phase 2: compute risk quality fields before persisting
+                    try:
+                        from .risk_quality import compute_risk_quality
+                        row_dict = {
+                            "price": result.price,
+                            "iv": result.iv,
+                            "iv_rank": result.metrics.iv_rank,
+                            "ema_20": result.ema_20,
+                            "ema_50": result.ema_50,
+                            "distribution_days_25": result.distribution_days_25,
+                            "iv_front_month": result.iv_front_month,
+                            "iv_back_month": result.iv_back_month,
+                            "put_skew": result.put_skew,
+                            "support_1": result.support_1,
+                            "support_2": result.support_2,
+                            "resistance_1": result.resistance_1,
+                            "resistance_2": result.resistance_2,
+                            "range_score": result.range_score,
+                            "iv_ramp_flag": result.metrics.iv_ramp,
+                            "best_strike": result.best_strike,
+                            "best_expiry": result.best_expiry,
+                            "cc_score": result.cc_score,
+                            "csp_score": result.csp_score,
+                        }
+                        rq = compute_risk_quality(
+                            row=row_dict,
+                            ticker_source=ticker_src,
+                            earnings_date=earn_date,
+                            recent_bars=result.recent_bars or [],
+                        )
+                        result.risk_grade = rq.get("risk_grade")
+                        result.vrp_state = rq.get("vrp_state")
+                        result.vrp_spread = rq.get("vrp_spread")
+                        result.realized_vol_20d = rq.get("realized_vol_20d")
+                        result.strategy_type = rq.get("strategy_type")
+                        result.secondary_edge = rq.get("secondary_edge") or []
+                        result.hard_fail_reasons = rq.get("hard_fail_reasons") or []
+                        result.strong_fail_reasons = rq.get("strong_fail_reasons") or []
+                        result.soft_fail_count = rq.get("soft_fail_count")
+                        result.soft_fail_details = rq.get("soft_fail_details") or []
+                        result.event_ramp_eligible = rq.get("event_ramp_eligible", False)
+                        result.technical_location_eligible = rq.get("technical_location_eligible", False)
+                        result.income_grind_eligible = rq.get("income_grind_eligible", False)
+                    except Exception as rq_exc:
+                        logger.warning("risk_quality compute failed for %s: %s", ticker, rq_exc)
                     _persist_result(db, run.id, result)
                 scanned += 1
 

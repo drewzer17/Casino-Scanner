@@ -197,3 +197,31 @@ def get_earnings_lookup(db: Session) -> dict[str, int]:
 
     logger.info("get_earnings_lookup: %d tickers loaded from cache", len(lookup))
     return lookup
+
+
+def get_earnings_date_lookup(db: Session) -> dict[str, date]:
+    """Return {TICKER: next_earnings_date} from the DB cache.
+
+    Companion to get_earnings_lookup — returns the actual date object instead
+    of days-until, which is needed for the Phase 2 Risk Quality earnings overlap
+    checks (earnings_date vs best_expiry comparison).
+    """
+    today = date.today()
+    try:
+        rows = db.execute(
+            text("""
+                SELECT ticker, next_earnings_date
+                FROM earnings_calendar
+                WHERE next_earnings_date >= :today
+            """),
+            {"today": today},
+        ).fetchall()
+    except Exception as exc:
+        logger.warning("earnings_calendar date read failed: %s", exc)
+        return {}
+
+    return {
+        r.ticker: r.next_earnings_date
+        for r in rows
+        if r.next_earnings_date is not None
+    }

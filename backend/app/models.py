@@ -113,6 +113,21 @@ class ScanResult(Base):
     iv_back_month: Mapped[float | None] = mapped_column(Float, nullable=True)   # ATM IV, second expiry
     term_structure: Mapped[float | None] = mapped_column(Float, nullable=True)  # iv_back - iv_front (+= contango)
 
+    # Phase 2 Risk Quality scoring engine
+    risk_grade: Mapped[str | None] = mapped_column(String(1), nullable=True)
+    vrp_state: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    vrp_spread: Mapped[float | None] = mapped_column(Float, nullable=True)
+    realized_vol_20d: Mapped[float | None] = mapped_column(Float, nullable=True)
+    strategy_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    secondary_edge: Mapped[str | None] = mapped_column(Text, nullable=True)       # JSON list
+    hard_fail_reasons: Mapped[str | None] = mapped_column(Text, nullable=True)    # JSON list
+    strong_fail_reasons: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON list
+    soft_fail_count: Mapped[float | None] = mapped_column(Float, nullable=True)
+    soft_fail_details: Mapped[str | None] = mapped_column(Text, nullable=True)    # JSON list
+    event_ramp_eligible: Mapped[bool] = mapped_column(Boolean, default=False)
+    technical_location_eligible: Mapped[bool] = mapped_column(Boolean, default=False)
+    income_grind_eligible: Mapped[bool] = mapped_column(Boolean, default=False)
+
     # Asymmetric setup flags (computed during scan from convergence of multiple criteria)
     asymmetric_cc_flag: Mapped[bool] = mapped_column(Boolean, default=False)
     asymmetric_csp_flag: Mapped[bool] = mapped_column(Boolean, default=False)

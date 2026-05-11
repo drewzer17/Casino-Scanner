@@ -170,6 +170,24 @@ def init_db() -> None:
     ]:
         _add_column_if_missing(_ddl)
 
+    # Phase 2 Risk Quality scoring engine — v12
+    for _ddl in [
+        "ALTER TABLE scan_results ADD COLUMN risk_grade VARCHAR(1)",
+        "ALTER TABLE scan_results ADD COLUMN vrp_state VARCHAR(10)",
+        "ALTER TABLE scan_results ADD COLUMN vrp_spread FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN realized_vol_20d FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN strategy_type VARCHAR(20)",
+        "ALTER TABLE scan_results ADD COLUMN secondary_edge TEXT",
+        "ALTER TABLE scan_results ADD COLUMN hard_fail_reasons TEXT",
+        "ALTER TABLE scan_results ADD COLUMN strong_fail_reasons TEXT",
+        "ALTER TABLE scan_results ADD COLUMN soft_fail_count FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN soft_fail_details TEXT",
+        "ALTER TABLE scan_results ADD COLUMN event_ramp_eligible BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE scan_results ADD COLUMN technical_location_eligible BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE scan_results ADD COLUMN income_grind_eligible BOOLEAN DEFAULT FALSE",
+    ]:
+        _add_column_if_missing(_ddl)
+
 
 def _add_column_if_missing(ddl: str) -> None:
     from sqlalchemy import text
