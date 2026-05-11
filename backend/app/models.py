@@ -21,6 +21,7 @@ class ScanRun(Base):
     status: Mapped[str] = mapped_column(String(32), default="running")
     scan_slot: Mapped[str | None] = mapped_column(String(16), nullable=True)  # "am" | "pm" | "manual"
     scoring_config: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON snapshot of thresholds
+    scan_type: Mapped[str | None] = mapped_column(String(20), nullable=True, default="full")  # "full" | "positions"
 
 
 class ScanResult(Base):
@@ -180,3 +181,20 @@ class IvHistory(Base):
     recorded_date: Mapped[date] = mapped_column(Date, index=True)
 
     __table_args__ = (UniqueConstraint("ticker", "recorded_date", name="uq_iv_history_ticker_date"),)
+
+
+class UserPosition(Base):
+    """Tracks user-managed positions for the My Positions quick-scan view."""
+    __tablename__ = "user_positions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    ticker: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
+    position_type: Mapped[str | None] = mapped_column(String(10), nullable=True)  # CSP / CC / SHARES
+    entry_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    entry_date: Mapped[str | None] = mapped_column(String(20), nullable=True)   # ISO date string
+    contracts: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    strike: Mapped[float | None] = mapped_column(Float, nullable=True)
+    expiry: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

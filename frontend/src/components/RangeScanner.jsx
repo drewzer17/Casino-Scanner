@@ -121,7 +121,7 @@ function sortValue(row, key) {
   }
 }
 
-export default function RangeScanner({ rows, onRowClick, onResearch }) {
+export default function RangeScanner({ rows, onRowClick, onResearch, onAddToPositions }) {
   const [sortCol, setSortCol] = useState("range_score");
   const [sortAsc, setSortAsc] = useState(true);
   const [earnBuckets, setEarnBuckets] = useState(new Set());
@@ -201,6 +201,7 @@ export default function RangeScanner({ rows, onRowClick, onResearch }) {
                   )}
                 </th>
               ))}
+              {onAddToPositions && <th className="prem-scanner-th row-action-th"></th>}
             </tr>
           </thead>
           <tbody>
@@ -218,6 +219,15 @@ export default function RangeScanner({ rows, onRowClick, onResearch }) {
                     {cellValue(row, col.key, onResearch)}
                   </td>
                 ))}
+                {onAddToPositions && (
+                  <td className="prem-scanner-td row-action-td" onClick={e => e.stopPropagation()}>
+                    <button
+                      className="row-add-pos-btn"
+                      onClick={() => onAddToPositions(row.ticker)}
+                      title={`Add ${row.ticker} to positions`}
+                    >+</button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

@@ -2422,3 +2422,275 @@ body {
 @media (max-width: 600px) {
   .rq-modal-factors { grid-template-columns: 1fr; }
 }
+
+/* ── My Positions view button ──────────────────────────────────────────────── */
+.pos-view-btn {
+  padding: 5px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.pos-view-btn:hover { background: #2a2a40; border-color: #6366f1; }
+.pos-view-btn.active { background: #1e1b4b; border-color: #6366f1; color: #a5b4fc; }
+
+/* ── "Add to positions" row button (table scanners) ───────────────────────── */
+.row-action-th { width: 32px; padding: 0; }
+.row-action-td { padding: 0 4px; width: 32px; }
+.row-add-pos-btn {
+  opacity: 0;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 2px 7px;
+  line-height: 1;
+  transition: opacity 0.1s, background 0.15s, color 0.15s;
+}
+.prem-scanner-row:hover .row-add-pos-btn { opacity: 1; }
+.row-add-pos-btn:hover { background: #2563eb; border-color: #2563eb; color: #fff; }
+
+/* ScoreCard "+" button */
+.card-add-pos-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  opacity: 0;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 2px 7px;
+  line-height: 1;
+  transition: opacity 0.1s, background 0.15s, color 0.15s;
+  z-index: 2;
+}
+.card:hover .card-add-pos-btn { opacity: 1; }
+.card-add-pos-btn:hover { background: #2563eb; border-color: #2563eb; color: #fff; }
+
+/* ── "Add to positions" toast ──────────────────────────────────────────────── */
+.pos-toast {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 9999;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  animation: pos-toast-in 0.2s ease;
+}
+.pos-toast.ok  { background: #14532d; color: #86efac; border: 1px solid #16a34a; }
+.pos-toast.err { background: #1c1917; color: #fca5a5; border: 1px solid #7f1d1d; }
+@keyframes pos-toast-in {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+/* ── My Positions component ────────────────────────────────────────────────── */
+.pos-root {
+  padding: 0 16px 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.pos-section {
+  margin-bottom: 32px;
+}
+
+.pos-section-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.pos-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+
+.pos-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.pos-bulk-wrap {
+  display: flex;
+  gap: 6px;
+}
+
+.pos-bulk-input {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 6px 12px;
+  font-size: 13px;
+  width: 200px;
+}
+.pos-bulk-input::placeholder { color: var(--text-muted); }
+.pos-bulk-input:focus { outline: none; border-color: #6366f1; }
+
+.pos-add-btn {
+  background: #1e1b4b;
+  border: 1px solid #6366f1;
+  color: #a5b4fc;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.pos-add-btn:hover { background: #2d2980; }
+
+.pos-add-msg { font-size: 12px; }
+.pos-add-msg.ok  { color: #86efac; }
+.pos-add-msg.err { color: #fca5a5; }
+
+.pos-scan-btn {
+  background: #1e3a5f;
+  border: 1px solid #2563eb;
+  color: #93c5fd;
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.pos-scan-btn:hover:not(:disabled) { background: #1d4ed8; color: #fff; }
+.pos-scan-btn:disabled { opacity: 0.5; cursor: default; }
+.pos-scan-btn.scanning { opacity: 0.7; }
+
+.pos-last-scan { font-size: 12px; color: var(--text-muted); }
+.pos-never { color: #fca5a5; }
+.pos-scan-error { font-size: 12px; color: #fca5a5; }
+
+.pos-empty {
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 24px 0;
+}
+
+/* Positions table */
+.pos-table-wrap { overflow-x: auto; }
+.pos-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.pos-table th {
+  background: var(--bg-elev);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+.pos-th-ticker { min-width: 80px; }
+.pos-table td { padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
+.pos-td-ticker { font-weight: 700; color: var(--text); }
+.pos-row:hover { background: rgba(255,255,255,0.03); }
+
+/* Editable cells */
+.pos-editable {
+  cursor: pointer;
+  color: var(--text);
+  border-radius: 3px;
+  padding: 2px 4px;
+}
+.pos-editable:hover { background: rgba(99,102,241,0.15); }
+.pos-editable-empty { color: var(--text-muted); }
+
+.pos-edit-input {
+  background: var(--bg-elev);
+  border: 1px solid #6366f1;
+  border-radius: 4px;
+  color: var(--text);
+  padding: 3px 7px;
+  font-size: 13px;
+  width: 100px;
+}
+.pos-edit-input:focus { outline: none; }
+
+.pos-edit-select {
+  background: var(--bg-elev);
+  border: 1px solid #6366f1;
+  border-radius: 4px;
+  color: var(--text);
+  padding: 3px 6px;
+  font-size: 13px;
+}
+.pos-edit-select:focus { outline: none; }
+
+/* Remove button */
+.pos-remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.1s, background 0.15s, color 0.15s;
+}
+.pos-row:hover .pos-remove-btn { opacity: 1; }
+.pos-remove-btn:hover { background: rgba(239,68,68,0.2); color: #fca5a5; }
+
+/* Scan results section */
+.pos-results-section { border-top: 1px solid var(--border); padding-top: 24px; }
+.pos-results-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: var(--text);
+}
+.pos-results-runid { font-size: 13px; font-weight: 400; color: var(--text-muted); }
+.pos-results-hint { font-size: 12px; color: var(--text-muted); margin: 0 0 12px; }
+
+/* Scan results table */
+.pos-scan-table-wrap { overflow-x: auto; }
+.pos-scan-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.pos-scan-table th {
+  background: var(--bg-elev);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.pos-scan-row td { padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
+.pos-scan-row:hover { background: rgba(255,255,255,0.04); }
+.pos-scan-ticker { min-width: 120px; }
+.pos-scan-ticker-text { font-weight: 700; color: var(--text); }
+.pos-scan-co { display: block; font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.pos-scan-price, .pos-scan-ivrank, .pos-scan-score { font-variant-numeric: tabular-nums; }

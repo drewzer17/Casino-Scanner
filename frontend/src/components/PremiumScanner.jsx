@@ -513,7 +513,7 @@ function ExclusionTable({ allExcluded }) {
 
 // ── Component ─────────────────────────────────────────────────────
 
-export default function PremiumScanner({ rows, onRowClick, allScanRows = [], excludedRows = [], onResearch }) {
+export default function PremiumScanner({ rows, onRowClick, allScanRows = [], excludedRows = [], onResearch, onAddToPositions }) {
   const [dteSelected, setDteSelected] = useState(new Set()); // empty = ALL
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [otmSelected, setOtmSelected] = useState(new Set()); // empty = ALL
@@ -771,6 +771,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                       )}
                     </th>
                   ))}
+                  {onAddToPositions && <th className="prem-scanner-th row-action-th"></th>}
                 </tr>
               </thead>
               <tbody>
@@ -814,6 +815,15 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                           </td>
                         );
                       })}
+                      {onAddToPositions && (
+                        <td className="prem-scanner-td row-action-td" onClick={e => e.stopPropagation()}>
+                          <button
+                            className="row-add-pos-btn"
+                            onClick={() => onAddToPositions(item.ticker)}
+                            title={`Add ${item.ticker} to positions`}
+                          >+</button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

@@ -102,6 +102,7 @@ import BucketTabs from "./BucketTabs.jsx";
 import AsymmetricScanner from "./AsymmetricScanner.jsx";
 import { calcAsymmetricFlags } from "../utils/asymmetric.js";
 import IvRampScanner from "./IvRampScanner.jsx";
+import MyPositions from "./MyPositions.jsx";
 import PremiumScanner from "./PremiumScanner.jsx";
 import RangeScanner from "./RangeScanner.jsx";
 import RiskQualityScanner from "./RiskQualityScanner.jsx";
@@ -208,7 +209,7 @@ export default function Dashboard() {
   const [premTimeframe, setPremTimeframe] = useState(30);
   const [showAll, setShowAll] = useState(false);
   const [asymOnly, setAsymOnly] = useState(false);
-  const [view, setView] = useState("cards"); // "cards" | "premium" | "range" | "ivramp" | "asymmetric" | "riskquality" | "markethealth"
+  const [view, setView] = useState("cards"); // "cards" | "premium" | "range" | "ivramp" | "asymmetric" | "riskquality" | "positions" | "markethealth"
   const [scanMode, setScanMode] = useState(null); // "normal" | "extensive" | null
   const [sourceFilter, setSourceFilter] = useState("all");
   const [assetTypeFilter, setAssetTypeFilter] = useState("all"); // "all" | "stocks" | "etfs"
@@ -255,6 +256,10 @@ export default function Dashboard() {
   const [scanning, setScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(null);
   const pollRef = useRef(null);
+
+  // "Add to positions" toast
+  const [posToast, setPosToast] = useState(null);   // { text, ok } | null
+  const posToastTimerRef = useRef(null);
 
   // Earnings refresh state
   const [earningsStatus, setEarningsStatus] = useState(null);   // { last_refresh, rows_count, human_readable }
@@ -403,6 +408,22 @@ export default function Dashboard() {
       setReloadMsg(`Error: ${e.message}`);
       setTimeout(() => setReloadMsg(null), 5000);
     }
+  };
+
+  const handleAddToPositions = async (ticker) => {
+    if (posToastTimerRef.current) clearTimeout(posToastTimerRef.current);
+    try {
+      await api.addPosition(ticker);
+      setPosToast({ text: `${ticker} added to positions`, ok: true });
+    } catch (e) {
+      // 409 = already in positions
+      if (e.message && e.message.includes("409")) {
+        setPosToast({ text: `${ticker} already in positions`, ok: false });
+      } else {
+        setPosToast({ text: `Failed to add ${ticker}`, ok: false });
+      }
+    }
+    posToastTimerRef.current = setTimeout(() => setPosToast(null), 3000);
   };
 
   const handleRunEarnings = async () => {
@@ -730,6 +751,12 @@ export default function Dashboard() {
               onClick={() => setView(v => v === "riskquality" ? "cards" : "riskquality")}
             >
               {view === "riskquality" ? "← Cards" : "◈ Risk Quality"}
+            </button>
+            <button
+              className={`pos-view-btn${view === "positions" ? " active" : ""}`}
+              onClick={() => setView(v => v === "positions" ? "cards" : "positions")}
+            >
+              {view === "positions" ? "← Cards" : "📋 My Positions"}
             </button>
             {/* TODO: MarketHealth side-tabled — restore button when feature is ready
             <button
@@ -1073,15 +1100,26 @@ export default function Dashboard() {
       {/* TODO: MarketHealth side-tabled — guard restored to always-true */}
       {<TopMovers movers={movers} view={view} riskGradeMap={riskGradeMap} />}
 
+      {/* ── "Add to positions" toast ── */}
+      {posToast && (
+        <div className={`pos-toast${posToast.ok ? " ok" : " err"}`}>
+          {posToast.text}
+        </div>
+      )}
+
       {view === "premium" ? (
         <PremiumScanner rows={viewRows} onRowClick={setSelectedRow}
-          allScanRows={allRows} excludedRows={excludedRows} onResearch={setPanelTicker} />
+          allScanRows={allRows} excludedRows={excludedRows} onResearch={setPanelTicker}
+          onAddToPositions={handleAddToPositions} />
       ) : view === "range" ? (
-        <RangeScanner rows={viewRows} onRowClick={setSelectedRow} onResearch={setPanelTicker} />
+        <RangeScanner rows={viewRows} onRowClick={setSelectedRow} onResearch={setPanelTicker}
+          onAddToPositions={handleAddToPositions} />
       ) : view === "ivramp" ? (
-        <IvRampScanner rows={viewRows} onRowClick={setSelectedRow} onResearch={setPanelTicker} />
+        <IvRampScanner rows={viewRows} onRowClick={setSelectedRow} onResearch={setPanelTicker}
+          onAddToPositions={handleAddToPositions} />
       ) : view === "asymmetric" ? (
-        <AsymmetricScanner rows={viewRows} onRowClick={setSelectedRow} onResearch={setPanelTicker} />
+        <AsymmetricScanner rows={viewRows} onRowClick={setSelectedRow} onResearch={setPanelTicker}
+          onAddToPositions={handleAddToPositions} />
       ) : view === "riskquality" ? (
         <RiskQualityScanner
           rows={viewRows}
@@ -1093,7 +1131,10 @@ export default function Dashboard() {
           onGradeFilter={setRqGradeFilter}
           onVrpFilter={setRqVrpFilter}
           onStrategyFilter={setRqStrategyFilter}
+          onAddToPositions={handleAddToPositions}
         />
+      ) : view === "positions" ? (
+        <MyPositions allRows={allRows} onRowClick={setSelectedRow} />
       ) : /* TODO: MarketHealth side-tabled — render branch removed until feature is ready */ (
         <>
           <div className="tabs-row">
@@ -1117,7 +1158,7 @@ export default function Dashboard() {
           ) : (
             <div className="grid">
               {rows.filter(r => !asymOnly || r.asymmetric_any_flag).map((r) => (
-                <ScoreCard key={r.ticker} row={r} showBucket={showAll} onClick={() => setSelectedRow(r)} onResearch={setPanelTicker} />
+                <ScoreCard key={r.ticker} row={r} showBucket={showAll} onClick={() => setSelectedRow(r)} onResearch={setPanelTicker} onAddToPositions={handleAddToPositions} />
               ))}
             </div>
           )}

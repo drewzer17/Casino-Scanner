@@ -158,6 +158,57 @@ class ScanLatestOut(BaseModel):
     watchlist: list[ScanResultOut]
 
 
+# ── My Positions schemas ──────────────────────────────────────────────────────
+
+class PositionIn(BaseModel):
+    ticker: str
+    position_type: str | None = None     # "CSP" | "CC" | "SHARES"
+    entry_price: float | None = None
+    entry_date: str | None = None        # ISO date string e.g. "2026-05-10"
+    contracts: int | None = None
+    strike: float | None = None
+    expiry: str | None = None            # ISO date string e.g. "2026-06-20"
+    notes: str | None = None
+
+
+class PositionUpdate(BaseModel):
+    """All fields optional — only provided fields are updated."""
+    position_type: str | None = None
+    entry_price: float | None = None
+    entry_date: str | None = None
+    contracts: int | None = None
+    strike: float | None = None
+    expiry: str | None = None
+    notes: str | None = None
+
+
+class PositionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    ticker: str
+    position_type: str | None = None
+    entry_price: float | None = None
+    entry_date: str | None = None
+    contracts: int | None = None
+    strike: float | None = None
+    expiry: str | None = None
+    notes: str | None = None
+    active: bool
+    created_at: datetime
+
+
+class QuickAddIn(BaseModel):
+    tickers: str     # comma-separated, e.g. "AAPL,MSFT,CRDO"
+
+
+class PositionScanOut(BaseModel):
+    """Response from POST /api/scan/positions and GET /api/scan/positions/latest."""
+    run_id: int | None = None
+    scanned_at: datetime | None = None
+    results: list[ScanResultOut] = []
+
+
 class MoverOut(BaseModel):
     ticker: str
     score: float

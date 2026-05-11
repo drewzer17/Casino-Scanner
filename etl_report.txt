@@ -1,0 +1,36 @@
+=== ETL PARSE REPORT ===
+Generated: 2026-05-02 19:30:09 UTC
+Source PDF: AI_Buildout_Ultimate_Master_Final_177names.pdf
+
+SUMMARY:
+  Total sitrep blocks found:    176
+  Expected:                     177
+  Successfully parsed (7/7):    173
+  Partial parse (4-6 sections): 2
+  Failed (<4 sections):         1
+
+TICKERS BELOW 7/7 (REVIEW NEEDED):
+  TICKER     SECTIONS   WARNINGS
+  HBM        0          
+  TSM        4          
+  TSM        4          contrarian_case:fallback
+
+FALLBACK FIRES BY SECTION:
+  what_they_do:     0
+  hidden_angles:    0
+  bear_case:        0
+  contrarian_case:  1
+  what_kills_it:    0
+  kill_probability: 0
+  winners:          0
+
+KILL PROBABILITY EXTRACTION:
+  Range parsed:      174/176
+  Horizon parsed:    174/176
+  Components parsed: 174/176
+
+WINNERS EXTRACTION:
+  Tickers identified:     786
+  Rationale-only entries: 0
+
+=== END REPORT ===

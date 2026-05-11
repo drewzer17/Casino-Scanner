@@ -619,7 +619,7 @@ const SETUP_MODES = [
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export default function AsymmetricScanner({ rows, onRowClick, onResearch }) {
+export default function AsymmetricScanner({ rows, onRowClick, onResearch, onAddToPositions }) {
   const [setupMode, setSetupMode]       = useState("all");
   const [dteSelected, setDteSelected]   = useState(new Set());
   const [evalOtmLevel, setEvalOtmLevel] = useState(0);
@@ -798,10 +798,19 @@ export default function AsymmetricScanner({ rows, onRowClick, onResearch }) {
               {cellValue(row, col.key, 0, onResearch)}
             </td>
           ))}
+          {onAddToPositions && (
+            <td className="prem-scanner-td row-action-td" onClick={e => e.stopPropagation()}>
+              <button
+                className="row-add-pos-btn"
+                onClick={() => onAddToPositions(row.ticker)}
+                title={`Add ${row.ticker} to positions`}
+              >+</button>
+            </td>
+          )}
         </tr>
         {isExpanded && (
           <tr className="asym-expansion-row">
-            <td colSpan={COLS.length + 1} className="asym-expansion-cell">
+            <td colSpan={COLS.length + 1 + (onAddToPositions ? 1 : 0)} className="asym-expansion-cell">
               <AsymExpansion row={rowForExpansion} onFullDetail={() => onRowClick && onRowClick(row)} />
             </td>
           </tr>
@@ -812,7 +821,7 @@ export default function AsymmetricScanner({ rows, onRowClick, onResearch }) {
 
   const renderSeparator = (label, color) => (
     <tr key={`sep-${label}`}>
-      <td colSpan={COLS.length + 1} style={{ padding: "6px 12px", fontSize: "0.75em", color, background: "#1a1a2e", borderTop: "1px solid #333", borderBottom: "1px solid #333", letterSpacing: "0.05em" }}>
+      <td colSpan={COLS.length + 1 + (onAddToPositions ? 1 : 0)} style={{ padding: "6px 12px", fontSize: "0.75em", color, background: "#1a1a2e", borderTop: "1px solid #333", borderBottom: "1px solid #333", letterSpacing: "0.05em" }}>
         {label}
       </td>
     </tr>
@@ -918,6 +927,7 @@ export default function AsymmetricScanner({ rows, onRowClick, onResearch }) {
                     )}
                   </th>
                 ))}
+                {onAddToPositions && <th className="prem-scanner-th row-action-th"></th>}
               </tr>
             </thead>
             <tbody>

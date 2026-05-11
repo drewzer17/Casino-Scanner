@@ -179,6 +179,7 @@ export default function RiskQualityScanner({
   onGradeFilter,
   onVrpFilter,
   onStrategyFilter,
+  onAddToPositions,
 }) {
   const [sortCol, setSortCol] = useState("grade");
   const [sortAsc, setSortAsc] = useState(true);
@@ -321,6 +322,7 @@ export default function RiskQualityScanner({
                     )}
                   </th>
                 ))}
+                {onAddToPositions && <th className="prem-scanner-th row-action-th"></th>}
               </tr>
             </thead>
             <tbody>
@@ -375,6 +377,16 @@ export default function RiskQualityScanner({
                     </td>
                     {/* Fail Summary */}
                     <td className="prem-scanner-td"><FailSummary row={row} /></td>
+                    {/* Add to positions */}
+                    {onAddToPositions && (
+                      <td className="prem-scanner-td row-action-td" onClick={e => e.stopPropagation()}>
+                        <button
+                          className="row-add-pos-btn"
+                          onClick={() => onAddToPositions(row.ticker)}
+                          title={`Add ${row.ticker} to positions`}
+                        >+</button>
+                      </td>
+                    )}
                   </tr>
                 );
               })}

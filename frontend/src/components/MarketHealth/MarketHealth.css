@@ -1,0 +1,249 @@
+/* ── Market Health — isolated styles ────────────────────────────────────────
+   All classes are prefixed with .mh- to avoid collisions with existing CSS.
+   This file is only imported by MarketHealth components.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Nav button — purple to distinguish from other scanner buttons */
+.mh-view-btn {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 5px 14px;
+  border-radius: 6px;
+  border: 2px solid #a855f7;
+  background: transparent;
+  color: #a855f7;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.mh-view-btn:hover  { background: #a855f7; color: #fff; }
+.mh-view-btn.active { background: #7e22ce; border-color: #7e22ce; color: #fff; }
+
+/* ── Outer container ── */
+.mh-container {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Panel card — base style matching existing elevated surfaces ── */
+.mh-panel {
+  background: #141922;
+  border: 1px solid #222837;
+  border-radius: 10px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mh-panel-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8b94a7;
+  margin-bottom: 4px;
+}
+
+/* ── Middle and bottom rows — side by side ── */
+.mh-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* ── System Status panel ── */
+.mh-status-banner {
+  border-radius: 8px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.mh-status-banner.green  { background: rgba(74, 222, 128, 0.12); border: 1px solid rgba(74, 222, 128, 0.3); }
+.mh-status-banner.yellow { background: rgba(250, 204, 21, 0.10); border: 1px solid rgba(250, 204, 21, 0.3); }
+.mh-status-banner.red    { background: rgba(248, 113, 113, 0.10); border: 1px solid rgba(248, 113, 113, 0.3); }
+
+.mh-status-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.mh-status-dot.green  { background: #4ade80; box-shadow: 0 0 10px rgba(74,222,128,0.5); }
+.mh-status-dot.yellow { background: #facc15; box-shadow: 0 0 10px rgba(250,204,21,0.5); }
+.mh-status-dot.red    { background: #f87171; box-shadow: 0 0 10px rgba(248,113,113,0.5); }
+
+.mh-status-label {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+.mh-status-label.green  { color: #4ade80; }
+.mh-status-label.yellow { color: #facc15; }
+.mh-status-label.red    { color: #f87171; }
+
+.mh-status-text {
+  font-size: 13px;
+  color: #8b94a7;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+/* ── Where's the Fear — bucket rows ── */
+.mh-fear-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #1c2333;
+}
+.mh-fear-row:last-child { border-bottom: none; }
+
+.mh-fear-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e7ecf3;
+  width: 110px;
+}
+
+.mh-fear-bar-wrap {
+  flex: 1;
+  margin: 0 14px;
+  height: 6px;
+  background: #1c2333;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.mh-fear-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+.mh-fear-bar.calm     { background: #4ade80; }
+.mh-fear-bar.elevated { background: #facc15; }
+.mh-fear-bar.stressed { background: #f87171; }
+
+.mh-fear-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+  width: 72px;
+  text-align: center;
+}
+.mh-fear-badge.calm     { background: rgba(74,222,128,0.15);  color: #4ade80; }
+.mh-fear-badge.elevated { background: rgba(250,204,21,0.15);  color: #facc15; }
+.mh-fear-badge.stressed { background: rgba(248,113,113,0.15); color: #f87171; }
+
+/* ── Rotation Direction ── */
+.mh-rotation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mh-rotation-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+.mh-rotation-row:hover { background: #1c2333; }
+
+.mh-rotation-ticker {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e7ecf3;
+  width: 52px;
+}
+.mh-rotation-name {
+  font-size: 11px;
+  color: #8b94a7;
+  flex: 1;
+}
+.mh-rotation-arrow {
+  font-size: 16px;
+  font-weight: 700;
+  width: 24px;
+  text-align: center;
+}
+.mh-rotation-arrow.up      { color: #4ade80; }
+.mh-rotation-arrow.neutral { color: #8b94a7; }
+.mh-rotation-arrow.down    { color: #f87171; }
+
+/* ── Broad Market State ── */
+.mh-state-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 14px;
+  padding: 20px 0;
+}
+.mh-state-badge {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  padding: 14px 32px;
+  border-radius: 10px;
+}
+.mh-state-badge.rotation    { background: rgba(250,204,21,0.12); color: #facc15; border: 1px solid rgba(250,204,21,0.3); }
+.mh-state-badge.transitional { background: rgba(96,165,250,0.12); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
+.mh-state-badge.liquidation  { background: rgba(248,113,113,0.12); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+
+.mh-state-desc {
+  font-size: 12px;
+  color: #8b94a7;
+  text-align: center;
+  max-width: 220px;
+  line-height: 1.6;
+}
+
+/* ── Currently Calm ── */
+.mh-calm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mh-calm-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  background: rgba(74, 222, 128, 0.06);
+  border: 1px solid rgba(74, 222, 128, 0.15);
+  border-radius: 6px;
+}
+.mh-calm-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+  flex-shrink: 0;
+}
+.mh-calm-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e7ecf3;
+}
+.mh-calm-detail {
+  font-size: 11px;
+  color: #8b94a7;
+  margin-left: auto;
+}
+
+.mh-placeholder-note {
+  font-size: 11px;
+  color: #8b94a7;
+  font-style: italic;
+  text-align: center;
+  padding-top: 4px;
+}

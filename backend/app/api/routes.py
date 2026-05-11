@@ -18,6 +18,11 @@ from ..schemas import (
     ExpiryRow,
     MoverOut,
     MoversOut,
+    PositionIn,
+    PositionOut,
+    PositionScanOut,
+    PositionUpdate,
+    QuickAddIn,
     ScanLatestOut,
     ScanResultOut,
     ScoreBreakdown,
@@ -58,6 +63,7 @@ def _history_lookup(
                 models.ScanRun.status == "completed",
                 models.ScanRun.id != current_run_id,
                 models.ScanRun.finished_at <= cutoff,
+                (models.ScanRun.scan_type == "full") | (models.ScanRun.scan_type.is_(None)),
             )
             .order_by(models.ScanRun.finished_at.desc())
             .limit(1)
@@ -314,9 +320,13 @@ def _to_out(
 
 
 def _latest_run(db: Session) -> models.ScanRun | None:
+    """Return the most recent completed full scan run (excludes positions scans)."""
     stmt = (
         select(models.ScanRun)
-        .where(models.ScanRun.status == "completed")
+        .where(
+            models.ScanRun.status == "completed",
+            (models.ScanRun.scan_type == "full") | (models.ScanRun.scan_type.is_(None)),
+        )
         .order_by(models.ScanRun.finished_at.desc())
         .limit(1)
     )
@@ -1832,3 +1842,224 @@ def trigger_backfill_iv_history(background_tasks: BackgroundTasks) -> dict:
         "status": "backfill_started",
         "message": "IV history backfill running in background. Check Railway logs for progress.",
     }
+
+
+# ── My Positions — CRUD ───────────────────────────────────────────────────────
+
+@router.get("/positions", response_model=list[PositionOut])
+def list_positions(db: Session = Depends(get_db)) -> list[PositionOut]:
+    """Return all active positions ordered by ticker."""
+    rows = (
+        db.execute(
+            select(models.UserPosition)
+            .where(models.UserPosition.active == True)  # noqa: E712
+            .order_by(models.UserPosition.ticker)
+        )
+        .scalars()
+        .all()
+    )
+    return [PositionOut.model_validate(r) for r in rows]
+
+
+@router.post("/positions", response_model=PositionOut, status_code=201)
+def create_position(body: PositionIn, db: Session = Depends(get_db)) -> PositionOut:
+    """Add a new position. Ticker is required; all other fields are optional."""
+    ticker = body.ticker.upper().strip()
+    if not ticker:
+        raise HTTPException(status_code=422, detail="ticker is required")
+
+    # Check for existing active position with same ticker
+    existing = db.execute(
+        select(models.UserPosition)
+        .where(
+            models.UserPosition.ticker == ticker,
+            models.UserPosition.active == True,  # noqa: E712
+        )
+        .limit(1)
+    ).scalar_one_or_none()
+    if existing:
+        raise HTTPException(status_code=409, detail=f"{ticker} already in positions")
+
+    pos = models.UserPosition(
+        ticker=ticker,
+        position_type=body.position_type,
+        entry_price=body.entry_price,
+        entry_date=body.entry_date,
+        contracts=body.contracts,
+        strike=body.strike,
+        expiry=body.expiry,
+        notes=body.notes,
+        active=True,
+        created_at=datetime.utcnow(),
+    )
+    db.add(pos)
+    db.commit()
+    db.refresh(pos)
+    return PositionOut.model_validate(pos)
+
+
+@router.delete("/positions/{position_id}", status_code=200)
+def delete_position(position_id: int, db: Session = Depends(get_db)) -> dict:
+    """Soft-delete a position (sets active=False)."""
+    pos = db.execute(
+        select(models.UserPosition).where(models.UserPosition.id == position_id)
+    ).scalar_one_or_none()
+    if pos is None:
+        raise HTTPException(status_code=404, detail="Position not found")
+    pos.active = False
+    db.commit()
+    return {"status": "deleted", "id": position_id}
+
+
+@router.put("/positions/{position_id}", response_model=PositionOut)
+def update_position(position_id: int, body: PositionUpdate, db: Session = Depends(get_db)) -> PositionOut:
+    """Update any optional fields on a position. Only provided (non-None) fields are written."""
+    pos = db.execute(
+        select(models.UserPosition).where(
+            models.UserPosition.id == position_id,
+            models.UserPosition.active == True,  # noqa: E712
+        )
+    ).scalar_one_or_none()
+    if pos is None:
+        raise HTTPException(status_code=404, detail="Position not found")
+
+    update_data = body.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(pos, field, value)
+    db.commit()
+    db.refresh(pos)
+    return PositionOut.model_validate(pos)
+
+
+@router.post("/positions/quick-add", response_model=list[PositionOut], status_code=201)
+def quick_add_positions(body: QuickAddIn, db: Session = Depends(get_db)) -> list[PositionOut]:
+    """Bulk-add comma-separated tickers. Silently skips duplicates.
+
+    Example body: { "tickers": "AAPL,MSFT,CRDO" }
+    Returns the list of newly created positions (already-existing tickers omitted).
+    """
+    tickers = [t.upper().strip() for t in body.tickers.split(",") if t.strip()]
+    if not tickers:
+        raise HTTPException(status_code=422, detail="No valid tickers provided")
+
+    # Get already-active tickers in one query
+    existing_tickers: set[str] = set(
+        db.execute(
+            select(models.UserPosition.ticker)
+            .where(
+                models.UserPosition.ticker.in_(tickers),
+                models.UserPosition.active == True,  # noqa: E712
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    created: list[PositionOut] = []
+    for ticker in tickers:
+        if ticker in existing_tickers:
+            continue
+        pos = models.UserPosition(
+            ticker=ticker,
+            active=True,
+            created_at=datetime.utcnow(),
+        )
+        db.add(pos)
+        db.flush()   # get id before commit
+        created.append(PositionOut.model_validate(pos))
+
+    db.commit()
+    return created
+
+
+# ── My Positions — Quick Scan ─────────────────────────────────────────────────
+
+@router.post("/scan/positions", response_model=PositionScanOut)
+def scan_positions(db: Session = Depends(get_db)) -> PositionScanOut:
+    """Synchronously scan all active position tickers.
+
+    Runs scan_ticker for each active position, persists results under a
+    scan_type='positions' ScanRun, and returns results directly (no background task).
+    """
+    # Get active positions
+    active_tickers = list(
+        db.execute(
+            select(models.UserPosition.ticker)
+            .where(models.UserPosition.active == True)  # noqa: E712
+            .order_by(models.UserPosition.ticker)
+            .distinct()
+        )
+        .scalars()
+        .all()
+    )
+    if not active_tickers:
+        raise HTTPException(status_code=400, detail="No active positions to scan")
+
+    # Reject if a full scan is already running (run_scan would resume it otherwise)
+    running = db.execute(
+        select(models.ScanRun).where(models.ScanRun.status == "running").limit(1)
+    ).scalar_one_or_none()
+    if running:
+        raise HTTPException(
+            status_code=409,
+            detail="A full scan is currently running. Wait for it to complete before running a positions scan.",
+        )
+
+    from ..scanner.engine import run_scan
+    run_id = run_scan(db, tickers=active_tickers, scan_type="positions")
+
+    # Fetch results from the completed run
+    result_rows = (
+        db.execute(
+            select(models.ScanResult)
+            .where(models.ScanResult.run_id == run_id)
+            .order_by(models.ScanResult.score.desc())
+        )
+        .scalars()
+        .all()
+    )
+
+    run_obj = db.execute(
+        select(models.ScanRun).where(models.ScanRun.id == run_id)
+    ).scalar_one_or_none()
+
+    results = [_to_out(r) for r in result_rows]
+    return PositionScanOut(
+        run_id=run_id,
+        scanned_at=run_obj.finished_at if run_obj else datetime.utcnow(),
+        results=results,
+    )
+
+
+@router.get("/scan/positions/latest", response_model=PositionScanOut)
+def scan_positions_latest(db: Session = Depends(get_db)) -> PositionScanOut:
+    """Return results from the most recent positions quick scan."""
+    run = db.execute(
+        select(models.ScanRun)
+        .where(
+            models.ScanRun.status == "completed",
+            models.ScanRun.scan_type == "positions",
+        )
+        .order_by(models.ScanRun.finished_at.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+
+    if run is None:
+        return PositionScanOut(run_id=None, scanned_at=None, results=[])
+
+    result_rows = (
+        db.execute(
+            select(models.ScanResult)
+            .where(models.ScanResult.run_id == run.id)
+            .order_by(models.ScanResult.score.desc())
+        )
+        .scalars()
+        .all()
+    )
+
+    results = [_to_out(r) for r in result_rows]
+    return PositionScanOut(
+        run_id=run.id,
+        scanned_at=run.finished_at,
+        results=results,
+    )

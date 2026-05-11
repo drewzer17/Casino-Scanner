@@ -243,12 +243,21 @@ const BUCKET_TAG = {
   watchlist: { label: "Watchlist", cls: "bucket-tag-watch" },
 };
 
-export default function ScoreCard({ row, onClick, showBucket = false, onResearch }) {
+export default function ScoreCard({ row, onClick, showBucket = false, onResearch, onAddToPositions }) {
   const [premExpanded, setPremExpanded] = useState(false);
   const b = row.breakdown || {};
   const bucketTag = BUCKET_TAG[row.bucket];
   return (
-    <div className="card" onClick={onClick} style={{ cursor: onClick ? "pointer" : "default" }}>
+    <div className="card" onClick={onClick} style={{ cursor: onClick ? "pointer" : "default", position: "relative" }}>
+      {onAddToPositions && (
+        <button
+          className="card-add-pos-btn"
+          onClick={e => { e.stopPropagation(); onAddToPositions(row.ticker); }}
+          title={`Add ${row.ticker} to positions`}
+        >
+          +
+        </button>
+      )}
       <div className="card-header">
         <div className="card-ticker-info">
           <div className="ticker">

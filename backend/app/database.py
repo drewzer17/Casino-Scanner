@@ -199,6 +199,26 @@ def init_db() -> None:
     ]:
         _add_column_if_missing(_ddl)
 
+    # My Positions + Quick Scan — v14
+    # user_positions: user-managed positions for the My Positions view
+    # scan_runs.scan_type: distinguishes full scans from positions quick scans
+    _add_column_if_missing(
+        "CREATE TABLE IF NOT EXISTS user_positions ("
+        "id SERIAL PRIMARY KEY, "
+        "ticker VARCHAR(16) NOT NULL, "
+        "position_type VARCHAR(10), "
+        "entry_price FLOAT, "
+        "entry_date VARCHAR(20), "
+        "contracts INTEGER, "
+        "strike FLOAT, "
+        "expiry VARCHAR(20), "
+        "notes TEXT, "
+        "active BOOLEAN NOT NULL DEFAULT TRUE, "
+        "created_at TIMESTAMP DEFAULT NOW()"
+        ")"
+    )
+    _add_column_if_missing("ALTER TABLE scan_runs ADD COLUMN scan_type VARCHAR(20) DEFAULT 'full'")
+
 
 def _add_column_if_missing(ddl: str) -> None:
     from sqlalchemy import text

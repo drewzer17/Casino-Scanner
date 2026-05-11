@@ -109,7 +109,7 @@ function sortValue(row, key) {
   }
 }
 
-export default function IvRampScanner({ rows, onRowClick, onResearch }) {
+export default function IvRampScanner({ rows, onRowClick, onResearch, onAddToPositions }) {
   const [sortCol, setSortCol] = useState("iv_ramp_score");
   const [sortAsc, setSortAsc] = useState(false);
   const [flaggedOnly, setFlaggedOnly] = useState(true);
@@ -212,6 +212,7 @@ export default function IvRampScanner({ rows, onRowClick, onResearch }) {
                     )}
                   </th>
                 ))}
+                {onAddToPositions && <th className="prem-scanner-th row-action-th"></th>}
               </tr>
             </thead>
             <tbody>
@@ -229,6 +230,15 @@ export default function IvRampScanner({ rows, onRowClick, onResearch }) {
                       {cellValue(row, col.key, onResearch)}
                     </td>
                   ))}
+                  {onAddToPositions && (
+                    <td className="prem-scanner-td row-action-td" onClick={e => e.stopPropagation()}>
+                      <button
+                        className="row-add-pos-btn"
+                        onClick={() => onAddToPositions(row.ticker)}
+                        title={`Add ${row.ticker} to positions`}
+                      >+</button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

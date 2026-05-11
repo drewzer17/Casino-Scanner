@@ -1750,6 +1750,7 @@ def run_scan(
     scanner_fn=None,
     cancel_event: "threading.Event | None" = None,
     scan_slot: str | None = None,
+    scan_type: str = "full",
 ) -> int:
     """Crash-resilient, resumable scan. Returns ScanRun id.
 
@@ -1814,6 +1815,7 @@ def run_scan(
             status="running",
             tickers_total=len(universe),
             scan_slot=scan_slot,
+            scan_type=scan_type,
         )
         db.add(run)
         db.commit()

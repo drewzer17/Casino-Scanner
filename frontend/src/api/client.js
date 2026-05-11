@@ -18,6 +18,41 @@ async function post(path) {
   return res.json();
 }
 
+async function postJson(path, body) {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`${res.status} ${res.statusText}: ${text}`);
+  }
+  return res.json();
+}
+
+async function putJson(path, body) {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`${res.status} ${res.statusText}: ${text}`);
+  }
+  return res.json();
+}
+
+async function del(path) {
+  const res = await fetch(`${BASE}${path}`, { method: "DELETE" });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`${res.status} ${res.statusText}: ${text}`);
+  }
+  return res.json();
+}
+
 export const api = {
   scanLatest: () => get("/api/scan/latest"),
   ticker: (symbol) => get(`/api/ticker/${encodeURIComponent(symbol)}`),
@@ -39,4 +74,15 @@ export const api = {
   resetScan: () => post("/api/scan/reset"),
   runEarnings: () => post("/api/refresh-earnings"),
   earningsStatus: () => get("/api/earnings-status"),
+
+  // My Positions — CRUD
+  getPositions: () => get("/api/positions"),
+  addPosition: (ticker, opts = {}) => postJson("/api/positions", { ticker, ...opts }),
+  quickAddPositions: (tickers) => postJson("/api/positions/quick-add", { tickers }),
+  deletePosition: (id) => del(`/api/positions/${id}`),
+  updatePosition: (id, fields) => putJson(`/api/positions/${id}`, fields),
+
+  // My Positions — Quick Scan
+  scanPositions: () => post("/api/scan/positions"),
+  scanPositionsLatest: () => get("/api/scan/positions/latest"),
 };
