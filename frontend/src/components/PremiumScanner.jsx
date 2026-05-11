@@ -466,6 +466,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const [showExcl, setShowExcl] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [earnBuckets, setEarnBuckets] = useState(new Set());
+  const [tableExpanded, setTableExpanded] = useState(false);
 
   const toggleDte = (label) => {
     setDteSelected(prev => {
@@ -667,6 +668,15 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
           >{b.label}</button>
         ))}
       </div>
+      <div className="dte-filter-row" style={{ justifyContent: "flex-end", paddingRight: "4px" }}>
+        <button
+          className="dte-filter-btn"
+          style={{ fontFamily: "monospace", letterSpacing: 0 }}
+          onClick={() => setTableExpanded(v => !v)}
+          title={tableExpanded ? "Collapse table to default width" : "Expand table to full window width"}
+        >{tableExpanded ? "⛶ Collapse" : "⛶ Expand"}</button>
+      </div>
+      <div className={tableExpanded ? "prem-table-fullwidth" : ""}>
       <ScrollArrows>
         {sorted.length === 0 ? (
           <div className="empty">
@@ -716,6 +726,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
           </table>
         )}
       </ScrollArrows>
+      </div>
     </div>
   );
 }

@@ -1331,6 +1331,25 @@ body {
   font-size: 13px;
 }
 
+/* Sticky header — thead sticks to viewport top on vertical scroll.
+   Applied to <thead> (not individual <th>) because the parent
+   .prem-scanner-wrap has overflow-x: auto, making it the horizontal
+   scroll container. Sticky on thead keeps it relative to the document
+   scroll, not the horizontal wrapper. */
+.prem-scanner-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Full-width table toggle — breaks out of any parent max-width */
+.prem-table-fullwidth {
+  position: relative;
+  width: 100vw;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .prem-scanner-th {
   padding: 6px 8px;
   text-align: left;
@@ -1343,6 +1362,7 @@ body {
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
+  background: #0c0f14; /* must be solid — matches --bg so sticky header is opaque */
 }
 
 .prem-scanner-th:hover { color: var(--text); }
