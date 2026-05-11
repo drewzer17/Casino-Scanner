@@ -1343,6 +1343,11 @@ body {
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
+  /* Sticky header — stays visible while scrolling table content */
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #141922;   /* matches --bg-elev exactly so content doesn't bleed through */
 }
 
 .prem-scanner-th:hover { color: var(--text); }
@@ -2423,6 +2428,36 @@ body {
   .rq-modal-factors { grid-template-columns: 1fr; }
 }
 
+/* ── Header ⚡ Scan Positions button ──────────────────────────────────────── */
+.pos-header-scan-btn {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 7px;
+  border: 1px solid #2563eb;
+  background: #1e2d4a;
+  color: #93c5fd;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  align-self: center;
+  letter-spacing: 0.2px;
+}
+.pos-header-scan-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+  color: #fff;
+}
+.pos-header-scan-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.pos-header-scan-btn.scanning {
+  opacity: 0.75;
+  animation: pulse 1.8s ease-in-out infinite;
+  cursor: default;
+}
+
 /* ── My Positions view button ──────────────────────────────────────────────── */
 .pos-view-btn {
   padding: 5px 14px;
@@ -2496,6 +2531,20 @@ body {
   from { transform: translateY(16px); opacity: 0; }
   to   { transform: translateY(0); opacity: 1; }
 }
+.pos-toast-goto {
+  margin-left: 10px;
+  background: none;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: opacity 0.15s;
+}
+.pos-toast-goto:hover { opacity: 1; }
 
 /* ── My Positions component ────────────────────────────────────────────────── */
 .pos-root {
@@ -2607,6 +2656,9 @@ body {
   border-bottom: 1px solid var(--border);
   text-align: left;
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 .pos-th-ticker { min-width: 80px; }
 .pos-table td { padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
@@ -2687,6 +2739,9 @@ body {
   padding: 8px 12px;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 .pos-scan-row td { padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
 .pos-scan-row:hover { background: rgba(255,255,255,0.04); }

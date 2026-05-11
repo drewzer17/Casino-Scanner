@@ -258,8 +258,12 @@ export default function Dashboard() {
   const pollRef = useRef(null);
 
   // "Add to positions" toast
-  const [posToast, setPosToast] = useState(null);   // { text, ok } | null
+  const [posToast, setPosToast] = useState(null);   // { text, ok, goToPositions? } | null
   const posToastTimerRef = useRef(null);
+
+  // Header ⚡ Scan Positions button state
+  const [posScanRunning, setPosScanRunning] = useState(false);
+  const [posScanLabel, setPosScanLabel] = useState(null); // null = idle
 
   // Earnings refresh state
   const [earningsStatus, setEarningsStatus] = useState(null);   // { last_refresh, rows_count, human_readable }
@@ -407,6 +411,48 @@ export default function Dashboard() {
     } catch (e) {
       setReloadMsg(`Error: ${e.message}`);
       setTimeout(() => setReloadMsg(null), 5000);
+    }
+  };
+
+  const handleHeaderScanPositions = async () => {
+    if (posScanRunning || scanning) return;
+    setPosScanRunning(true);
+
+    // First, check how many active positions we have
+    let positions = [];
+    try {
+      positions = await api.getPositions();
+    } catch {
+      // non-fatal — proceed and let the scan endpoint report the error
+    }
+
+    if (positions.length === 0) {
+      if (posToastTimerRef.current) clearTimeout(posToastTimerRef.current);
+      setPosToast({ text: "No positions to scan — add tickers first", ok: false });
+      posToastTimerRef.current = setTimeout(() => setPosToast(null), 4000);
+      setPosScanRunning(false);
+      return;
+    }
+
+    setPosScanLabel(`Scanning ${positions.length} position${positions.length === 1 ? "" : "s"}…`);
+
+    try {
+      await api.scanPositions();
+      if (posToastTimerRef.current) clearTimeout(posToastTimerRef.current);
+      setPosToast({ text: "Positions scan complete", ok: true, goToPositions: true });
+      posToastTimerRef.current = setTimeout(() => setPosToast(null), 6000);
+    } catch (e) {
+      if (posToastTimerRef.current) clearTimeout(posToastTimerRef.current);
+      const msg = e.message || "";
+      if (msg.includes("409") || msg.toLowerCase().includes("full scan")) {
+        setPosToast({ text: "Full scan in progress — try again after it finishes", ok: false });
+      } else {
+        setPosToast({ text: `Scan failed: ${msg.slice(0, 80)}`, ok: false });
+      }
+      posToastTimerRef.current = setTimeout(() => setPosToast(null), 5000);
+    } finally {
+      setPosScanRunning(false);
+      setPosScanLabel(null);
     }
   };
 
@@ -811,6 +857,14 @@ export default function Dashboard() {
               </button>
             </>
           )}
+          <button
+            className={`pos-header-scan-btn${posScanRunning ? " scanning" : ""}`}
+            onClick={handleHeaderScanPositions}
+            disabled={posScanRunning || scanning}
+            title="Quick scan your saved positions only (not a full scan)"
+          >
+            {posScanRunning ? (posScanLabel || "Scanning…") : "⚡ Scan Positions"}
+          </button>
           <div className="earnings-refresh-wrap">
             <button
               className="earnings-refresh-btn"
@@ -1104,6 +1158,14 @@ export default function Dashboard() {
       {posToast && (
         <div className={`pos-toast${posToast.ok ? " ok" : " err"}`}>
           {posToast.text}
+          {posToast.goToPositions && (
+            <button
+              className="pos-toast-goto"
+              onClick={() => { setView("positions"); setPosToast(null); }}
+            >
+              View →
+            </button>
+          )}
         </div>
       )}
 
