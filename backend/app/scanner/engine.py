@@ -1185,21 +1185,33 @@ def scan_ticker(
             iv_rank = 50.0  # neutral placeholder until we have 30d of IV history
 
         # Build the expiry list to score.
-        # AI sector: all expiries Tradier returned (DTE >= 1), unfiltered.
-        # Non-AI: nearest single expiry in 7-30d window, falling back to iv_exp.
+        # LEAPS (>90 DTE) are not income opportunities — cap all expiry lists at 90d.
+        # AI sector: expiries in 1-90 DTE range, falling back to nearest if none qualify.
+        # Non-AI: nearest single expiry in 1-30d window, falling back to iv_exp if ≤90d.
+        MAX_PREMIUM_DTE = 90
         today_d = date.today()
         if is_ai:
             exp_list: list[tuple[int, str]] = sorted(
                 (((datetime.strptime(e, "%Y-%m-%d").date() - today_d).days, e)
                  for e in exps
-                 if (datetime.strptime(e, "%Y-%m-%d").date() - today_d).days >= 1),
+                 if 1 <= (datetime.strptime(e, "%Y-%m-%d").date() - today_d).days <= MAX_PREMIUM_DTE),
             )
+            # Fallback: if no expiry within 90d exists, use the nearest one (single row)
+            if not exp_list:
+                all_near = sorted(
+                    (((datetime.strptime(e, "%Y-%m-%d").date() - today_d).days, e)
+                     for e in exps
+                     if (datetime.strptime(e, "%Y-%m-%d").date() - today_d).days >= 1),
+                )
+                exp_list = all_near[:1]
         else:
             prem_exps = _expirations_for_premium(exps)
             single = prem_exps[0] if prem_exps else None
             if single is None and iv_exp:
                 iv_dte = (datetime.strptime(iv_exp, "%Y-%m-%d").date() - today_d).days
-                single = (iv_dte, iv_exp)
+                # Only use iv_exp as premium fallback if it's not a LEAPS expiry
+                if iv_dte <= MAX_PREMIUM_DTE:
+                    single = (iv_dte, iv_exp)
             exp_list = [single] if single else []
 
         results: list[ScanRowResult] = []
