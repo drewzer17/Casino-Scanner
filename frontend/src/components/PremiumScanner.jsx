@@ -536,12 +536,8 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
 
   const toggleDte = (label) => {
     setDteSelected(prev => {
-      // Exclusive selection: clicking the already-selected range deselects (ALL);
-      // clicking any other range replaces the current selection entirely.
-      // This prevents the additive-multi-select bug where e.g. "4-7" + "31-61"
-      // both active causes 32d/38d rows to appear when user expects only 4-7d.
       if (prev.size === 1 && prev.has(label)) return new Set(); // deselect → ALL
-      return new Set([label]); // select exclusively
+      return new Set([label]); // exclusive: only one range active at a time
     });
   };
 
@@ -571,9 +567,20 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
 
   const baseRows = showAll ? allScanRows : rows;
 
+  // DTE pre-filter: single source of truth — compare row.best_dte directly.
+  // ≤3 = best_dte<=3 | 4-7 = 4..7 | 10-17 = 10..17 | 21-30 = 21..30 | 31-61 = 31..61
+  const dteFilteredRows = dteSelected.size === 0 ? baseRows : baseRows.filter(r => {
+    if (r.best_dte == null) return false;
+    for (const label of dteSelected) {
+      const range = DTE_RANGES.find(x => x.label === label);
+      if (range && r.best_dte >= range.min && r.best_dte <= range.max) return true;
+    }
+    return false;
+  });
+
   // Expand each ticker into rows: ATM + each OTM level available in expiry_data
   const items = [];
-  for (const row of baseRows) {
+  for (const row of dteFilteredRows) {
     if (typeFilter !== "CSP") {
       const callD = getCallData(row, dteSelected);
       if (callD) {
