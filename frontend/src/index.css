@@ -2329,6 +2329,11 @@ body {
   font-size: 13px;
 }
 
+.rq-table .ticker-col {
+  width: 160px;
+  max-width: 160px;
+}
+
 .rq-table th {
   padding: 6px 8px;
   text-align: left;

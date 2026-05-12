@@ -158,7 +158,10 @@ function sortRqRows(rows, col, asc) {
       case "grade":    av = GRADE_SORT[a.risk_grade] ?? 5; bv = GRADE_SORT[b.risk_grade] ?? 5; break;
       case "vrp":      av = a.vrp_spread ?? -999; bv = b.vrp_spread ?? -999; break;
       case "strategy": av = a.strategy_type ?? ""; bv = b.strategy_type ?? ""; break;
+      case "type":     av = a._isCC ? 0 : 1; bv = b._isCC ? 0 : 1; break;
+      case "otm":      av = calcOtmLvl(a._strike, a.price, !a._isCC) ?? 99; bv = calcOtmLvl(b._strike, b.price, !b._isCC) ?? 99; break;
       case "score":    av = a.score; bv = b.score; break;
+      case "price":    av = a.price ?? -1; bv = b.price ?? -1; break;
       case "strike":   av = a._strike ?? -1; bv = b._strike ?? -1; break;
       case "dte":      av = a._dte ?? 9999; bv = b._dte ?? 9999; break;
       case "premium":  av = a._premium ?? -1; bv = b._premium ?? -1; break;
@@ -179,7 +182,10 @@ const COLS = [
   { key: "grade",    label: "Grade",     align: "center" },
   { key: "vrp",      label: "VRP",       align: "center" },
   { key: "strategy", label: "Strategy",  align: "center" },
+  { key: "type",     label: "Type",      align: "center" },
+  { key: "otm",      label: "OTM",       align: "center" },
   { key: "score",    label: "Score",     align: "right"  },
+  { key: "price",    label: "Price",     align: "right"  },
   { key: "strike",   label: "Strike",    align: "right"  },
   { key: "dte",      label: "DTE",       align: "right"  },
   { key: "premium",  label: "Prem $",    align: "right"  },
@@ -500,11 +506,34 @@ export default function RiskQualityScanner({
                     <td className="prem-scanner-td center"><VrpBadge state={row.vrp_state} spread={row.vrp_spread} highBeta={row.high_beta_moderate} /></td>
                     {/* Strategy */}
                     <td className="prem-scanner-td center"><StrategyTag strategyType={row.strategy_type} secondaryEdge={row.secondary_edge} /></td>
+                    {/* Type */}
+                    <td className="prem-scanner-td center">
+                      <span style={{ fontWeight: 700, color: row._isCC ? "var(--accent)" : "var(--green)" }}>{row._isCC ? "CC" : "CSP"}</span>
+                    </td>
+                    {/* OTM */}
+                    <td className="prem-scanner-td center">
+                      {(() => {
+                        const lvl = calcOtmLvl(row._strike, row.price, !row._isCC);
+                        if (lvl == null) return "—";
+                        const distPct = row._strike != null && row.price ? (row._isCC ? (row._strike - row.price) : (row.price - row._strike)) / row.price * 100 : null;
+                        const sign = row._isCC ? "+" : "-";
+                        const distStr = distPct != null ? ` ${sign}${distPct.toFixed(1)}%` : "";
+                        const distCls = distPct == null ? "" : distPct >= 3 ? "spread-tight" : distPct >= 1 ? "spread-ok" : "spread-wide";
+                        if (lvl <= 0) return <span className="otm-atm">ATM{distStr && <span className={distCls}>{distStr}</span>}</span>;
+                        if (lvl === 1) return <span className="otm-1">1 OTM{distStr && <span className={distCls}>{distStr}</span>}</span>;
+                        const n = Math.min(lvl, 5);
+                        return <span className="otm-2plus">{n}{lvl >= 5 ? "+" : ""} OTM{distStr && <span className={distCls}>{distStr}</span>}</span>;
+                      })()}
+                    </td>
                     {/* Score */}
                     <td className="prem-scanner-td right">
                       <span style={{ fontWeight: 700, color: row.score >= 60 ? "var(--green)" : row.score >= 40 ? "var(--yellow)" : "var(--text-muted)" }}>
                         {row.score.toFixed(0)}
                       </span>
+                    </td>
+                    {/* Price */}
+                    <td className="prem-scanner-td right">
+                      {row.price != null ? `$${row.price.toFixed(2)}` : "—"}
                     </td>
                     {/* Strike */}
                     <td className="prem-scanner-td right">
