@@ -1353,6 +1353,18 @@ body {
   margin-top: 12px;
 }
 
+/* Sticky header styling in expanded mode only */
+.prem-scanner-wrap-expanded .prem-scanner-th {
+  background-color: #1b5e20;
+  color: #ffffff;
+  font-weight: 700;
+  border-bottom: 2px solid #4caf50;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
 .prem-scanner-th {
   padding: 6px 8px;
   text-align: left;
