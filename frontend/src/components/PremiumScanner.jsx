@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import CrossConflictWarning from "./CrossConflictWarning.jsx";
 import ResearchAsterisk from "./ResearchAsterisk.jsx";
 import ScrollArrows from "./ScrollArrows.jsx";
@@ -533,6 +533,9 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const [earnBuckets, setEarnBuckets] = useState(new Set());
   const [showRiskCols, setShowRiskCols] = useState(false); // Risk Quality expand toggle
   const [showLeaps, setShowLeaps] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(100);
+
+  useEffect(() => { setVisibleCount(100); }, [dteSelected, typeFilter, otmSelected, earnBuckets, showAll, showLeaps]);
 
   const toggleDte = (label) => {
     setDteSelected(prev => {
@@ -838,7 +841,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                 </tr>
               </thead>
               <tbody>
-                {dteSorted.map(item => {
+                {dteSorted.slice(0, visibleCount).map(item => {
                   const grade = item.risk_grade;
                   const rowStyle = showRiskCols
                     ? { opacity: grade === "F" ? 0.45 : grade === "C" ? 0.7 : 1.0, transition: "opacity 0.15s" }
@@ -895,6 +898,13 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
           );
         })()}
       </ScrollArrows>
+      {dteSorted.length > visibleCount && (
+        <div style={{ textAlign: "center", padding: "10px 0 4px" }}>
+          <button className="excl-toggle-btn" onClick={() => setVisibleCount(v => v + 100)}>
+            Show 100 more ({dteSorted.length - visibleCount} remaining)
+          </button>
+        </div>
+      )}
     </div>
   );
 }
