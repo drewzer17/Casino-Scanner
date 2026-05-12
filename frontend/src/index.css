@@ -1331,23 +1331,26 @@ body {
   font-size: 13px;
 }
 
-/* Sticky header — thead sticks to viewport top on vertical scroll.
-   Applied to <thead> (not individual <th>) because the parent
-   .prem-scanner-wrap has overflow-x: auto, making it the horizontal
-   scroll container. Sticky on thead keeps it relative to the document
-   scroll, not the horizontal wrapper. */
-.prem-scanner-table thead {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
 /* Full-width table toggle — breaks out of any parent max-width */
 .prem-table-fullwidth {
   position: relative;
   width: 100vw;
   left: 50%;
   transform: translateX(-50%);
+}
+
+/* Sticky header — ONLY works in expanded mode where the table wrapper
+   has no overflow-x (so sticky pins to the viewport, not a scroll container).
+   In collapsed mode the wrapper keeps overflow-x: auto and sticky is skipped. */
+.prem-table-expanded .prem-scanner-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Plain wrapper for expanded mode — no overflow-x so sticky works */
+.prem-scanner-wrap-expanded {
+  margin-top: 12px;
 }
 
 .prem-scanner-th {
@@ -1391,6 +1394,7 @@ body {
   font-weight: 700;
   color: var(--accent);
   font-size: 14px;
+  padding-left: 24px;
   /* Cap column so lens pill + ticker content don't consume excessive horizontal
      space. Longest pill ("Metrology / Inspection / Test" ~175px at 10px font)
      + ticker (5 chars at 14px ~50px) + asterisk + earn tile + padding ≈ 300px.
@@ -1398,6 +1402,11 @@ body {
   max-width: 320px;
   width: 320px;
   overflow: hidden;
+}
+
+/* Match ticker column header indent to cell padding */
+.prem-scanner-th:first-child {
+  padding-left: 24px;
 }
 
 .prem-scanner-th.compact-col { padding-left: 4px; padding-right: 4px; }

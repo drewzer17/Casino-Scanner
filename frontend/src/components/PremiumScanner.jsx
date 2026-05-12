@@ -676,9 +676,8 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
           title={tableExpanded ? "Collapse table to default width" : "Expand table to full window width"}
         >{tableExpanded ? "⛶ Collapse" : "⛶ Expand"}</button>
       </div>
-      <div className={tableExpanded ? "prem-table-fullwidth" : ""}>
-      <ScrollArrows>
-        {sorted.length === 0 ? (
+      {(() => {
+        const tableContent = sorted.length === 0 ? (
           <div className="empty">
             No tickers match this DTE filter.
             {dteSelected.size > 0 && [...dteSelected].some(l => l === "≤3" || l === "4-7")
@@ -724,9 +723,18 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
               ))}
             </tbody>
           </table>
-        )}
-      </ScrollArrows>
-      </div>
+        );
+        // Expanded: plain wrapper, no overflow-x → sticky thead pins to viewport.
+        // Collapsed: ScrollArrows wrapper with overflow-x: auto → horizontal scroll.
+        if (tableExpanded) {
+          return (
+            <div className="prem-table-fullwidth prem-table-expanded">
+              <div className="prem-scanner-wrap-expanded">{tableContent}</div>
+            </div>
+          );
+        }
+        return <ScrollArrows>{tableContent}</ScrollArrows>;
+      })()}
     </div>
   );
 }
