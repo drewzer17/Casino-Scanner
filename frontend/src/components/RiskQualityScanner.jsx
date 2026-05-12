@@ -241,16 +241,19 @@ export default function RiskQualityScanner({
 
   const enriched = rows.map(enrichRow);
 
+  const VRP_MAP = { Rich: "Rich", Mod: "Moderate", Weak: "Weak", Neg: "Negative" };
+  const STRATEGY_MAP = { Income: "Income Grind", Event: "Event Ramp", Tech: "Technical Location" };
+
   // Apply RQ-specific filters
   const filtered = enriched.filter(r => {
-    if (gradeFilter !== "all" && r.risk_grade !== gradeFilter) return false;
-    if (vrpFilter !== "all") {
-      const map = { "Rich": "Rich", "Mod": "Moderate", "Weak": "Weak", "Neg": "Negative" };
-      if (r.vrp_state !== map[vrpFilter]) return false;
+    if (gradeFilter.size > 0 && !gradeFilter.has(r.risk_grade)) return false;
+    if (vrpFilter.size > 0) {
+      const allowed = new Set([...vrpFilter].map(k => VRP_MAP[k]));
+      if (!allowed.has(r.vrp_state)) return false;
     }
-    if (strategyFilter !== "all") {
-      const map = { "Income": "Income Grind", "Event": "Event Ramp", "Tech": "Technical Location" };
-      if (r.strategy_type !== map[strategyFilter]) return false;
+    if (strategyFilter.size > 0) {
+      const allowed = new Set([...strategyFilter].map(k => STRATEGY_MAP[k]));
+      if (!allowed.has(r.strategy_type)) return false;
     }
     if (earnFilter.size > 0) {
       const match = [...earnFilter].some(k => {
@@ -321,9 +324,14 @@ export default function RiskQualityScanner({
         {["all", "A", "B", "C", "F"].map(opt => (
           <button
             key={opt}
-            className={`dte-filter-btn rq-grade-btn-${opt}${gradeFilter === opt ? " active" : ""}`}
-            style={gradeFilter === opt && opt !== "all" ? { background: GRADE_COLORS[opt], borderColor: GRADE_COLORS[opt], color: "#fff" } : {}}
-            onClick={() => onGradeFilter(opt)}
+            className={`dte-filter-btn rq-grade-btn-${opt}${opt === "all" ? (gradeFilter.size === 0 ? " active" : "") : (gradeFilter.has(opt) ? " active" : "")}`}
+            style={gradeFilter.has(opt) && opt !== "all" ? { background: GRADE_COLORS[opt], borderColor: GRADE_COLORS[opt], color: "#fff" } : {}}
+            onClick={() => {
+              if (opt === "all") { onGradeFilter(new Set()); return; }
+              const next = new Set(gradeFilter);
+              if (next.has(opt)) next.delete(opt); else next.add(opt);
+              onGradeFilter(next);
+            }}
           >
             {opt === "all" ? "ALL" : opt}
             {opt !== "all" && <span className="dte-filter-count">{gradeCounts[opt] || 0}</span>}
@@ -335,11 +343,16 @@ export default function RiskQualityScanner({
         {["all", "Rich", "Mod", "Weak", "Neg"].map(opt => (
           <button
             key={opt}
-            className={`dte-filter-btn${vrpFilter === opt ? " active" : ""}`}
-            style={vrpFilter === opt && opt !== "all"
+            className={`dte-filter-btn${opt === "all" ? (vrpFilter.size === 0 ? " active" : "") : (vrpFilter.has(opt) ? " active" : "")}`}
+            style={vrpFilter.has(opt) && opt !== "all"
               ? { background: VRP_COLORS[{ Rich: "Rich", Mod: "Moderate", Weak: "Weak", Neg: "Negative" }[opt]] || "#6b7280", borderColor: "transparent", color: "#000", fontWeight: 700 }
               : {}}
-            onClick={() => onVrpFilter(opt)}
+            onClick={() => {
+              if (opt === "all") { onVrpFilter(new Set()); return; }
+              const next = new Set(vrpFilter);
+              if (next.has(opt)) next.delete(opt); else next.add(opt);
+              onVrpFilter(next);
+            }}
           >
             {opt === "all" ? "ALL" : opt}
           </button>
@@ -350,8 +363,13 @@ export default function RiskQualityScanner({
         {["all", "Income", "Event", "Tech"].map(opt => (
           <button
             key={opt}
-            className={`dte-filter-btn${strategyFilter === opt ? " active" : ""}`}
-            onClick={() => onStrategyFilter(opt)}
+            className={`dte-filter-btn${opt === "all" ? (strategyFilter.size === 0 ? " active" : "") : (strategyFilter.has(opt) ? " active" : "")}`}
+            onClick={() => {
+              if (opt === "all") { onStrategyFilter(new Set()); return; }
+              const next = new Set(strategyFilter);
+              if (next.has(opt)) next.delete(opt); else next.add(opt);
+              onStrategyFilter(next);
+            }}
           >
             {opt === "all" ? "ALL" : opt}
           </button>

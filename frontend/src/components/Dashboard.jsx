@@ -247,10 +247,10 @@ export default function Dashboard() {
   const [spreadRange, setSpreadRange] = useState([0, 500]);
   const [ivRampScoreRange, setIvRampScoreRange] = useState([0, 100]);
 
-  // Risk Quality view filters (persist during session)
-  const [rqGradeFilter,    setRqGradeFilter]    = useState("all");
-  const [rqVrpFilter,      setRqVrpFilter]      = useState("all");
-  const [rqStrategyFilter, setRqStrategyFilter] = useState("all");
+  // Risk Quality view filters (persist during session) — multi-select Sets; empty = ALL
+  const [rqGradeFilter,    setRqGradeFilter]    = useState(new Set());
+  const [rqVrpFilter,      setRqVrpFilter]      = useState(new Set());
+  const [rqStrategyFilter, setRqStrategyFilter] = useState(new Set());
 
   // Scan trigger state
   const [scanning, setScanning] = useState(false);
