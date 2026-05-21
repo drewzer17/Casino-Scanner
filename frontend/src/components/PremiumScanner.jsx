@@ -748,11 +748,6 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
             onClick={() => setTypeFilter(opt)}
           >{opt}</button>
         ))}
-        <span style={{borderLeft:'1px solid #555',height:20,margin:'0 12px'}}></span>
-        <span className="dte-filter-label">GRADE</span>
-        {['A','B','C','F'].map(v => (
-          <button key={v} className={`dte-filter-btn${gradeFilter.has(v) ? " active" : ""}`} onClick={() => toggleGrade(v)}>{v}</button>
-        ))}
       </div>
       <div className="dte-filter-row">
         <span className="dte-filter-label">OTM</span>
@@ -767,11 +762,6 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
           className={`dte-filter-btn${otmSelected.size === 0 ? " active" : ""}`}
           onClick={() => setOtmSelected(new Set())}
         >ALL</button>
-        <span style={{borderLeft:'1px solid #555',height:20,margin:'0 12px'}}></span>
-        <span className="dte-filter-label">VRP</span>
-        {['Rich','Moderate','Weak','Negative'].map(v => (
-          <button key={v} className={`dte-filter-btn${vrpFilter.has(v) ? " active" : ""}`} onClick={() => toggleVrp(v)}>{v}</button>
-        ))}
       </div>
       <div className="dte-filter-row">
         <span className="dte-filter-label">DTE</span>
@@ -795,11 +785,6 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
           <span className="leaps-scan-ts">Last: {fmtLeapsTs(leapsScannedAt)}</span>
         )}
         <span className="dte-filter-count">{sorted.length} rows · {uniqueTickers} tickers</span>
-        <span style={{borderLeft:'1px solid #555',height:20,margin:'0 12px'}}></span>
-        <span className="dte-filter-label">STRATEGY</span>
-        {['Income Grind','Event Ramp','Technical Location'].map(v => (
-          <button key={v} className={`dte-filter-btn${stratFilter.has(v) ? " active" : ""}`} onClick={() => toggleStrat(v)}>{v}</button>
-        ))}
       </div>
       <div className="dte-filter-row">
         <span className="dte-filter-label">EARNINGS</span>
@@ -818,6 +803,16 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
             })}
           >{b.label}</button>
         ))}
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+        <span style={{fontWeight:600,fontSize:13,minWidth:55}}>GRADE</span>
+        {['A','B','C','F'].map(v => <button key={v} className={gradeFilter.has(v) ? 'filter-btn active' : 'filter-btn'} onClick={() => toggleGrade(v)}>{v}</button>)}
+        <span style={{borderLeft:'1px solid #555',height:20,margin:'0 12px'}}></span>
+        <span style={{fontWeight:600,fontSize:13}}>VRP</span>
+        {['Rich','Moderate','Weak','Negative'].map(v => <button key={v} className={vrpFilter.has(v) ? 'filter-btn active' : 'filter-btn'} onClick={() => toggleVrp(v)}>{v}</button>)}
+        <span style={{borderLeft:'1px solid #555',height:20,margin:'0 12px'}}></span>
+        <span style={{fontWeight:600,fontSize:13}}>STRATEGY</span>
+        {['Income Grind','Event Ramp','Technical Location'].map(v => <button key={v} className={stratFilter.has(v) ? 'filter-btn active' : 'filter-btn'} onClick={() => toggleStrat(v)}>{v}</button>)}
       </div>
       <ScrollArrows>
         {sorted.length === 0 ? (
