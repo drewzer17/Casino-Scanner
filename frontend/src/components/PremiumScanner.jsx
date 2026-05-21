@@ -570,20 +570,10 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
 
   const baseRows = showAll ? allScanRows : rows;
 
-  // DTE pre-filter: single source of truth — compare row.best_dte directly.
-  // ≤3 = best_dte<=3 | 4-7 = 4..7 | 10-17 = 10..17 | 21-30 = 21..30 | 31-61 = 31..61
-  const dteFilteredRows = dteSelected.size === 0 ? baseRows : baseRows.filter(r => {
-    if (r.best_dte == null) return false;
-    for (const label of dteSelected) {
-      const range = DTE_RANGES.find(x => x.label === label);
-      if (range && r.best_dte >= range.min && r.best_dte <= range.max) return true;
-    }
-    return false;
-  });
-
   // Expand each ticker into rows: ATM + each OTM level available in expiry_data
+  // getCallData/getPutData handle all DTE filtering internally via expiry_data.
   const items = [];
-  for (const row of dteFilteredRows) {
+  for (const row of baseRows) {
     if (typeFilter !== "CSP") {
       const callD = getCallData(row, dteSelected);
       if (callD) {
@@ -686,13 +676,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
     return 0;
   });
 
-  const dteSorted = dteSelected.size === 0 ? sorted :
-    sorted.filter(item => {
-      const d = Number(item.best_dte || item._d?.best_dte || 0);
-      return dteInAny(d, dteSelected);
-    });
-
-  const uniqueTickers = new Set(dteSorted.map(i => i.ticker)).size;
+  const uniqueTickers = new Set(sorted.map(i => i.ticker)).size;
 
   const totalInScan    = allScanRows.length;
   const inTable        = passedTickerSet.size;
@@ -778,7 +762,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
         {showLeaps && (
           <span className="leaps-scan-ts">Last: {fmtLeapsTs(leapsScannedAt)}</span>
         )}
-        <span className="dte-filter-count">{dteSorted.length} rows · {uniqueTickers} tickers</span>
+        <span className="dte-filter-count">{sorted.length} rows · {uniqueTickers} tickers</span>
       </div>
       <div className="dte-filter-row">
         <span className="dte-filter-label">EARNINGS</span>
@@ -799,7 +783,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
         ))}
       </div>
       <ScrollArrows>
-        {dteSorted.length === 0 ? (
+        {sorted.length === 0 ? (
           <div className="empty">
             No tickers match this DTE filter.
             {dteSelected.size > 0 && [...dteSelected].some(l => l === "≤3" || l === "4-7")
@@ -841,7 +825,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                 </tr>
               </thead>
               <tbody>
-                {dteSorted.slice(0, visibleCount).map(item => {
+                {sorted.slice(0, visibleCount).map(item => {
                   const grade = item.risk_grade;
                   const rowStyle = showRiskCols
                     ? { opacity: grade === "F" ? 0.45 : grade === "C" ? 0.7 : 1.0, transition: "opacity 0.15s" }
@@ -898,10 +882,10 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
           );
         })()}
       </ScrollArrows>
-      {dteSorted.length > visibleCount && (
+      {sorted.length > visibleCount && (
         <div style={{ textAlign: "center", padding: "10px 0 4px" }}>
           <button className="excl-toggle-btn" onClick={() => setVisibleCount(v => v + 100)}>
-            Show 100 more ({dteSorted.length - visibleCount} remaining)
+            Show 100 more ({sorted.length - visibleCount} remaining)
           </button>
         </div>
       )}
