@@ -750,7 +750,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
         ))}
         <span style={{position:'absolute',left:640,display:'flex',alignItems:'center',gap:8}}>
           <span style={{fontWeight:600,fontSize:13}}>GRADE</span>
-          {['A','B','C','F'].map(v => <button key={v} className={`dte-filter-btn${gradeFilter.has(v) ? " active" : ""}`} style={gradeFilter.has(v) ? {background:'#2e7d32',border:'1px solid #4caf50',color:'#fff',padding:'4px 10px',borderRadius:4,cursor:'pointer',fontSize:13} : {background:'transparent',border:'1px solid #555',color:'#ccc',padding:'4px 10px',borderRadius:4,cursor:'pointer',fontSize:13}} onClick={() => toggleGrade(v)}>{v}</button>)}
+          {['A','B','C','F'].map(v => <button key={v} style={gradeFilter.has(v) ? {background:'#2e7d32',border:'1px solid #4caf50',color:'#fff',padding:'4px 10px',borderRadius:4,cursor:'pointer',fontSize:13} : {background:'transparent',border:'1px solid #555',color:'#ccc',padding:'4px 10px',borderRadius:4,cursor:'pointer',fontSize:13}} onClick={() => toggleGrade(v)}>{v}</button>)}
         </span>
       </div>
       <div className="dte-filter-row" style={{position:'relative'}}>
@@ -768,7 +768,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
         >ALL</button>
         <span style={{position:'absolute',left:640,display:'flex',alignItems:'center',gap:8}}>
           <span style={{fontWeight:600,fontSize:13}}>VRP</span>
-          {['Rich','Moderate','Weak','Negative'].map(v => <button key={v} className={`dte-filter-btn${vrpFilter.has(v) ? " active" : ""}`} style={vrpFilter.has(v) ? {background:'#2e7d32',border:'1px solid #4caf50',color:'#fff',padding:'4px 10px',borderRadius:4,cursor:'pointer',fontSize:13} : {background:'transparent',border:'1px solid #555',color:'#ccc',padding:'4px 10px',borderRadius:4,cursor:'pointer',fontSize:13}} onClick={() => toggleVrp(v)}>{v}</button>)}
+          {['Rich','Moderate','Weak','Negative'].map(v => <button key={v} style={vrpFilter.has(v) ? {background:'#2e7d32',border:'1px solid #4caf50',color:'#fff',padding:'4px 10px',borderRadius:4,cursor:'pointer',fontSize:13} : {background:'transparent',border:'1px solid #555',color:'#ccc',padding:'4px 10px',borderRadius:4,cursor:'pointer',fontSize:13}} onClick={() => toggleVrp(v)}>{v}</button>)}
         </span>
       </div>
       <div className="dte-filter-row" style={{position:'relative'}}>
@@ -795,7 +795,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
         <span className="dte-filter-count">{sorted.length} rows · {uniqueTickers} tickers</span>
         <span style={{position:'absolute',left:640,display:'flex',alignItems:'center',gap:8}}>
           <span style={{fontWeight:600,fontSize:13}}>STRATEGY</span>
-          {['Income Grind','Event Ramp','Technical Location'].map(v => <button key={v} className={`dte-filter-btn${stratFilter.has(v) ? " active" : ""}`} style={stratFilter.has(v) ? {background:'#2e7d32',border:'1px solid #4caf50',color:'#fff',padding:'4px 10px',borderRadius:4,cursor:'pointer',fontSize:13} : {background:'transparent',border:'1px solid #555',color:'#ccc',padding:'4px 10px',borderRadius:4,cursor:'pointer',fontSize:13}} onClick={() => toggleStrat(v)}>{v}</button>)}
+          {['Income Grind','Event Ramp','Technical Location'].map(v => <button key={v} style={stratFilter.has(v) ? {background:'#2e7d32',border:'1px solid #4caf50',color:'#fff',padding:'4px 10px',borderRadius:4,cursor:'pointer',fontSize:13} : {background:'transparent',border:'1px solid #555',color:'#ccc',padding:'4px 10px',borderRadius:4,cursor:'pointer',fontSize:13}} onClick={() => toggleStrat(v)}>{v}</button>)}
         </span>
       </div>
       <div className="dte-filter-row" style={{position:'relative'}}>
