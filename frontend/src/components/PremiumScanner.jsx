@@ -101,7 +101,7 @@ function otmLevelKey(level) {
 }
 
 function getOtmCallsFromExpiry(row, dteSelected) {
-  const allExp = row.expiry_data || [];
+  const allExp = _parseExpiry(row.expiry_data);
   if (!allExp.length) return [];
   const expiries = allExp.filter(e => dteInAny(e.dte, dteSelected));
   if (!expiries.length) return [];
@@ -115,7 +115,7 @@ function getOtmCallsFromExpiry(row, dteSelected) {
 }
 
 function getOtmPutsFromExpiry(row, dteSelected) {
-  const allExp = row.expiry_data || [];
+  const allExp = _parseExpiry(row.expiry_data);
   if (!allExp.length) return [];
   const expiries = allExp.filter(e => dteInAny(e.dte, dteSelected));
   if (!expiries.length) return [];
@@ -141,7 +141,14 @@ function fmtExpiry(exp) {
 
 // ── Data extractors ───────────────────────────────────────────────
 
+function _parseExpiry(raw) {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'string' && raw.length > 0) { try { return JSON.parse(raw); } catch { return []; } }
+  return [];
+}
+
 function getCallData(row, dteSelected) {
+  const expiry_data = _parseExpiry(row.expiry_data);
   if (dteSelected.size === 0) {
     // ALL: use stored best call directly
     if (row.atm_call_premium != null) {
@@ -153,7 +160,7 @@ function getCallData(row, dteSelected) {
         dte: row.best_dte,
       };
     }
-    const entries = (row.expiry_data || []).filter(e => e.atm_call_prem != null);
+    const entries = expiry_data.filter(e => e.atm_call_prem != null);
     if (!entries.length) return null;
     entries.sort((a, b) => (b.atm_call_prem ?? 0) - (a.atm_call_prem ?? 0));
     const e = entries[0];
@@ -166,7 +173,7 @@ function getCallData(row, dteSelected) {
     };
   }
   // Range-filtered: prefer expiry_data entries within any selected range
-  const entries = (row.expiry_data || []).filter(
+  const entries = expiry_data.filter(
     e => e.atm_call_prem != null && dteInAny(e.dte, dteSelected)
   );
   if (entries.length) {
@@ -194,6 +201,7 @@ function getCallData(row, dteSelected) {
 }
 
 function getPutData(row, dteSelected) {
+  const expiry_data = _parseExpiry(row.expiry_data);
   if (dteSelected.size === 0) {
     // ALL: prefer stored atm_put_premium directly
     if (row.atm_put_premium != null) {
@@ -205,7 +213,7 @@ function getPutData(row, dteSelected) {
         dte: row.best_put_dte,
       };
     }
-    const entries = (row.expiry_data || []).filter(e => e.atm_put_prem != null);
+    const entries = expiry_data.filter(e => e.atm_put_prem != null);
     if (!entries.length) return null;
     entries.sort((a, b) => (b.atm_put_prem ?? 0) - (a.atm_put_prem ?? 0));
     const e = entries[0];
@@ -218,7 +226,7 @@ function getPutData(row, dteSelected) {
     };
   }
   // Range-filtered: prefer expiry_data entries within any selected range
-  const entries = (row.expiry_data || []).filter(
+  const entries = expiry_data.filter(
     e => e.atm_put_prem != null && dteInAny(e.dte, dteSelected)
   );
   if (entries.length) {
