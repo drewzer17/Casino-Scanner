@@ -542,8 +542,15 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const [showRiskCols, setShowRiskCols] = useState(false); // Risk Quality expand toggle
   const [showLeaps, setShowLeaps] = useState(false);
   const [visibleCount, setVisibleCount] = useState(100);
+  const [gradeFilter, setGradeFilter] = useState(new Set());
+  const [vrpFilter, setVrpFilter] = useState(new Set());
+  const [stratFilter, setStratFilter] = useState(new Set());
 
   useEffect(() => { setVisibleCount(100); }, [dteSelected, typeFilter, otmSelected, earnBuckets, showAll, showLeaps]);
+
+  const toggleGrade = (v) => setGradeFilter(prev => prev.size === 1 && prev.has(v) ? new Set() : new Set([v]));
+  const toggleVrp = (v) => setVrpFilter(prev => prev.size === 1 && prev.has(v) ? new Set() : new Set([v]));
+  const toggleStrat = (v) => setStratFilter(prev => prev.size === 1 && prev.has(v) ? new Set() : new Set([v]));
 
   const toggleDte = (label) => {
     setDteSelected(prev => {
@@ -578,10 +585,17 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
 
   const baseRows = showAll ? allScanRows : rows;
 
+  const rqFiltered = baseRows.filter(r => {
+    if (gradeFilter.size > 0 && !gradeFilter.has(r.risk_grade)) return false;
+    if (vrpFilter.size > 0 && !vrpFilter.has(r.vrp_state)) return false;
+    if (stratFilter.size > 0 && !stratFilter.has(r.strategy_type)) return false;
+    return true;
+  });
+
   // Expand each ticker into rows: ATM + each OTM level available in expiry_data.
   // getCallData/getPutData handle all DTE filtering via expiry_data — no pre-filter needed.
   const items = [];
-  for (const row of baseRows) {
+  for (const row of rqFiltered) {
     if (typeFilter !== "CSP") {
       const callD = getCallData(row, dteSelected);
       if (callD) {
@@ -725,6 +739,18 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
       </div>
       {showExcl && <ExclusionTable allExcluded={allExcluded} />}
 
+      <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+        <span style={{fontWeight:600,fontSize:13,minWidth:70}}>GRADE</span>
+        {['A','B','C','F'].map(v => <button key={v} className={gradeFilter.has(v) ? 'filter-btn active' : 'filter-btn'} onClick={() => toggleGrade(v)}>{v}</button>)}
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+        <span style={{fontWeight:600,fontSize:13,minWidth:70}}>VRP</span>
+        {['Rich','Moderate','Weak','Negative'].map(v => <button key={v} className={vrpFilter.has(v) ? 'filter-btn active' : 'filter-btn'} onClick={() => toggleVrp(v)}>{v}</button>)}
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+        <span style={{fontWeight:600,fontSize:13,minWidth:70}}>STRATEGY</span>
+        {['Income Grind','Event Ramp','Technical Location'].map(v => <button key={v} className={stratFilter.has(v) ? 'filter-btn active' : 'filter-btn'} onClick={() => toggleStrat(v)}>{v}</button>)}
+      </div>
       <div className="dte-filter-row">
         <span className="dte-filter-label">Type</span>
         {["ALL", "CC", "CSP"].map(opt => (
