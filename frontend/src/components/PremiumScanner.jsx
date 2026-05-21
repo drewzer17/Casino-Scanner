@@ -578,10 +578,20 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
 
   const baseRows = showAll ? allScanRows : rows;
 
+  // DTE pre-filter: only pass rows whose best_dte falls in the selected range.
+  const dteRows = dteSelected.size === 0 ? baseRows : baseRows.filter(r => {
+    if (r.best_dte == null) return false;
+    for (const label of dteSelected) {
+      const range = DTE_RANGES.find(x => x.label === label);
+      if (range && r.best_dte >= range.min && r.best_dte <= range.max) return true;
+    }
+    return false;
+  });
+
   // Expand each ticker into rows: ATM + each OTM level available in expiry_data
-  // getCallData/getPutData handle all DTE filtering internally via expiry_data.
+  // getCallData/getPutData handle OTM filtering internally via expiry_data.
   const items = [];
-  for (const row of baseRows) {
+  for (const row of dteRows) {
     if (typeFilter !== "CSP") {
       const callD = getCallData(row, dteSelected);
       if (callD) {
