@@ -1988,6 +1988,7 @@ def run_scan(
                         result.soft_fail_count = rq.get("soft_fail_count")
                         result.soft_fail_details = rq.get("soft_fail_details") or []
                         result.high_beta_moderate = rq.get("high_beta_moderate", False)
+                        result.extension_ratio = rq.get("extension_ratio")
                         result.event_ramp_eligible = rq.get("event_ramp_eligible", False)
                         result.technical_location_eligible = rq.get("technical_location_eligible", False)
                         result.income_grind_eligible = rq.get("income_grind_eligible", False)
