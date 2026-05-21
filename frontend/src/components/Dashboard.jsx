@@ -813,7 +813,7 @@ export default function Dashboard() {
               className={`prem-view-btn${view === "premium" ? " active" : ""}`}
               onClick={() => setView(v => v === "premium" ? "cards" : "premium")}
             >
-              {view === "premium" ? "← Cards" : "Premium Scanner"}
+              {view === "premium" ? "← Cards" : "Premium Scanner v2"}
             </button>
             <button
               className={`range-view-btn${view === "range" ? " active" : ""}`}
