@@ -317,6 +317,7 @@ def _to_out(
         soft_fail_count=_san(row.soft_fail_count),
         soft_fail_details=_parse_json_list(row.soft_fail_details),
         high_beta_moderate=bool(row.high_beta_moderate),
+        extension_ratio=_san(row.extension_ratio),
         is_leaps=bool(row.is_leaps) if row.is_leaps is not None else False,
     )
 

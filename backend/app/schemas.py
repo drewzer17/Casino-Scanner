@@ -145,6 +145,7 @@ class ScanResultOut(BaseModel):
     soft_fail_count: float | None = None
     soft_fail_details: list[str] = []
     high_beta_moderate: bool = False         # Moderate VRP + rv20 > 35% proxy
+    extension_ratio: float | None = None    # Factor 9: price / ema_50 (CSP path risk)
     is_leaps: bool = False                   # True when row came from LEAPS on-demand scan
 
 

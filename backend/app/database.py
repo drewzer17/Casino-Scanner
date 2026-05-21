@@ -223,6 +223,10 @@ def init_db() -> None:
     # is_leaps = TRUE for rows produced by the on-demand LEAPS scan (180-365 DTE)
     _add_column_if_missing("ALTER TABLE scan_results ADD COLUMN is_leaps BOOLEAN DEFAULT FALSE")
 
+    # Factor 9: CSP Path Risk v1 — v16
+    # extension_ratio = price / ema_50 (how far price is above its EMA-50)
+    _add_column_if_missing("ALTER TABLE scan_results ADD COLUMN extension_ratio FLOAT")
+
 
 def _add_column_if_missing(ddl: str) -> None:
     from sqlalchemy import text

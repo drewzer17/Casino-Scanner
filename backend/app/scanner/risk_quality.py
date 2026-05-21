@@ -44,6 +44,9 @@ POST_EARNINGS_RV_EXCLUSION_DAYS = 10  # exclude gap return within 10 days post-e
 HIGH_BETA_THRESHOLD           = 1.3  # intended beta threshold (proxy used: rv20 > 35%)
 HIGH_BETA_RV_PROXY_THRESHOLD  = 35.0 # rv20 > 35% used as high-beta proxy
 
+CSP_PATH_RISK_SOFT   = 1.30  # PROVISIONAL/Phase 4 — price / ema_50 ≥ 1.30 → extended (soft fail)
+CSP_PATH_RISK_STRONG = 1.50  # PROVISIONAL/Phase 4 — price / ema_50 ≥ 1.50 → parabolic (strong fail)
+
 # Flat dict exported for engine.py to write into scan_runs.scoring_config
 SCORING_CONFIG: dict = {
     "vrp_bands": {
@@ -62,6 +65,8 @@ SCORING_CONFIG: dict = {
     "rv_window_long":                        RV_WINDOW_LONG,
     "post_earnings_rv_exclusion_days":       POST_EARNINGS_RV_EXCLUSION_DAYS,
     "high_beta_threshold":                   HIGH_BETA_THRESHOLD,
+    "csp_path_risk_soft":                    CSP_PATH_RISK_SOFT,
+    "csp_path_risk_strong":                  CSP_PATH_RISK_STRONG,
 }
 
 # ---------------------------------------------------------------------------
@@ -252,6 +257,7 @@ def compute_risk_quality(
         "event_ramp_eligible": False,
         "technical_location_eligible": False,
         "income_grind_eligible": False,
+        "extension_ratio": None,
     }
 
     try:
@@ -279,6 +285,14 @@ def compute_risk_quality(
 
         # Is this row a CC (call-selling) or CSP (put-selling)?
         is_cc = cc_score > csp_score
+
+        # Factor 9: Extension ratio — price / ema_50 (how far price is above EMA-50)
+        extension_ratio = (
+            round(price / ema_50, 3)
+            if price is not None and ema_50 is not None and ema_50 > 0
+            else None
+        )
+        out["extension_ratio"] = extension_ratio
 
         # Convert stored decimals to percentage points for threshold comparisons
         atm_iv_pct   = _to_pct(atm_iv_raw)    # e.g. 22.9
@@ -418,6 +432,23 @@ def compute_risk_quality(
 
         # Check 7: earnings_overlap_technical already captured in strong_fail above
 
+        # ── Factor 9: CSP Path Risk v1 ──────────────────────────────────────────
+        # Measures how far price has moved above its EMA-50 (extension_ratio =
+        # price / ema_50). A stock trading significantly above its EMA-50
+        # represents an extended, high-risk CSP entry point.
+        #   extension_ratio ≥ 1.50 → strong fail ("parabolic") — caps grade at C
+        #                            (or F if soft_count ≥ 3)
+        #   extension_ratio ≥ 1.30 → soft fail  ("extended")   — counts toward grade
+        # CC setups are intentionally exempt: extension is a tailwind for
+        # covered-call premium, not a risk.
+        # Thresholds are PROVISIONAL / Phase 4 placeholders pending backtesting.
+        # ────────────────────────────────────────────────────────────────────────
+
+        # Check 8: CSP Path Risk — parabolic extension (CSP only)
+        if not is_cc:
+            if extension_ratio is not None and extension_ratio >= CSP_PATH_RISK_STRONG:
+                strong_fail.append("csp_path_parabolic")
+
         strong_fail_fired = len(strong_fail) > 0
 
         # ---- Soft Fails ----
@@ -465,6 +496,12 @@ def compute_risk_quality(
             if iv_rank is not None and iv_rank < STRONG_FAIL_IV_RANK_THRESHOLD:
                 soft_count += 1.0
                 soft_details.append("low_iv_rank_rich_vrp")
+
+        # Soft 6: CSP Path Risk — extended above EMA-50 (CSP only)
+        if not is_cc:
+            if extension_ratio is not None and CSP_PATH_RISK_SOFT <= extension_ratio < CSP_PATH_RISK_STRONG:
+                soft_count += 1.0
+                soft_details.append("csp_path_extended")
 
         out["strong_fail_reasons"] = strong_fail
         out["soft_fail_count"] = round(soft_count, 1)

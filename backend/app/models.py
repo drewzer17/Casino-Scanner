@@ -131,6 +131,7 @@ class ScanResult(Base):
     technical_location_eligible: Mapped[bool] = mapped_column(Boolean, default=False)
     income_grind_eligible: Mapped[bool] = mapped_column(Boolean, default=False)
     high_beta_moderate: Mapped[bool] = mapped_column(Boolean, default=False)  # Phase 3 addition
+    extension_ratio: Mapped[float | None] = mapped_column(Float, nullable=True)  # Factor 9: price / ema_50
 
     # Asymmetric setup flags (computed during scan from convergence of multiple criteria)
     asymmetric_cc_flag: Mapped[bool] = mapped_column(Boolean, default=False)
