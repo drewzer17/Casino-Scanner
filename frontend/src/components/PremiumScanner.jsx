@@ -256,8 +256,11 @@ function getPutData(row, dteSelected) {
 // ── Columns ───────────────────────────────────────────────────────
 
 const COLS = [
-  { key: "ticker",     label: "Ticker",    align: "left" },
-  { key: "earnings",   label: "EARNINGS",  align: "center" },
+  { key: "ticker",        label: "Ticker",   align: "left" },
+  { key: "risk_grade",   label: "GRADE",    align: "center", compact: true },
+  { key: "vrp_state",    label: "VRP",      align: "center", compact: true },
+  { key: "strategy_type",label: "STRATEGY", align: "center", compact: true },
+  { key: "earnings",     label: "EARNINGS", align: "center" },
   { key: "type",       label: "Type",      align: "left" },
   { key: "otm",        label: "OTM",       align: "center" },
   { key: "price",      label: "Price",     align: "right", compact: true },
@@ -405,6 +408,21 @@ function cellValue(item, key, onResearch) {
         : item.asymmetric_type.replace("IV_RAMP", "IV RAMP");
       return <span className="prem-asym-badge">{label}</span>;
     }
+    case "risk_grade": {
+      const grade = item.risk_grade || '—';
+      const gradeColors = {A:'#4caf50',B:'#ffc107',C:'#ff9800',F:'#f44336'};
+      return <span style={{color:gradeColors[grade]||'#888',fontWeight:700}}>{grade}</span>;
+    }
+    case "vrp_state": {
+      const vrp = item.vrp_state || '—';
+      const vrpColors = {Rich:'#4caf50',Moderate:'#ffc107',Weak:'#ff9800',Negative:'#f44336'};
+      return <span style={{color:vrpColors[vrp]||'#888',fontSize:12}}>{vrp}</span>;
+    }
+    case "strategy_type": {
+      const strat = item.strategy_type || '—';
+      const stratColors = {'Income Grind':'#888','Event Ramp':'#ffc107','Technical Location':'#64b5f6'};
+      return <span style={{color:stratColors[strat]||'#888',fontSize:11}}>{strat}</span>;
+    }
     default: return "—";
   }
 }
@@ -439,6 +457,9 @@ function sortValue(item, key) {
         : -1;
     case "score": return item._type === "CC" ? (item.cc_score ?? -1) : (item.csp_score ?? -1);
     case "asymmetric": return item.asymmetric_any_flag ? 1 : 0;
+    case "risk_grade": return {A:1,B:2,C:3,F:4}[item.risk_grade] ?? 5;
+    case "vrp_state": return {Rich:1,Moderate:2,Weak:3,Negative:4}[item.vrp_state] ?? 5;
+    case "strategy_type": return item.strategy_type || 'zzz';
     default: return 0;
   }
 }
