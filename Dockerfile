@@ -10,7 +10,7 @@ RUN cd frontend && npm ci
 COPY frontend/src frontend/src
 COPY frontend/index.html frontend/index.html
 COPY frontend/vite.config.js frontend/vite.config.js
-ARG CACHEBUST=1
+ARG CACHEBUST=20260521
 RUN cd frontend && npm run build
 COPY backend/requirements.txt backend/
 RUN python -m venv /opt/venv \
