@@ -706,7 +706,21 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const hiddenCount    = totalInScan - inTable;
 
   return (
-    <div style={{margin:'0 -40px',padding:'0 8px'}}>
+    <>
+    <style>{`
+  .premium-scanner-fullwidth {
+    position: relative !important;
+    width: 100vw !important;
+    left: 50% !important;
+    right: 50% !important;
+    margin-left: -50vw !important;
+    margin-right: -50vw !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    box-sizing: border-box !important;
+  }
+`}</style>
+    <div className="premium-scanner-fullwidth">
       {/* ── Diagnostic banner ── */}
       <div className="excl-banner">
         <span className="excl-stat">Scanned: <strong>{totalInScan}</strong></span>
@@ -935,5 +949,6 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
       )}
       </>)}
     </div>
+    </>
   );
 }
