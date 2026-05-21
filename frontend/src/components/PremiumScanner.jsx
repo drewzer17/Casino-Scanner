@@ -723,8 +723,8 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
     right: 50% !important;
     margin-left: -50vw !important;
     margin-right: -50vw !important;
-    padding-left: 8px !important;
-    padding-right: 8px !important;
+    padding-left: 48px !important;
+    padding-right: 48px !important;
     box-sizing: border-box !important;
   }
 `}</style>
