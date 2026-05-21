@@ -545,6 +545,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const [gradeFilter, setGradeFilter] = useState(new Set());
   const [vrpFilter, setVrpFilter] = useState(new Set());
   const [stratFilter, setStratFilter] = useState(new Set());
+  const [tableExpanded, setTableExpanded] = useState(true);
 
   useEffect(() => { setVisibleCount(100); }, [dteSelected, typeFilter, otmSelected, earnBuckets, showAll, showLeaps]);
 
@@ -739,6 +740,11 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
       </div>
       {showExcl && <ExclusionTable allExcluded={allExcluded} />}
 
+      <button onClick={() => setTableExpanded(v => !v)} style={{background:'transparent',border:'1px solid #555',color:'#ccc',padding:'6px 16px',borderRadius:4,cursor:'pointer',marginBottom:8}}>
+        {tableExpanded ? '⊟ Collapse' : '⊞ Expand'}
+      </button>
+
+      {tableExpanded && (<>
       <div className="dte-filter-row" style={{position:'relative'}}>
         <span className="dte-filter-label">Type</span>
         {["ALL", "CC", "CSP"].map(opt => (
@@ -816,7 +822,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
           >{b.label}</button>
         ))}
       </div>
-      <ScrollArrows>
+      <div style={{width:'100%'}}>
         {sorted.length === 0 ? (
           <div className="empty">
             No tickers match this DTE filter.
@@ -845,8 +851,12 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                       className={`prem-scanner-th${col.align === "right" ? " right" : col.align === "center" ? " center" : ""}${sortCol === col.key ? " sorted" : ""}${col.compact ? " compact-col" : ""}`}
                       onClick={() => col.key.startsWith("rq_") ? undefined : handleSort(col.key)}
                       style={{
+                        position:'sticky', top:0, background:'#1b5e20', color:'#fff', fontWeight:700,
+                        borderBottom:'2px solid #4caf50', textTransform:'uppercase', letterSpacing:'0.5px',
+                        padding: col.key === 'ticker' ? '14px 8px 14px 24px' : '14px 8px',
+                        zIndex:10, fontSize:13,
                         ...(col.groupEnd ? { borderRight: "1px solid rgba(255,255,255,0.15)" } : {}),
-                        ...(col.key.startsWith("rq_") ? { cursor: "default", color: "#7c3aed" } : {}),
+                        ...(col.key.startsWith("rq_") ? { cursor: "default" } : {}),
                       }}
                     >
                       {col.label}
@@ -855,7 +865,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                       )}
                     </th>
                   ))}
-                  {onAddToPositions && <th className="prem-scanner-th row-action-th"></th>}
+                  {onAddToPositions && <th style={{position:'sticky',top:0,background:'#1b5e20',zIndex:10,borderBottom:'2px solid #4caf50'}} className="prem-scanner-th row-action-th"></th>}
                 </tr>
               </thead>
               <tbody>
@@ -915,7 +925,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
             </table>
           );
         })()}
-      </ScrollArrows>
+      </div>
       {sorted.length > visibleCount && (
         <div style={{ textAlign: "center", padding: "10px 0 4px" }}>
           <button className="excl-toggle-btn" onClick={() => setVisibleCount(v => v + 100)}>
@@ -923,6 +933,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
           </button>
         </div>
       )}
+      </>)}
     </div>
   );
 }
