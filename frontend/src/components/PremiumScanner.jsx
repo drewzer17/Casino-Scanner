@@ -706,7 +706,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const hiddenCount    = totalInScan - inTable;
 
   return (
-    <div>
+    <div style={{marginLeft:-24,marginRight:-24,paddingLeft:12,paddingRight:12}}>
       {/* ── Diagnostic banner ── */}
       <div className="excl-banner">
         <span className="excl-stat">Scanned: <strong>{totalInScan}</strong></span>
