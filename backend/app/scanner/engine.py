@@ -1349,6 +1349,23 @@ def scan_ticker(
                 bid_ask_spread_pct=spread_pct,
             )
 
+            # Build expiry_data for AI ticker rows (non-AI gets it from scan_ticker_extensive)
+            row_expiry_data: str | None = None
+            if is_ai and exp in chain_cache and price:
+                try:
+                    ed_chain = chain_cache[exp]
+                    row_expiry_data = json.dumps([{
+                        "expiry": exp,
+                        "dte": dte,
+                        "atm_strike": best_strike,
+                        "atm_call_prem": round(best_atm_premium, 4) if best_atm_premium else None,
+                        "atm_put_prem": round(best_put_premium, 4) if best_put_premium else None,
+                        "calls": _collect_otm_calls(ed_chain, price),
+                        "puts": _collect_otm_puts(ed_chain, price),
+                    }])
+                except Exception as exc:
+                    logger.debug("%s: expiry_data build failed (%s): %s", ticker, exp, exc)
+
             results.append(ScanRowResult(
                 ticker=ticker,
                 metrics=metrics,
@@ -1369,7 +1386,7 @@ def scan_ticker(
                 best_expiry=exp,
                 best_dte=dte,
                 best_strike=best_strike,
-                expiry_data=None,
+                expiry_data=row_expiry_data,
                 # ATM put
                 atm_put_premium=round(best_put_premium, 4) if best_put_premium else None,
                 best_put_strike=best_put_strike,
