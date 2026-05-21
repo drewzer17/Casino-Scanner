@@ -578,20 +578,10 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
 
   const baseRows = showAll ? allScanRows : rows;
 
-  // DTE pre-filter: only pass rows whose best_dte falls in the selected range.
-  const dteRows = dteSelected.size === 0 ? baseRows : baseRows.filter(r => {
-    if (r.best_dte == null) return false;
-    for (const label of dteSelected) {
-      const range = DTE_RANGES.find(x => x.label === label);
-      if (range && r.best_dte >= range.min && r.best_dte <= range.max) return true;
-    }
-    return false;
-  });
-
-  // Expand each ticker into rows: ATM + each OTM level available in expiry_data
-  // getCallData/getPutData handle OTM filtering internally via expiry_data.
+  // Expand each ticker into rows: ATM + each OTM level available in expiry_data.
+  // getCallData/getPutData handle all DTE filtering via expiry_data — no pre-filter needed.
   const items = [];
-  for (const row of dteRows) {
+  for (const row of baseRows) {
     if (typeFilter !== "CSP") {
       const callD = getCallData(row, dteSelected);
       if (callD) {
@@ -652,15 +642,6 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
     ? items
     : items.filter(i => i._isLeaps || earnBucketMatch(i.earnings_days, earnBuckets));
 
-  // DTE display filter: hide any item whose rendered DTE doesn't fall in the selected range.
-  // Runs after getCallData so it checks _d.dte — the actual number shown in the DTE column.
-  const dteFiltered = (dteSelected.size === 0)
-    ? earnFiltered
-    : earnFiltered.filter(i => {
-        if (i._isLeaps) return true; // LEAPS bypass DTE filter
-        return dteInAny(i._d?.dte, dteSelected);
-      });
-
   // ── Internal exclusions (rows that passed Dashboard but have no items) ──
   const passedTickerSet = new Set(items.map(i => i.ticker));
   const internalExcluded = baseRows
@@ -688,7 +669,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
 
   const allExcluded = [...(showAll ? [] : excludedRows), ...internalExcluded];
 
-  const sorted = [...dteFiltered].sort((a, b) => {
+  const sorted = [...earnFiltered].sort((a, b) => {
     if (sortCol === "earnings") {
       const an = a.earnings_days == null;
       const bn = b.earnings_days == null;
