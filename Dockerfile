@@ -5,14 +5,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY frontend/package*.json frontend/
-RUN cd frontend && npm ci
-ARG CACHEBUST=20260522f
-RUN echo "bust=$CACHEBUST"
-COPY frontend/src frontend/src
-COPY frontend/index.html frontend/index.html
-COPY frontend/vite.config.js frontend/vite.config.js
-RUN cd frontend && npm run build
+# Copy ALL frontend files in one layer — any source change busts npm ci + build
+COPY frontend/ frontend/
+RUN cd frontend && npm ci && npm run build
 COPY backend/requirements.txt backend/
 RUN python -m venv /opt/venv \
     && /opt/venv/bin/pip install --upgrade pip \
