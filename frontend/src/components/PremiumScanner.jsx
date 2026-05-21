@@ -553,7 +553,7 @@ function fmtLeapsTs(iso) {
 
 export default function PremiumScanner({ rows, onRowClick, allScanRows = [], excludedRows = [], onResearch, onAddToPositions, leapsRows = [], leapsScannedAt = null }) {
   const [dteSelected, setDteSelected] = useState(new Set()); // empty = ALL
-  const [typeFilter, setTypeFilter] = useState("ALL");
+  const [typeFilter, setTypeFilter] = useState(new Set()); // empty = ALL (CC+CSP)
   const [otmSelected, setOtmSelected] = useState(new Set()); // empty = ALL
   const [sortCol, setSortCol] = useState("premium");
   const [sortAsc, setSortAsc] = useState(false);
@@ -570,25 +570,12 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
 
   useEffect(() => { setVisibleCount(100); }, [dteSelected, typeFilter, otmSelected, earnBuckets, showAll, showLeaps]);
 
-  const toggleGrade = (v) => setGradeFilter(prev => prev.size === 1 && prev.has(v) ? new Set() : new Set([v]));
-  const toggleVrp = (v) => setVrpFilter(prev => prev.size === 1 && prev.has(v) ? new Set() : new Set([v]));
-  const toggleStrat = (v) => setStratFilter(prev => prev.size === 1 && prev.has(v) ? new Set() : new Set([v]));
-
-  const toggleDte = (label) => {
-    setDteSelected(prev => {
-      if (prev.size === 1 && prev.has(label)) return new Set(); // deselect → ALL
-      return new Set([label]); // exclusive: only one range active at a time
-    });
-  };
-
-  const toggleOtm = (level) => {
-    setOtmSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(level)) next.delete(level);
-      else next.add(level);
-      return next;
-    });
-  };
+  const toggleType  = (v) => setTypeFilter(prev => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n; });
+  const toggleDte   = (v) => setDteSelected(prev => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n; });
+  const toggleOtm   = (v) => setOtmSelected(prev => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n; });
+  const toggleGrade = (v) => setGradeFilter(prev => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n; });
+  const toggleVrp   = (v) => setVrpFilter(prev => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n; });
+  const toggleStrat = (v) => setStratFilter(prev => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n; });
 
   const handleSort = (key) => {
     if (key === "earnings") {
@@ -618,7 +605,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   // getCallData/getPutData handle all DTE filtering via expiry_data — no pre-filter needed.
   const items = [];
   for (const row of rqFiltered) {
-    if (typeFilter !== "CSP") {
+    if (typeFilter.size === 0 || typeFilter.has("CC")) {
       const callD = getCallData(row, dteSelected);
       if (callD) {
         if (otmSelected.size === 0 || otmSelected.has("ATM"))
@@ -630,7 +617,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
           items.push({ ...row, _d: oc, _type: "CC", _key: `${row.ticker}-CC-${oc.level}-${callD?.dte ?? row.best_dte}`, _otmLevel: oc.level });
       }
     }
-    if (typeFilter !== "CC") {
+    if (typeFilter.size === 0 || typeFilter.has("CSP")) {
       const putD = getPutData(row, dteSelected);
       if (putD) {
         if (otmSelected.size === 0 || otmSelected.has("ATM"))
@@ -647,7 +634,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   // Append LEAPS items when toggle is ON (bypass DTE filter — LEAPS are 180-365 DTE)
   if (showLeaps && leapsRows.length > 0) {
     for (const row of leapsRows) {
-      if (typeFilter !== "CSP") {
+      if (typeFilter.size === 0 || typeFilter.has("CC")) {
         const callD = getCallData(row, new Set());
         if (callD) {
           if (otmSelected.size === 0 || otmSelected.has("ATM"))
@@ -659,7 +646,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
             items.push({ ...row, _d: oc, _type: "CC", _key: `${row.ticker}-LEAPS-CC-${oc.level}-${callD?.dte ?? row.best_dte}`, _otmLevel: oc.level, _isLeaps: true });
         }
       }
-      if (typeFilter !== "CC") {
+      if (typeFilter.size === 0 || typeFilter.has("CSP")) {
         const putD = getPutData(row, new Set());
         if (putD) {
           if (otmSelected.size === 0 || otmSelected.has("ATM"))
@@ -696,9 +683,9 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
       if (otmSelected.size > 0)
         return { ticker: r.ticker, price: r.price, company_name: r.company_name,
                  _reason: `OTM filter (only ${[...otmSelected].join(", ")} OTM selected)` };
-      if (typeFilter !== "ALL")
+      if (typeFilter.size > 0)
         return { ticker: r.ticker, price: r.price, company_name: r.company_name,
-                 _reason: `Type filter (${typeFilter} only)` };
+                 _reason: `Type filter (${[...typeFilter].join(", ")} only)` };
       return { ticker: r.ticker, price: r.price, company_name: r.company_name,
                _reason: "Unknown internal filter" };
     });
@@ -782,11 +769,15 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
       {tableExpanded && (<>
       <div className="dte-filter-row" style={{position:'relative'}}>
         <span className="dte-filter-label">Type</span>
-        {["ALL", "CC", "CSP"].map(opt => (
+        <button
+          className={`dte-filter-btn type-filter-btn-all${typeFilter.size === 0 ? " active" : ""}`}
+          onClick={() => setTypeFilter(new Set())}
+        >ALL</button>
+        {["CC", "CSP"].map(opt => (
           <button
             key={opt}
-            className={`dte-filter-btn type-filter-btn-${opt.toLowerCase()}${typeFilter === opt ? " active" : ""}`}
-            onClick={() => setTypeFilter(opt)}
+            className={`dte-filter-btn type-filter-btn-${opt.toLowerCase()}${typeFilter.has(opt) ? " active" : ""}`}
+            onClick={() => toggleType(opt)}
           >{opt}</button>
         ))}
         <span style={{position:'absolute',left:640,display:'flex',alignItems:'center',gap:8}}>
