@@ -227,6 +227,31 @@ def init_db() -> None:
     # extension_ratio = price / ema_50 (how far price is above its EMA-50)
     _add_column_if_missing("ALTER TABLE scan_results ADD COLUMN extension_ratio FLOAT")
 
+    # Phase 4: Price history table — v17
+    # Daily OHLCV from yfinance backfill; used for technical analysis, backtesting
+    _add_column_if_missing(
+        "CREATE TABLE IF NOT EXISTS price_history ("
+        "id SERIAL PRIMARY KEY, "
+        "ticker VARCHAR(20) NOT NULL, "
+        "date DATE NOT NULL, "
+        "open DOUBLE PRECISION, "
+        "high DOUBLE PRECISION, "
+        "low DOUBLE PRECISION, "
+        "close DOUBLE PRECISION, "
+        "adj_close DOUBLE PRECISION, "
+        "volume BIGINT, "
+        "source VARCHAR(20) DEFAULT 'yfinance', "
+        "created_at TIMESTAMP DEFAULT NOW(), "
+        "UNIQUE(ticker, date)"
+        ")"
+    )
+    _add_column_if_missing(
+        "CREATE INDEX IF NOT EXISTS idx_price_history_ticker_date ON price_history(ticker, date)"
+    )
+    _add_column_if_missing(
+        "CREATE INDEX IF NOT EXISTS idx_price_history_date ON price_history(date)"
+    )
+
 
 def _add_column_if_missing(ddl: str) -> None:
     from sqlalchemy import text
