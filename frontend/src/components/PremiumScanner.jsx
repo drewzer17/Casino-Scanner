@@ -652,6 +652,15 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
     ? items
     : items.filter(i => i._isLeaps || earnBucketMatch(i.earnings_days, earnBuckets));
 
+  // DTE display filter: hide any item whose rendered DTE doesn't fall in the selected range.
+  // Runs after getCallData so it checks _d.dte — the actual number shown in the DTE column.
+  const dteFiltered = (dteSelected.size === 0)
+    ? earnFiltered
+    : earnFiltered.filter(i => {
+        if (i._isLeaps) return true; // LEAPS bypass DTE filter
+        return dteInAny(i._d?.dte, dteSelected);
+      });
+
   // ── Internal exclusions (rows that passed Dashboard but have no items) ──
   const passedTickerSet = new Set(items.map(i => i.ticker));
   const internalExcluded = baseRows
@@ -679,7 +688,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
 
   const allExcluded = [...(showAll ? [] : excludedRows), ...internalExcluded];
 
-  const sorted = [...earnFiltered].sort((a, b) => {
+  const sorted = [...dteFiltered].sort((a, b) => {
     if (sortCol === "earnings") {
       const an = a.earnings_days == null;
       const bn = b.earnings_days == null;
