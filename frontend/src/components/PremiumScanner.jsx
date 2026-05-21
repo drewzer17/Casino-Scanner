@@ -739,88 +739,82 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
       </div>
       {showExcl && <ExclusionTable allExcluded={allExcluded} />}
 
-      <div style={{display:'grid',gridTemplateColumns:'auto 1fr',rowGap:8,columnGap:32}}>
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <span style={{fontWeight:600,fontSize:13,minWidth:70}}>TYPE</span>
-          {["ALL", "CC", "CSP"].map(opt => (
-            <button
-              key={opt}
-              className={`dte-filter-btn type-filter-btn-${opt.toLowerCase()}${typeFilter === opt ? " active" : ""}`}
-              onClick={() => setTypeFilter(opt)}
-            >{opt}</button>
-          ))}
-        </div>
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
+      <div className="dte-filter-row" style={{position:'relative'}}>
+        <span className="dte-filter-label">Type</span>
+        {["ALL", "CC", "CSP"].map(opt => (
+          <button
+            key={opt}
+            className={`dte-filter-btn type-filter-btn-${opt.toLowerCase()}${typeFilter === opt ? " active" : ""}`}
+            onClick={() => setTypeFilter(opt)}
+          >{opt}</button>
+        ))}
+        <span style={{position:'absolute',left:520,display:'flex',alignItems:'center',gap:8}}>
           <span style={{fontWeight:600,fontSize:13}}>GRADE</span>
           {['A','B','C','F'].map(v => <button key={v} className={gradeFilter.has(v) ? 'filter-btn active' : 'filter-btn'} onClick={() => toggleGrade(v)}>{v}</button>)}
-        </div>
-
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <span style={{fontWeight:600,fontSize:13,minWidth:70}}>OTM</span>
-          {OTM_LEVELS.map(lvl => (
-            <button
-              key={lvl}
-              className={`dte-filter-btn${otmSelected.has(lvl) ? " active" : ""}`}
-              onClick={() => toggleOtm(lvl)}
-            >{lvl}</button>
-          ))}
+        </span>
+      </div>
+      <div className="dte-filter-row" style={{position:'relative'}}>
+        <span className="dte-filter-label">OTM</span>
+        {OTM_LEVELS.map(lvl => (
           <button
-            className={`dte-filter-btn${otmSelected.size === 0 ? " active" : ""}`}
-            onClick={() => setOtmSelected(new Set())}
-          >ALL</button>
-        </div>
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
+            key={lvl}
+            className={`dte-filter-btn${otmSelected.has(lvl) ? " active" : ""}`}
+            onClick={() => toggleOtm(lvl)}
+          >{lvl}</button>
+        ))}
+        <button
+          className={`dte-filter-btn${otmSelected.size === 0 ? " active" : ""}`}
+          onClick={() => setOtmSelected(new Set())}
+        >ALL</button>
+        <span style={{position:'absolute',left:520,display:'flex',alignItems:'center',gap:8}}>
           <span style={{fontWeight:600,fontSize:13}}>VRP</span>
           {['Rich','Moderate','Weak','Negative'].map(v => <button key={v} className={vrpFilter.has(v) ? 'filter-btn active' : 'filter-btn'} onClick={() => toggleVrp(v)}>{v}</button>)}
-        </div>
-
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <span style={{fontWeight:600,fontSize:13,minWidth:70}}>DTE</span>
-          {DTE_RANGES.map(r => (
-            <button
-              key={r.label}
-              className={`dte-filter-btn${dteSelected.has(r.label) ? " active" : ""}`}
-              onClick={() => toggleDte(r.label)}
-            >{r.label}</button>
-          ))}
+        </span>
+      </div>
+      <div className="dte-filter-row" style={{position:'relative'}}>
+        <span className="dte-filter-label">DTE</span>
+        {DTE_RANGES.map(r => (
           <button
-            className={`dte-filter-btn${dteSelected.size === 0 ? " active" : ""}`}
-            onClick={() => setDteSelected(new Set())}
-          >ALL</button>
-          <button
-            className={`leaps-toggle-btn${showLeaps ? " active" : ""}`}
-            onClick={() => setShowLeaps(v => !v)}
-            title="Show LEAPS (180–365 DTE) from the most recent LEAPS scan"
-          >LEAPS</button>
-          {showLeaps && (
-            <span className="leaps-scan-ts">Last: {fmtLeapsTs(leapsScannedAt)}</span>
-          )}
-          <span className="dte-filter-count">{sorted.length} rows · {uniqueTickers} tickers</span>
-        </div>
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
+            key={r.label}
+            className={`dte-filter-btn${dteSelected.has(r.label) ? " active" : ""}`}
+            onClick={() => toggleDte(r.label)}
+          >{r.label}</button>
+        ))}
+        <button
+          className={`dte-filter-btn${dteSelected.size === 0 ? " active" : ""}`}
+          onClick={() => setDteSelected(new Set())}
+        >ALL</button>
+        <button
+          className={`leaps-toggle-btn${showLeaps ? " active" : ""}`}
+          onClick={() => setShowLeaps(v => !v)}
+          title="Show LEAPS (180–365 DTE) from the most recent LEAPS scan"
+        >LEAPS</button>
+        {showLeaps && (
+          <span className="leaps-scan-ts">Last: {fmtLeapsTs(leapsScannedAt)}</span>
+        )}
+        <span className="dte-filter-count">{sorted.length} rows · {uniqueTickers} tickers</span>
+        <span style={{position:'absolute',left:520,display:'flex',alignItems:'center',gap:8}}>
           <span style={{fontWeight:600,fontSize:13}}>STRATEGY</span>
           {['Income Grind','Event Ramp','Technical Location'].map(v => <button key={v} className={stratFilter.has(v) ? 'filter-btn active' : 'filter-btn'} onClick={() => toggleStrat(v)}>{v}</button>)}
-        </div>
-
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <span style={{fontWeight:600,fontSize:13,minWidth:70}}>EARNINGS</span>
+        </span>
+      </div>
+      <div className="dte-filter-row" style={{position:'relative'}}>
+        <span className="dte-filter-label">EARNINGS</span>
+        <button
+          className={`dte-filter-btn${earnBuckets.size === 0 ? " active" : ""}`}
+          onClick={() => setEarnBuckets(new Set())}
+        >ALL</button>
+        {EARN_BUCKETS.map(b => (
           <button
-            className={`dte-filter-btn${earnBuckets.size === 0 ? " active" : ""}`}
-            onClick={() => setEarnBuckets(new Set())}
-          >ALL</button>
-          {EARN_BUCKETS.map(b => (
-            <button
-              key={b.key}
-              className={`dte-filter-btn${earnBuckets.has(b.key) ? " active" : ""}`}
-              onClick={() => setEarnBuckets(prev => {
-                const n = new Set(prev);
-                n.has(b.key) ? n.delete(b.key) : n.add(b.key);
-                return n;
-              })}
-            >{b.label}</button>
-          ))}
-        </div>
-        <div></div>
+            key={b.key}
+            className={`dte-filter-btn${earnBuckets.has(b.key) ? " active" : ""}`}
+            onClick={() => setEarnBuckets(prev => {
+              const n = new Set(prev);
+              n.has(b.key) ? n.delete(b.key) : n.add(b.key);
+              return n;
+            })}
+          >{b.label}</button>
+        ))}
       </div>
       <ScrollArrows>
         {sorted.length === 0 ? (
