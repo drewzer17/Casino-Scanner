@@ -61,8 +61,8 @@ function RqStrategyCell({ strategyType, secondaryEdge }) {
 
 const DTE_RANGES = [
   { label: "≤3",    min: 0,  max: 3  },
-  { label: "4-7",   min: 4,  max: 7  },
-  { label: "10-17", min: 10, max: 17 },
+  { label: "4-7",   min: 4,  max: 9  },
+  { label: "10-17", min: 10, max: 20 },
   { label: "21-30", min: 21, max: 30 },
   { label: "31-61", min: 31, max: 61 },
 ];
@@ -586,24 +586,24 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
       const callD = getCallData(row, dteSelected);
       if (callD) {
         if (otmSelected.size === 0 || otmSelected.has("ATM"))
-          items.push({ ...row, _d: callD, _type: "CC", _key: `${row.ticker}-CC-ATM`, _otmLevel: 0 });
+          items.push({ ...row, _d: callD, _type: "CC", _key: `${row.ticker}-CC-ATM-${callD.dte ?? row.best_dte}`, _otmLevel: 0 });
       }
       for (const oc of getOtmCallsFromExpiry(row, dteSelected)) {
         const key = otmLevelKey(oc.level);
         if (otmSelected.size === 0 || otmSelected.has(key))
-          items.push({ ...row, _d: oc, _type: "CC", _key: `${row.ticker}-CC-${oc.level}`, _otmLevel: oc.level });
+          items.push({ ...row, _d: oc, _type: "CC", _key: `${row.ticker}-CC-${oc.level}-${callD.dte ?? row.best_dte}`, _otmLevel: oc.level });
       }
     }
     if (typeFilter !== "CC") {
       const putD = getPutData(row, dteSelected);
       if (putD) {
         if (otmSelected.size === 0 || otmSelected.has("ATM"))
-          items.push({ ...row, _d: putD, _type: "CSP", _key: `${row.ticker}-CSP-ATM`, _otmLevel: 0 });
+          items.push({ ...row, _d: putD, _type: "CSP", _key: `${row.ticker}-CSP-ATM-${putD.dte ?? row.best_dte}`, _otmLevel: 0 });
       }
       for (const op of getOtmPutsFromExpiry(row, dteSelected)) {
         const key = otmLevelKey(op.level);
         if (otmSelected.size === 0 || otmSelected.has(key))
-          items.push({ ...row, _d: op, _type: "CSP", _key: `${row.ticker}-CSP-${op.level}`, _otmLevel: op.level });
+          items.push({ ...row, _d: op, _type: "CSP", _key: `${row.ticker}-CSP-${op.level}-${putD.dte ?? row.best_dte}`, _otmLevel: op.level });
       }
     }
   }
@@ -615,24 +615,24 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
         const callD = getCallData(row, new Set());
         if (callD) {
           if (otmSelected.size === 0 || otmSelected.has("ATM"))
-            items.push({ ...row, _d: callD, _type: "CC", _key: `${row.ticker}-LEAPS-CC-ATM`, _otmLevel: 0, _isLeaps: true });
+            items.push({ ...row, _d: callD, _type: "CC", _key: `${row.ticker}-LEAPS-CC-ATM-${callD.dte ?? row.best_dte}`, _otmLevel: 0, _isLeaps: true });
         }
         for (const oc of getOtmCallsFromExpiry(row, new Set())) {
           const key = otmLevelKey(oc.level);
           if (otmSelected.size === 0 || otmSelected.has(key))
-            items.push({ ...row, _d: oc, _type: "CC", _key: `${row.ticker}-LEAPS-CC-${oc.level}`, _otmLevel: oc.level, _isLeaps: true });
+            items.push({ ...row, _d: oc, _type: "CC", _key: `${row.ticker}-LEAPS-CC-${oc.level}-${callD.dte ?? row.best_dte}`, _otmLevel: oc.level, _isLeaps: true });
         }
       }
       if (typeFilter !== "CC") {
         const putD = getPutData(row, new Set());
         if (putD) {
           if (otmSelected.size === 0 || otmSelected.has("ATM"))
-            items.push({ ...row, _d: putD, _type: "CSP", _key: `${row.ticker}-LEAPS-CSP-ATM`, _otmLevel: 0, _isLeaps: true });
+            items.push({ ...row, _d: putD, _type: "CSP", _key: `${row.ticker}-LEAPS-CSP-ATM-${putD.dte ?? row.best_dte}`, _otmLevel: 0, _isLeaps: true });
         }
         for (const op of getOtmPutsFromExpiry(row, new Set())) {
           const key = otmLevelKey(op.level);
           if (otmSelected.size === 0 || otmSelected.has(key))
-            items.push({ ...row, _d: op, _type: "CSP", _key: `${row.ticker}-LEAPS-CSP-${op.level}`, _otmLevel: op.level, _isLeaps: true });
+            items.push({ ...row, _d: op, _type: "CSP", _key: `${row.ticker}-LEAPS-CSP-${op.level}-${putD.dte ?? row.best_dte}`, _otmLevel: op.level, _isLeaps: true });
         }
       }
     }
