@@ -739,18 +739,6 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
       </div>
       {showExcl && <ExclusionTable allExcluded={allExcluded} />}
 
-      <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-        <span style={{fontWeight:600,fontSize:13,minWidth:70}}>GRADE</span>
-        {['A','B','C','F'].map(v => <button key={v} className={gradeFilter.has(v) ? 'filter-btn active' : 'filter-btn'} onClick={() => toggleGrade(v)}>{v}</button>)}
-      </div>
-      <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-        <span style={{fontWeight:600,fontSize:13,minWidth:70}}>VRP</span>
-        {['Rich','Moderate','Weak','Negative'].map(v => <button key={v} className={vrpFilter.has(v) ? 'filter-btn active' : 'filter-btn'} onClick={() => toggleVrp(v)}>{v}</button>)}
-      </div>
-      <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-        <span style={{fontWeight:600,fontSize:13,minWidth:70}}>STRATEGY</span>
-        {['Income Grind','Event Ramp','Technical Location'].map(v => <button key={v} className={stratFilter.has(v) ? 'filter-btn active' : 'filter-btn'} onClick={() => toggleStrat(v)}>{v}</button>)}
-      </div>
       <div className="dte-filter-row">
         <span className="dte-filter-label">Type</span>
         {["ALL", "CC", "CSP"].map(opt => (
@@ -814,6 +802,24 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
               return n;
             })}
           >{b.label}</button>
+        ))}
+      </div>
+      <div className="dte-filter-row">
+        <span className="dte-filter-label">GRADE</span>
+        {['A','B','C','F'].map(v => (
+          <button key={v} className={`dte-filter-btn${gradeFilter.has(v) ? " active" : ""}`} onClick={() => toggleGrade(v)}>{v}</button>
+        ))}
+      </div>
+      <div className="dte-filter-row">
+        <span className="dte-filter-label">VRP</span>
+        {['Rich','Moderate','Weak','Negative'].map(v => (
+          <button key={v} className={`dte-filter-btn${vrpFilter.has(v) ? " active" : ""}`} onClick={() => toggleVrp(v)}>{v}</button>
+        ))}
+      </div>
+      <div className="dte-filter-row">
+        <span className="dte-filter-label">STRATEGY</span>
+        {['Income Grind','Event Ramp','Technical Location'].map(v => (
+          <button key={v} className={`dte-filter-btn${stratFilter.has(v) ? " active" : ""}`} onClick={() => toggleStrat(v)}>{v}</button>
         ))}
       </div>
       <ScrollArrows>
