@@ -1,6 +1,9 @@
 """
 seed_user.py — Create or update a Casino Scanner user.
 
+Uses psycopg2 directly to avoid importing models.py (which uses
+Python 3.10+ X | None union syntax incompatible with local Python 3.9).
+
 Usage:
     cd backend && python -m app.scripts.seed_user <username> <password>
 
@@ -12,6 +15,7 @@ Safe to re-run: updates the password if the user already exists.
 """
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -19,40 +23,54 @@ _BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
 if str(_BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(_BACKEND_DIR))
 
-from sqlalchemy import create_engine, select
-from sqlalchemy.orm import sessionmaker
+import bcrypt
+import psycopg2
 
-from app.config import settings
-from app.database import Base
-from app.models import User
+DATABASE_URL = os.environ.get(
+    "DATABASE_URL",
+    "postgresql://postgres:uIcMzUUNlqmhekvgoKBcQxRIQOoajQyu@nozomi.proxy.rlwy.net:46336/railway",
+)
+
+
+def _ensure_users_table(conn) -> None:
+    with conn.cursor() as cur:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id            SERIAL PRIMARY KEY,
+                username      VARCHAR(80) UNIQUE NOT NULL,
+                password_hash VARCHAR(128) NOT NULL
+            )
+        """)
+    conn.commit()
 
 
 def seed_user(username: str, password: str) -> None:
-    engine = create_engine(settings.database_url, pool_pre_ping=True)
+    username = username.strip().lower()
+    hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
-    # Ensure the users table exists
-    Base.metadata.create_all(bind=engine, tables=[User.__table__])
-
-    Session = sessionmaker(bind=engine)
-    db = Session()
+    conn = psycopg2.connect(DATABASE_URL)
     try:
-        username = username.strip().lower()
-        existing = db.execute(
-            select(User).where(User.username == username)
-        ).scalar_one_or_none()
-
-        if existing:
-            existing.set_password(password)
-            db.commit()
-            print(f"Updated password for user '{username}'.")
-        else:
-            user = User(username=username)
-            user.set_password(password)
-            db.add(user)
-            db.commit()
-            print(f"Created user '{username}' (id={user.id}).")
+        _ensure_users_table(conn)
+        with conn.cursor() as cur:
+            cur.execute("SELECT id FROM users WHERE username = %s", (username,))
+            row = cur.fetchone()
+            if row:
+                cur.execute(
+                    "UPDATE users SET password_hash = %s WHERE username = %s",
+                    (hashed, username),
+                )
+                conn.commit()
+                print(f"Updated password for user '{username}'.")
+            else:
+                cur.execute(
+                    "INSERT INTO users (username, password_hash) VALUES (%s, %s) RETURNING id",
+                    (username, hashed),
+                )
+                user_id = cur.fetchone()[0]
+                conn.commit()
+                print(f"Created user '{username}' (id={user_id}).")
     finally:
-        db.close()
+        conn.close()
 
 
 if __name__ == "__main__":
