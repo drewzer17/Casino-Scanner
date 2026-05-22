@@ -2,7 +2,7 @@
 replay.py — Phase 4 backtesting layer.
 
 Runs a full single-date replay across the entire ticker universe:
-  reconstruct_factors → score_historical → measure_outcome (all windows)
+  reconstruct_factors → score_historical + score_path_safety → measure_outcome (all windows)
   → bulk-insert into backtest_runs + backtest_results.
 
 Usage:
@@ -16,6 +16,7 @@ import os
 import sys
 from datetime import date, datetime
 from pathlib import Path
+from typing import Optional
 
 _BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
 if str(_BACKEND_DIR) not in sys.path:
@@ -29,6 +30,7 @@ from sqlalchemy.orm import sessionmaker
 from app.backtest.factor_reconstruction import reconstruct_factors
 from app.backtest.historical_scorer import score_historical
 from app.backtest.outcome_measurement import measure_outcome
+from app.backtest.path_safety_scorer import score_path_safety
 
 logging.basicConfig(
     level=logging.INFO,
@@ -42,9 +44,43 @@ DATABASE_URL = os.environ.get(
     "postgresql://postgres:uIcMzUUNlqmhekvgoKBcQxRIQOoajQyu@nozomi.proxy.rlwy.net:46336/railway",
 )
 
-DEFAULT_HOLD_DAYS  = [5, 10, 15, 21]
+DEFAULT_HOLD_DAYS   = [5, 10, 15, 21]
 DEFAULT_STRIKE_PCTS = [0.0, 0.01, 0.02, 0.03]
 PROGRESS_EVERY = 100
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VIX helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _get_vix(test_date: date, db_session) -> tuple:
+    """
+    Return (vix_close, vix_regime) for test_date.
+    Looks up to 5 trading days back to handle non-trading days.
+    """
+    row = db_session.execute(
+        text(
+            "SELECT close FROM price_history "
+            "WHERE ticker = '^VIX' AND date <= :d AND close IS NOT NULL "
+            "ORDER BY date DESC LIMIT 1"
+        ),
+        {"d": test_date},
+    ).fetchone()
+
+    if row is None:
+        return None, "Unknown"
+
+    vix = float(row[0])
+    if vix < 15:
+        regime = "Low"
+    elif vix < 20:
+        regime = "Normal"
+    elif vix < 30:
+        regime = "Elevated"
+    else:
+        regime = "High"
+
+    return round(vix, 2), regime
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -54,8 +90,8 @@ PROGRESS_EVERY = 100
 def single_date_replay(
     test_date: date,
     db_session,
-    hold_days: list[int]   = DEFAULT_HOLD_DAYS,
-    strike_pcts: list[float] = DEFAULT_STRIKE_PCTS,
+    hold_days: list  = DEFAULT_HOLD_DAYS,
+    strike_pcts: list = DEFAULT_STRIKE_PCTS,
 ) -> int:
     """
     Run a full replay for one test_date across the entire ticker universe.
@@ -65,6 +101,10 @@ def single_date_replay(
     t_start = datetime.now()
     logger.info("Replay start — test_date=%s  hold_days=%s  strike_pcts=%s",
                 test_date, hold_days, strike_pcts)
+
+    # ── Load VIX for this date ────────────────────────────────────────────────
+    vix_on_entry, vix_regime = _get_vix(test_date, db_session)
+    logger.info("VIX on %s: %.2f (%s)", test_date, vix_on_entry or 0, vix_regime)
 
     # ── Load universe ─────────────────────────────────────────────────────────
     rows = db_session.execute(
@@ -76,9 +116,9 @@ def single_date_replay(
 
     # ── Counters ──────────────────────────────────────────────────────────────
     grade_counts = {"A": 0, "B": 0, "C": 0, "F": 0}
-    graded = 0
+    graded  = 0
     skipped = 0
-    result_rows: list[tuple] = []
+    result_rows: list = []
 
     for i, ticker in enumerate(tickers, 1):
         # ── Reconstruct factors ───────────────────────────────────────────────
@@ -93,8 +133,10 @@ def single_date_replay(
             skipped += 1
             continue
 
-        # ── Score ─────────────────────────────────────────────────────────────
-        scored = score_historical(factors)
+        # ── Score (legacy + path safety) ──────────────────────────────────────
+        scored    = score_historical(factors)
+        ps_scored = score_path_safety(factors)
+
         grade = scored["grade"]
         grade_counts[grade] = grade_counts.get(grade, 0) + 1
         graded += 1
@@ -113,7 +155,7 @@ def single_date_replay(
                     logger.warning("measure_outcome failed %s hd=%d sp=%.2f: %s", ticker, hd, sp, exc)
                     continue
 
-                result_rows.append(_to_tuple(scored, outcome))
+                result_rows.append(_to_tuple(scored, ps_scored, outcome, vix_on_entry, vix_regime))
 
         if i % PROGRESS_EVERY == 0:
             elapsed = (datetime.now() - t_start).total_seconds()
@@ -146,9 +188,11 @@ def single_date_replay(
 # Private helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _to_tuple(scored: dict, outcome: dict) -> tuple:
-    """Flatten scored + outcome into a flat tuple for bulk insert (no run_id yet)."""
+def _to_tuple(scored: dict, ps_scored: dict, outcome: dict,
+              vix_on_entry: Optional[float], vix_regime: Optional[str]) -> tuple:
+    """Flatten scored + ps_scored + outcome + VIX into a flat tuple (no run_id yet)."""
     return (
+        # identity / legacy grade
         scored["ticker"],
         scored["test_date"],
         scored.get("grade"),
@@ -161,6 +205,7 @@ def _to_tuple(scored: dict, outcome: dict) -> tuple:
         scored.get("available_factors"),
         json.dumps(scored.get("missing_factors", [])),
         json.dumps(scored.get("fail_reasons", [])),
+        # outcome — CSP
         outcome.get("strike"),
         outcome.get("strike_pct"),
         outcome.get("hold_days"),
@@ -173,16 +218,51 @@ def _to_tuple(scored: dict, outcome: dict) -> tuple:
         outcome.get("final_close"),
         outcome.get("final_distance_pct"),
         outcome.get("complete"),
+        # rv20 / current_iv
         scored.get("rv20"),
         scored.get("current_iv"),
+        # path safety
+        ps_scored.get("path_safety_grade"),
+        ps_scored.get("path_safety_version"),
+        ps_scored.get("threshold_profile"),
+        ps_scored.get("extension_gate"),
+        ps_scored.get("rv20_gate"),
+        ps_scored.get("modifier_score"),
+        ps_scored.get("path_pain_flag"),
+        ps_scored.get("gate_ceiling"),
+        # outcome — CC
+        outcome.get("upside_touched"),
+        outcome.get("upside_breached"),
+        outcome.get("time_to_upside_touch"),
+        outcome.get("time_to_upside_breach"),
+        outcome.get("upside_overshoot_pct"),
+        outcome.get("stock_return_pct"),
+        # outcome — directional
+        outcome.get("max_up_move_pct"),
+        outcome.get("max_down_move_pct"),
+        outcome.get("hit_5up"),
+        outcome.get("hit_8up"),
+        outcome.get("hit_10up"),
+        outcome.get("hit_5down"),
+        outcome.get("hit_8down"),
+        outcome.get("hit_10down"),
+        outcome.get("time_to_5up"),
+        outcome.get("time_to_8up"),
+        outcome.get("time_to_10up"),
+        outcome.get("time_to_5down"),
+        outcome.get("time_to_8down"),
+        outcome.get("time_to_10down"),
+        # VIX regime
+        vix_on_entry,
+        vix_regime,
     )
 
 
 def _insert_run(
     db_session,
     test_date: date,
-    hold_days: list[int],
-    strike_pcts: list[float],
+    hold_days: list,
+    strike_pcts: list,
     total: int,
     graded: int,
     grade_counts: dict,
@@ -217,9 +297,8 @@ def _insert_run(
     return run_id
 
 
-def _bulk_insert_results(rows: list[tuple], run_id: int) -> None:
+def _bulk_insert_results(rows: list, run_id: int) -> None:
     """Prepend run_id and bulk-insert via psycopg2 execute_values."""
-    # Prepend run_id to every row
     tagged = [(run_id,) + r for r in rows]
 
     raw = psycopg2.connect(DATABASE_URL)
@@ -235,7 +314,17 @@ def _bulk_insert_results(rows: list[tuple], run_id: int) -> None:
                     strike, strike_pct, hold_days,
                     touched, breached, time_to_touch, time_to_breach,
                     mae_pct, mfe_pct, final_close, final_distance_pct, complete,
-                    rv20, current_iv
+                    rv20, current_iv,
+                    path_safety_grade, path_safety_version, threshold_profile,
+                    extension_gate, rv20_gate, modifier_score, path_pain_flag, gate_ceiling,
+                    upside_touched, upside_breached, time_to_upside_touch, time_to_upside_breach,
+                    upside_overshoot_pct, stock_return_pct,
+                    max_up_move_pct, max_down_move_pct,
+                    hit_5up, hit_8up, hit_10up,
+                    hit_5down, hit_8down, hit_10down,
+                    time_to_5up, time_to_8up, time_to_10up,
+                    time_to_5down, time_to_8down, time_to_10down,
+                    vix_on_entry, vix_regime
                 ) VALUES %s
                 """,
                 tagged,
@@ -247,8 +336,9 @@ def _bulk_insert_results(rows: list[tuple], run_id: int) -> None:
 
 
 def _ensure_backtest_tables(engine) -> None:
-    """Create backtest tables + indexes if they don't exist (idempotent)."""
+    """Create backtest tables + indexes if they don't exist; add new columns idempotently."""
     ddls = [
+        # ── Core tables ───────────────────────────────────────────────────────
         """CREATE TABLE IF NOT EXISTS backtest_runs (
             id SERIAL PRIMARY KEY,
             test_date DATE NOT NULL,
@@ -295,6 +385,43 @@ def _ensure_backtest_tables(engine) -> None:
         "CREATE INDEX IF NOT EXISTS idx_backtest_results_run    ON backtest_results(run_id)",
         "CREATE INDEX IF NOT EXISTS idx_backtest_results_grade  ON backtest_results(grade)",
         "CREATE INDEX IF NOT EXISTS idx_backtest_results_ticker ON backtest_results(ticker, test_date)",
+        # ── rv20 / current_iv (added in v2) ───────────────────────────────────
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS rv20 DOUBLE PRECISION",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS current_iv DOUBLE PRECISION",
+        # ── Path Safety columns (v3) ──────────────────────────────────────────
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS path_safety_grade VARCHAR(2)",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS path_safety_version VARCHAR(30)",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS threshold_profile VARCHAR(30)",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS extension_gate VARCHAR(20)",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS rv20_gate VARCHAR(20)",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS modifier_score DOUBLE PRECISION",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS path_pain_flag BOOLEAN",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS gate_ceiling VARCHAR(2)",
+        # ── CC outcome columns (v3) ───────────────────────────────────────────
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS upside_touched BOOLEAN",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS upside_breached BOOLEAN",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS time_to_upside_touch INTEGER",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS time_to_upside_breach INTEGER",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS upside_overshoot_pct DOUBLE PRECISION",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS stock_return_pct DOUBLE PRECISION",
+        # ── Directional columns (v3) ──────────────────────────────────────────
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS max_up_move_pct DOUBLE PRECISION",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS max_down_move_pct DOUBLE PRECISION",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS hit_5up BOOLEAN",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS hit_8up BOOLEAN",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS hit_10up BOOLEAN",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS hit_5down BOOLEAN",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS hit_8down BOOLEAN",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS hit_10down BOOLEAN",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS time_to_5up INTEGER",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS time_to_8up INTEGER",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS time_to_10up INTEGER",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS time_to_5down INTEGER",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS time_to_8down INTEGER",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS time_to_10down INTEGER",
+        # ── VIX regime columns (v3) ───────────────────────────────────────────
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS vix_on_entry DOUBLE PRECISION",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS vix_regime VARCHAR(20)",
     ]
     with engine.begin() as conn:
         for ddl in ddls:
@@ -348,8 +475,8 @@ if __name__ == "__main__":
         ).scalar()
         print(f"  Result rows:     {result_count:,}")
 
-        # Touch/breach rates by grade for 21-day ATM
-        print(f"\n  Touch/Breach rates (21d ATM CSP, strike_pct=0.0):")
+        # Legacy grade touch/breach rates
+        print(f"\n  Legacy grade — Touch/Breach rates (21d ATM CSP, strike_pct=0.0):")
         rates = session.execute(text("""
             SELECT grade,
                    COUNT(*) as n,
@@ -363,6 +490,22 @@ if __name__ == "__main__":
         print(f"  {'Grade':>5}  {'N':>5}  {'Touch%':>7}  {'Breach%':>8}  {'AvgMAE':>8}")
         for r in rates:
             print(f"  {r[0]:>5}  {r[1]:>5}  {str(r[2]):>7}  {str(r[3]):>8}  {str(r[4]):>8}")
+
+        # Path Safety grade assignment rates
+        print(f"\n  Path Safety grade — Assigned% (21d 2% OTM CSP):")
+        ps_rates = session.execute(text("""
+            SELECT path_safety_grade,
+                   COUNT(*) as n,
+                   ROUND(100.0 * SUM(CASE WHEN final_distance_pct < 0 THEN 1 ELSE 0 END) / COUNT(*), 1) as assigned_pct,
+                   ROUND(AVG(mae_pct)::numeric, 2) as avg_mae
+            FROM backtest_results
+            WHERE run_id = :rid AND hold_days = 21 AND strike_pct = 0.02
+              AND path_safety_grade IS NOT NULL
+            GROUP BY path_safety_grade ORDER BY path_safety_grade
+        """), {"rid": run_id}).fetchall()
+        print(f"  {'PS Grade':>8}  {'N':>5}  {'Assigned%':>10}  {'AvgMAE':>8}")
+        for r in ps_rates:
+            print(f"  {r[0]:>8}  {r[1]:>5}  {str(r[2]):>10}  {str(r[3]):>8}")
 
         print(f"\nDone.\n")
     finally:
