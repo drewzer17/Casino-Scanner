@@ -146,22 +146,24 @@ def _compute_iv_rank(
         return None, None
 
     # iv_history stores IV as a decimal fraction (e.g. 0.229 = 22.9%).
-    # Convert to percentage so it's in the same units as rv20 and the live scanner.
-    current_iv = float(rows[0][0]) * 100.0
+    # Keep raw decimal for the rank ratio (unit-agnostic), then convert to
+    # percentage for current_iv so VRP math works in consistent units.
+    current_iv_raw = float(rows[0][0])
 
     if len(rows) < 60:
-        return current_iv, None
+        return current_iv_raw * 100.0, None
 
-    window = [float(r[0]) for r in rows[1:]]  # prior 252 rows
+    window = [float(r[0]) for r in rows[1:]]  # prior 252 rows — all raw decimal
     min_252 = min(window)
     max_252 = max(window)
 
     if max_252 == min_252:
         iv_rank = 50.0
     else:
-        iv_rank = (current_iv - min_252) / (max_252 - min_252) * 100.0
+        iv_rank = (current_iv_raw - min_252) / (max_252 - min_252) * 100.0
 
-    return current_iv, round(iv_rank, 2)
+    # Return current_iv in percentage units (matches rv20 and live scanner)
+    return round(current_iv_raw * 100.0, 4), round(iv_rank, 2)
 
 
 def _compute_rv20(
