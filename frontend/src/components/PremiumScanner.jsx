@@ -457,10 +457,11 @@ function ExclusionTable({ allExcluded }) {
 
 // ── Component ─────────────────────────────────────────────────────
 
-export default function PremiumScanner({ rows, onRowClick, allScanRows = [], excludedRows = [], onResearch }) {
+export default function PremiumScanner({ rows, onRowClick, allScanRows = [], excludedRows = [], onResearch, isSearching = false }) {
   const [dteSelected, setDteSelected] = useState(new Set()); // empty = ALL
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [otmSelected, setOtmSelected] = useState(new Set()); // empty = ALL
+  const effectiveDte = isSearching ? new Set() : dteSelected;
   const [sortCol, setSortCol] = useState("premium");
   const [sortAsc, setSortAsc] = useState(false);
   const [showExcl, setShowExcl] = useState(false);
@@ -507,24 +508,24 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const items = [];
   for (const row of baseRows) {
     if (typeFilter !== "CSP") {
-      const callD = getCallData(row, dteSelected);
+      const callD = getCallData(row, effectiveDte);
       if (callD) {
         if (otmSelected.size === 0 || otmSelected.has("ATM"))
           items.push({ ...row, _d: callD, _type: "CC", _key: `${row.ticker}-CC-ATM-${callD?.dte ?? row.best_dte}`, _otmLevel: 0 });
       }
-      for (const oc of getOtmCallsFromExpiry(row, dteSelected)) {
+      for (const oc of getOtmCallsFromExpiry(row, effectiveDte)) {
         const key = otmLevelKey(oc.level);
         if (otmSelected.size === 0 || otmSelected.has(key))
           items.push({ ...row, _d: oc, _type: "CC", _key: `${row.ticker}-CC-${oc.level}-${oc.dte ?? row.best_dte}`, _otmLevel: oc.level });
       }
     }
     if (typeFilter !== "CC") {
-      const putD = getPutData(row, dteSelected);
+      const putD = getPutData(row, effectiveDte);
       if (putD) {
         if (otmSelected.size === 0 || otmSelected.has("ATM"))
           items.push({ ...row, _d: putD, _type: "CSP", _key: `${row.ticker}-CSP-ATM-${putD?.dte ?? row.best_put_dte}`, _otmLevel: 0 });
       }
-      for (const op of getOtmPutsFromExpiry(row, dteSelected)) {
+      for (const op of getOtmPutsFromExpiry(row, effectiveDte)) {
         const key = otmLevelKey(op.level);
         if (otmSelected.size === 0 || otmSelected.has(key))
           items.push({ ...row, _d: op, _type: "CSP", _key: `${row.ticker}-CSP-${op.level}-${op.dte ?? row.best_put_dte}`, _otmLevel: op.level });
@@ -546,9 +547,9 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
       if (!callAny && !putAny)
         return { ticker: r.ticker, price: r.price, company_name: r.company_name,
                  _reason: "No premium data (options chain not fetched or null)" };
-      const callInDte = getCallData(r, dteSelected);
-      const putInDte  = getPutData(r, dteSelected);
-      if (!callInDte && !putInDte && dteSelected.size > 0)
+      const callInDte = getCallData(r, effectiveDte);
+      const putInDte  = getPutData(r, effectiveDte);
+      if (!callInDte && !putInDte && effectiveDte.size > 0)
         return { ticker: r.ticker, price: r.price, company_name: r.company_name,
                  _reason: `DTE filter (${[...dteSelected].join(", ")} — no expiry fits)` };
       if (otmSelected.size > 0)

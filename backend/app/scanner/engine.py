@@ -1542,11 +1542,8 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
 # ── Main scan orchestrator ────────────────────────────────────────────────────
 
 def scan_ticker_extensive(ticker: str, price: float | None = None, earn_days: int | None = None) -> ScanRowResult | None:
-    """Extensive scan: runs normal scan_ticker then also fetches nearest weekly expiry.
-
-    Weekly = earliest available expiry that is NOT the one already used by the base scan.
-    Both entries are stored in expiry_data JSON so the Premium Scanner DTE filter can use them.
-    """
+    """Extensive scan: runs normal scan_ticker then fetches chains
+    for all available expiries within 75 DTE (capped at 6)."""
     result = scan_ticker(ticker, price, earn_days)
     if result is None:
         return None
@@ -1555,81 +1552,75 @@ def scan_ticker_extensive(ticker: str, price: float | None = None, earn_days: in
         exps = fetch_expirations(ticker)
         today = date.today()
 
-        # Find weekly = earliest expiry that differs from the one used by the base scan
-        used_expiry = result.best_expiry
-        weekly_exp: str | None = None
+        # Collect all expiries with DTE 1-75, cap at 6
+        eligible = []
         for exp in exps:
             try:
                 d = datetime.strptime(exp, "%Y-%m-%d").date()
             except ValueError:
                 continue
-            if (d - today).days < 1:
-                continue
-            if exp != used_expiry:
-                weekly_exp = exp
-                break
+            dte = (d - today).days
+            if 1 <= dte <= 75:
+                eligible.append((exp, dte))
+        eligible.sort(key=lambda x: x[1])
+        eligible = eligible[:6]
 
         expiry_rows: list[dict] = []
+        shortest_atm_call = None  # for IV term structure
 
-        if weekly_exp:
+        for exp_str, exp_dte in eligible:
             try:
-                w_dte = (datetime.strptime(weekly_exp, "%Y-%m-%d").date() - today).days
-                w_chain = fetch_chain(ticker, weekly_exp)
-                w_price = result.price or 100.0
-                w_atm, _, _ = _pick_call_strikes(w_chain, w_price)
-                w_atm_prem = _contract_mid(w_atm)
-                w_atm_strike = round(float(w_atm["strike"]), 2) if w_atm else None
-                # Term structure: capture front-month ATM IV from this (shorter) expiry
-                if w_atm:
-                    w_greeks = w_atm.get("greeks") or {}
-                    w_iv_raw = (w_greeks.get("smv_vol") or w_greeks.get("mid_iv")
-                                or w_greeks.get("iv"))
-                    if _is_valid(w_iv_raw):
-                        result.iv_front_month = round(float(w_iv_raw), 4)
-                w_puts = sorted(
-                    [o for o in w_chain if o.get("option_type") == "put" and _is_valid(o.get("strike")) and _is_sane_contract(o, w_price)],
-                    key=lambda o: float(o["strike"]),
-                )
-                w_atm_put_mid: float | None = None
-                if w_puts and w_atm_strike:
-                    pi = min(range(len(w_puts)), key=lambda i: abs(float(w_puts[i]["strike"]) - w_atm_strike))
-                    w_atm_put_mid = _contract_mid(w_puts[pi])
-                expiry_rows.append({
-                    "expiry": weekly_exp,
-                    "dte": w_dte,
-                    "atm_strike": w_atm_strike,
-                    "atm_call_prem": round(w_atm_prem, 4) if w_atm_prem else None,
-                    "atm_put_prem": round(w_atm_put_mid, 4) if w_atm_put_mid else None,
-                    "calls": _collect_otm_calls(w_chain, w_price),
-                    "puts": _collect_otm_puts(w_chain, w_price),
-                })
-            except Exception as exc:
-                logger.debug("%s: weekly chain fetch failed (%s): %s", ticker, weekly_exp, exc)
+                chain = fetch_chain(ticker, exp_str)
+                p = result.price or 100.0
+                atm_c, _, _ = _pick_call_strikes(chain, p)
+                atm_prem = _contract_mid(atm_c)
+                atm_strike = round(float(atm_c["strike"]), 2) if atm_c else None
 
-        # Term structure: back-month IV = the base scan's iv (from the 21-45d IV expiry)
-        # front-month is set above from the weekly chain; back-month is the longer expiry IV.
+                # ATM put — find put nearest to atm_strike
+                atm_put_mid = None
+                if atm_strike:
+                    puts = sorted(
+                        [o for o in chain
+                         if o.get("option_type") == "put"
+                         and _is_valid(o.get("strike"))
+                         and _is_sane_contract(o, p)],
+                        key=lambda o: float(o["strike"]),
+                    )
+                    if puts:
+                        pi = min(range(len(puts)),
+                                 key=lambda i: abs(float(puts[i]["strike"]) - atm_strike))
+                        atm_put_mid = _contract_mid(puts[pi])
+
+                expiry_rows.append({
+                    "expiry": exp_str,
+                    "dte": exp_dte,
+                    "atm_strike": atm_strike,
+                    "atm_call_prem": round(atm_prem, 4) if atm_prem else None,
+                    "atm_put_prem": round(atm_put_mid, 4) if atm_put_mid else None,
+                    "calls": _collect_otm_calls(chain, p),
+                    "puts": _collect_otm_puts(chain, p),
+                })
+
+                # Track shortest expiry's ATM call for term structure
+                if shortest_atm_call is None and atm_c:
+                    shortest_atm_call = atm_c
+
+            except Exception as exc:
+                logger.debug("%s: chain fetch failed (%s): %s", ticker, exp_str, exc)
+                continue
+
+        # IV term structure: front-month from shortest expiry
+        if shortest_atm_call is not None:
+            greeks = shortest_atm_call.get("greeks") or {}
+            iv_raw = greeks.get("smv_vol") or greeks.get("mid_iv") or greeks.get("iv")
+            if _is_valid(iv_raw):
+                result.iv_front_month = round(float(iv_raw), 4)
         if result.iv_front_month is not None and result.iv is not None:
             result.iv_back_month = result.iv
             result.term_structure = round(result.iv - result.iv_front_month, 4)
 
-        # Add the base (monthly) expiry entry so both are queryable in Premium Scanner
-        if result.best_expiry:
-            try:
-                base_chain = fetch_chain(ticker, result.best_expiry)
-                base_price = result.price or 100.0
-                base_calls = _collect_otm_calls(base_chain, base_price)
-                base_puts  = _collect_otm_puts(base_chain, base_price)
-            except Exception:
-                base_calls, base_puts = [], []
-            expiry_rows.append({
-                "expiry": result.best_expiry,
-                "dte": result.best_dte,
-                "atm_strike": result.best_strike,
-                "atm_call_prem": round(result.atm_call_premium, 4) if result.atm_call_premium else None,
-                "atm_put_prem": None,
-                "calls": base_calls,
-                "puts": base_puts,
-            })
+        # Sort by DTE ascending before storing
+        expiry_rows.sort(key=lambda e: e["dte"])
 
         if expiry_rows:
             result.expiry_data = json.dumps(expiry_rows)

@@ -1048,7 +1048,8 @@ export default function Dashboard() {
 
       {view === "premium" ? (
         <PremiumScanner rows={viewRows} onRowClick={setSelectedRow}
-          allScanRows={allRows} excludedRows={excludedRows} onResearch={setPanelTicker} />
+          allScanRows={allRows} excludedRows={excludedRows} onResearch={setPanelTicker}
+          isSearching={isSearching} />
       ) : view === "range" ? (
         <RangeScanner rows={viewRows} onRowClick={setSelectedRow} onResearch={setPanelTicker} />
       ) : view === "ivramp" ? (
