@@ -35,6 +35,7 @@ class Settings:
     tradier_api_key: str
     finnhub_api_key: str
     orats_api_key: str
+    secret_key: str
 
 
 def load_settings() -> Settings:
@@ -54,6 +55,7 @@ def load_settings() -> Settings:
     tradier_api_key = _clean(os.environ.get("TRADIER_API_KEY"))
     finnhub_api_key = _clean(os.environ.get("FINNHUB_API_KEY"))
     orats_api_key = _clean(os.environ.get("ORATS_API_KEY"))
+    secret_key = _clean(os.environ.get("SECRET_KEY")) or "dev-secret-change-in-production"
 
     return Settings(
         database_url=database_url,
@@ -64,6 +66,7 @@ def load_settings() -> Settings:
         tradier_api_key=tradier_api_key,
         finnhub_api_key=finnhub_api_key,
         orats_api_key=orats_api_key,
+        secret_key=secret_key,
     )
 
 

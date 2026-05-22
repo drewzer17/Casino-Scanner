@@ -1,6 +1,7 @@
 """Database models."""
 from __future__ import annotations
 
+import bcrypt
 from datetime import date, datetime
 
 from sqlalchemy import Boolean, Date, DateTime, Float, Index, Integer, String, Text, UniqueConstraint
@@ -202,3 +203,21 @@ class UserPosition(Base):
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class User(Base):
+    """Application user — used for session-based authentication."""
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    username: Mapped[str] = mapped_column(String(80), unique=True, nullable=False, index=True)
+    password_hash: Mapped[str] = mapped_column(String(128), nullable=False)
+
+    def set_password(self, password: str) -> None:
+        """Hash and store password using bcrypt."""
+        hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+        self.password_hash = hashed.decode("utf-8")
+
+    def check_password(self, password: str) -> bool:
+        """Verify a plaintext password against the stored bcrypt hash."""
+        return bcrypt.checkpw(password.encode("utf-8"), self.password_hash.encode("utf-8"))

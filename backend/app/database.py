@@ -312,6 +312,15 @@ def init_db() -> None:
         "CREATE INDEX IF NOT EXISTS idx_backtest_results_ticker ON backtest_results(ticker, test_date)"
     )
 
+    # Auth — v19
+    _add_column_if_missing(
+        "CREATE TABLE IF NOT EXISTS users ("
+        "id SERIAL PRIMARY KEY, "
+        "username VARCHAR(80) UNIQUE NOT NULL, "
+        "password_hash VARCHAR(128) NOT NULL"
+        ")"
+    )
+
 
 def _add_column_if_missing(ddl: str) -> None:
     from sqlalchemy import text

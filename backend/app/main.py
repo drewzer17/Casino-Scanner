@@ -11,12 +11,15 @@ import json
 import logging
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
 
 from .api import router as api_router
+from .auth import require_login_page
+from .auth_routes import auth_router
 from .config import settings
 from .database import init_db
 from .scheduler import start_scheduler, stop_scheduler
@@ -36,6 +39,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.secret_key,
+    session_cookie="cs_session",
+    https_only=settings.environment == "production",
+    same_site="lax",
+)
+
+# ── Auth routes (login/logout — public, registered before API router) ─────────
+app.include_router(auth_router)
 
 # ── API routes (registered before static mounts so /api/* is never swallowed) ──
 app.include_router(api_router)
@@ -83,7 +96,10 @@ _TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
 
 @app.get("/ai-overview", include_in_schema=False, response_model=None)
-async def serve_ai_overview() -> FileResponse | dict:
+async def serve_ai_overview(request: Request) -> FileResponse | dict:
+    redirect = require_login_page(request)
+    if redirect:
+        return redirect
     html = _TEMPLATES_DIR / "ai_overview.html"
     if html.exists():
         return FileResponse(
@@ -104,7 +120,10 @@ _AI_UNIVERSE_PATH = _REPO_ROOT / "backend" / "data" / "ai_buildout_universe.json
 
 
 @app.get("/ai-overview/{ticker}", include_in_schema=False, response_model=None)
-async def serve_ai_sitrep(ticker: str) -> FileResponse:
+async def serve_ai_sitrep(ticker: str, request: Request) -> FileResponse:
+    redirect = require_login_page(request)
+    if redirect:
+        return redirect
     ticker = ticker.upper()
 
     # Load universe to validate the ticker is known
@@ -149,7 +168,10 @@ async def serve_ai_sitrep(ticker: str) -> FileResponse:
 # index.html must never be cached — it references hashed asset filenames that
 # change on every deploy, so browsers must always fetch a fresh copy.
 @app.get("/{full_path:path}", include_in_schema=False, response_model=None)
-async def serve_spa(full_path: str) -> FileResponse | dict:
+async def serve_spa(full_path: str, request: Request) -> FileResponse | dict:
+    redirect = require_login_page(request)
+    if redirect:
+        return redirect
     index = DIST / "index.html"
     if index.exists():
         return FileResponse(

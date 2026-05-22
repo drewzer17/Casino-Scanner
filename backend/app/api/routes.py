@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from ..auth import require_login
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
@@ -111,7 +112,7 @@ def _compute_deltas(
         ))
     return deltas
 
-router = APIRouter(prefix="/api", tags=["scanner"])
+router = APIRouter(prefix="/api", tags=["scanner"], dependencies=[Depends(require_login)])
 
 
 def _san(val: float | None) -> float | None:
