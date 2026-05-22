@@ -1555,32 +1555,30 @@ def scan_ticker_extensive(ticker: str, price: float | None = None, earn_days: in
         exps = fetch_expirations(ticker)
         today = date.today()
 
-        # Find weekly = earliest expiry that differs from the one used by the base scan
-        used_expiry = result.best_expiry
-        weekly_exp: str | None = None
+        # Collect first 4 expiries within 60 DTE
+        candidate_exps: list[tuple[str, int]] = []
         for exp in exps:
             try:
                 d = datetime.strptime(exp, "%Y-%m-%d").date()
             except ValueError:
                 continue
-            if (d - today).days < 1:
-                continue
-            if exp != used_expiry:
-                weekly_exp = exp
+            dte = (d - today).days
+            if 1 <= dte <= 60:
+                candidate_exps.append((exp, dte))
+            if len(candidate_exps) == 4:
                 break
 
         expiry_rows: list[dict] = []
 
-        if weekly_exp:
+        for weekly_exp, w_dte in candidate_exps:
             try:
-                w_dte = (datetime.strptime(weekly_exp, "%Y-%m-%d").date() - today).days
                 w_chain = fetch_chain(ticker, weekly_exp)
                 w_price = result.price or 100.0
                 w_atm, _, _ = _pick_call_strikes(w_chain, w_price)
                 w_atm_prem = _contract_mid(w_atm)
                 w_atm_strike = round(float(w_atm["strike"]), 2) if w_atm else None
-                # Term structure: capture front-month ATM IV from this (shorter) expiry
-                if w_atm:
+                # Term structure: capture front-month ATM IV from shortest expiry only
+                if w_atm and result.iv_front_month is None:
                     w_greeks = w_atm.get("greeks") or {}
                     w_iv_raw = (w_greeks.get("smv_vol") or w_greeks.get("mid_iv")
                                 or w_greeks.get("iv"))
@@ -1612,8 +1610,9 @@ def scan_ticker_extensive(ticker: str, price: float | None = None, earn_days: in
             result.iv_back_month = result.iv
             result.term_structure = round(result.iv - result.iv_front_month, 4)
 
-        # Add the base (monthly) expiry entry so both are queryable in Premium Scanner
-        if result.best_expiry:
+        # Add the base (monthly) expiry entry if not already fetched above
+        fetched_exps = {e for e, _ in candidate_exps}
+        if result.best_expiry and result.best_expiry not in fetched_exps:
             try:
                 base_chain = fetch_chain(ticker, result.best_expiry)
                 base_price = result.price or 100.0
