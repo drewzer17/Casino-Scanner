@@ -173,6 +173,8 @@ def _to_tuple(scored: dict, outcome: dict) -> tuple:
         outcome.get("final_close"),
         outcome.get("final_distance_pct"),
         outcome.get("complete"),
+        scored.get("rv20"),
+        scored.get("current_iv"),
     )
 
 
@@ -232,7 +234,8 @@ def _bulk_insert_results(rows: list[tuple], run_id: int) -> None:
                     available_factors, missing_factors, fail_reasons,
                     strike, strike_pct, hold_days,
                     touched, breached, time_to_touch, time_to_breach,
-                    mae_pct, mfe_pct, final_close, final_distance_pct, complete
+                    mae_pct, mfe_pct, final_close, final_distance_pct, complete,
+                    rv20, current_iv
                 ) VALUES %s
                 """,
                 tagged,
