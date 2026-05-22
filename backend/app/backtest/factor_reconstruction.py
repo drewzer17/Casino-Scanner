@@ -145,7 +145,9 @@ def _compute_iv_rank(
     if not rows:
         return None, None
 
-    current_iv = float(rows[0][0])
+    # iv_history stores IV as a decimal fraction (e.g. 0.229 = 22.9%).
+    # Convert to percentage so it's in the same units as rv20 and the live scanner.
+    current_iv = float(rows[0][0]) * 100.0
 
     if len(rows) < 60:
         return current_iv, None
