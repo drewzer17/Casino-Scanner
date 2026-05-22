@@ -252,6 +252,66 @@ def init_db() -> None:
         "CREATE INDEX IF NOT EXISTS idx_price_history_date ON price_history(date)"
     )
 
+    # Phase 4: Backtest tables — v18
+    # backtest_runs: one row per replay run (date + parameters)
+    # backtest_results: one row per ticker × hold_days × strike_pct
+    _add_column_if_missing(
+        "CREATE TABLE IF NOT EXISTS backtest_runs ("
+        "id SERIAL PRIMARY KEY, "
+        "test_date DATE NOT NULL, "
+        "hold_days INTEGER[] NOT NULL, "
+        "strike_pcts DOUBLE PRECISION[] NOT NULL, "
+        "total_tickers INTEGER, "
+        "graded_tickers INTEGER, "
+        "grade_a INTEGER, "
+        "grade_b INTEGER, "
+        "grade_c INTEGER, "
+        "grade_f INTEGER, "
+        "factors_available TEXT DEFAULT 'partial_v1', "
+        "parameters JSONB, "
+        "created_at TIMESTAMP DEFAULT NOW()"
+        ")"
+    )
+    _add_column_if_missing(
+        "CREATE TABLE IF NOT EXISTS backtest_results ("
+        "id SERIAL PRIMARY KEY, "
+        "run_id INTEGER REFERENCES backtest_runs(id), "
+        "ticker VARCHAR(20) NOT NULL, "
+        "test_date DATE NOT NULL, "
+        "grade VARCHAR(1), "
+        "vrp_state VARCHAR(20), "
+        "iv_rank DOUBLE PRECISION, "
+        "vrp_spread DOUBLE PRECISION, "
+        "extension_ratio DOUBLE PRECISION, "
+        "distribution_days INTEGER, "
+        "trend VARCHAR(10), "
+        "available_factors INTEGER, "
+        "missing_factors JSONB, "
+        "fail_reasons JSONB, "
+        "strike DOUBLE PRECISION, "
+        "strike_pct DOUBLE PRECISION, "
+        "hold_days INTEGER, "
+        "touched BOOLEAN, "
+        "breached BOOLEAN, "
+        "time_to_touch INTEGER, "
+        "time_to_breach INTEGER, "
+        "mae_pct DOUBLE PRECISION, "
+        "mfe_pct DOUBLE PRECISION, "
+        "final_close DOUBLE PRECISION, "
+        "final_distance_pct DOUBLE PRECISION, "
+        "complete BOOLEAN"
+        ")"
+    )
+    _add_column_if_missing(
+        "CREATE INDEX IF NOT EXISTS idx_backtest_results_run ON backtest_results(run_id)"
+    )
+    _add_column_if_missing(
+        "CREATE INDEX IF NOT EXISTS idx_backtest_results_grade ON backtest_results(grade)"
+    )
+    _add_column_if_missing(
+        "CREATE INDEX IF NOT EXISTS idx_backtest_results_ticker ON backtest_results(ticker, test_date)"
+    )
+
 
 def _add_column_if_missing(ddl: str) -> None:
     from sqlalchemy import text
