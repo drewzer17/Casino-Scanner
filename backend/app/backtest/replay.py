@@ -14,7 +14,7 @@ import json
 import logging
 import os
 import sys
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -142,6 +142,39 @@ def _get_spy_regime(test_date: date, db_session) -> dict:
     }
 
 
+def _check_earnings(ticker: str, test_date: date, hold_days: int, db_session) -> dict:
+    """
+    Check whether an earnings event falls within the holding window.
+
+    end_date = test_date + hold_days * 2 calendar days
+    (trading days × 2 ≈ calendar days, conservative upper bound).
+
+    Returns:
+        earnings_in_window  bool
+        days_to_earnings    int | None  (calendar days from test_date to first earnings)
+    """
+    end_date = test_date + timedelta(days=hold_days * 2)
+
+    rows = db_session.execute(
+        text(
+            "SELECT earnings_date FROM earnings_history "
+            "WHERE ticker = :ticker "
+            "  AND earnings_date > :start "
+            "  AND earnings_date <= :end "
+            "ORDER BY earnings_date ASC "
+            "LIMIT 1"
+        ),
+        {"ticker": ticker, "start": test_date, "end": end_date},
+    ).fetchall()
+
+    if rows:
+        first_date = rows[0][0]
+        days_to = (first_date - test_date).days
+        return {"earnings_in_window": True, "days_to_earnings": days_to}
+
+    return {"earnings_in_window": False, "days_to_earnings": None}
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Public API
 # ─────────────────────────────────────────────────────────────────────────────
@@ -225,6 +258,9 @@ def single_date_replay(
 
         # ── Measure outcomes — all hold_days × strike_pcts ───────────────────
         for hd in hold_days:
+            # Earnings check is per hold_days window (5d vs 21d window may differ)
+            earnings = _check_earnings(ticker, test_date, hd, db_session)
+
             for sp in strike_pcts:
                 try:
                     outcome = measure_outcome(ticker, test_date, entry_close, hd, sp, db_session)
@@ -233,7 +269,8 @@ def single_date_replay(
                     continue
 
                 result_rows.append(
-                    _to_tuple(scored, ps_scored, outcome, vix_on_entry, vix_regime, spy_regime, None)
+                    _to_tuple(scored, ps_scored, outcome, vix_on_entry, vix_regime,
+                              spy_regime, earnings, None)
                 )
 
         if i % PROGRESS_EVERY == 0:
@@ -284,6 +321,7 @@ def _to_tuple(
     vix_on_entry: Optional[float],
     vix_regime: Optional[str],
     spy_regime: dict,
+    earnings: dict,
     market_breadth_50: Optional[float],
 ) -> tuple:
     """Flatten scored + ps_scored + outcome + market context into a flat tuple (no run_id yet)."""
@@ -355,6 +393,9 @@ def _to_tuple(
         spy_regime.get("spy_above_ema50"),
         spy_regime.get("spy_above_ema200"),
         spy_regime.get("spy_20d_return"),
+        # earnings window
+        earnings.get("earnings_in_window"),
+        earnings.get("days_to_earnings"),
         # market breadth (backfilled after loop)
         market_breadth_50,
     )
@@ -428,6 +469,7 @@ def _bulk_insert_results(rows: list, run_id: int) -> None:
                     time_to_5down, time_to_8down, time_to_10down,
                     vix_on_entry, vix_regime,
                     spy_above_ema50, spy_above_ema200, spy_20d_return,
+                    earnings_in_window, days_to_earnings,
                     market_breadth_50
                 ) VALUES %s
                 """,
@@ -532,6 +574,9 @@ def _ensure_backtest_tables(engine) -> None:
         "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS spy_above_ema200 BOOLEAN",
         "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS spy_20d_return DOUBLE PRECISION",
         "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS market_breadth_50 DOUBLE PRECISION",
+        # ── Earnings window columns (v5) ──────────────────────────────────────
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS earnings_in_window BOOLEAN",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS days_to_earnings INTEGER",
     ]
     with engine.begin() as conn:
         for ddl in ddls:
