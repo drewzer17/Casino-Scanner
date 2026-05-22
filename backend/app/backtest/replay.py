@@ -50,13 +50,13 @@ PROGRESS_EVERY = 100
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# VIX helpers
+# Market context helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _get_vix(test_date: date, db_session) -> tuple:
     """
     Return (vix_close, vix_regime) for test_date.
-    Looks up to 5 trading days back to handle non-trading days.
+    Looks back up to 5 trading days to handle non-trading days.
     """
     row = db_session.execute(
         text(
@@ -83,6 +83,65 @@ def _get_vix(test_date: date, db_session) -> tuple:
     return round(vix, 2), regime
 
 
+def _ema(closes: list, period: int) -> Optional[float]:
+    """Exponential moving average over a list of closes (oldest first)."""
+    if len(closes) < period:
+        return None
+    k = 2.0 / (period + 1)
+    val = closes[0]
+    for c in closes[1:]:
+        val = c * k + val * (1.0 - k)
+    return val
+
+
+def _get_spy_regime(test_date: date, db_session) -> dict:
+    """
+    Return SPY regime fields for test_date.
+
+    Queries up to 260 closes on or before test_date to compute EMA50/EMA200
+    and derive the 20-day return.
+
+    Returns:
+        spy_above_ema50   bool | None
+        spy_above_ema200  bool | None
+        spy_20d_return    float | None  (percentage)
+    """
+    rows = db_session.execute(
+        text(
+            "SELECT close FROM price_history "
+            "WHERE ticker = 'SPY' AND date <= :d AND close IS NOT NULL "
+            "ORDER BY date DESC LIMIT 260"
+        ),
+        {"d": test_date},
+    ).fetchall()
+
+    if not rows:
+        return {"spy_above_ema50": None, "spy_above_ema200": None, "spy_20d_return": None}
+
+    # rows are newest-first; reverse for EMA computation (oldest first)
+    closes = [float(r[0]) for r in rows]
+    current_close = closes[0]
+    closes_asc = list(reversed(closes))
+
+    ema50  = _ema(closes_asc, 50)
+    ema200 = _ema(closes_asc, 200)
+
+    spy_above_ema50:  Optional[bool] = (current_close > ema50)  if ema50  is not None else None
+    spy_above_ema200: Optional[bool] = (current_close > ema200) if ema200 is not None else None
+
+    spy_20d_return: Optional[float] = None
+    if len(closes) > 20:
+        close_20d_ago = closes[20]   # index 20 = 20 rows back in newest-first list
+        if close_20d_ago and close_20d_ago != 0:
+            spy_20d_return = round((current_close - close_20d_ago) / close_20d_ago * 100.0, 4)
+
+    return {
+        "spy_above_ema50":  spy_above_ema50,
+        "spy_above_ema200": spy_above_ema200,
+        "spy_20d_return":   spy_20d_return,
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Public API
 # ─────────────────────────────────────────────────────────────────────────────
@@ -106,6 +165,16 @@ def single_date_replay(
     vix_on_entry, vix_regime = _get_vix(test_date, db_session)
     logger.info("VIX on %s: %.2f (%s)", test_date, vix_on_entry or 0, vix_regime)
 
+    # ── SPY regime ────────────────────────────────────────────────────────────
+    spy_regime = _get_spy_regime(test_date, db_session)
+    logger.info(
+        "SPY on %s: above_ema50=%s  above_ema200=%s  20d_return=%.2f%%",
+        test_date,
+        spy_regime["spy_above_ema50"],
+        spy_regime["spy_above_ema200"],
+        spy_regime["spy_20d_return"] or 0.0,
+    )
+
     # ── Load universe ─────────────────────────────────────────────────────────
     rows = db_session.execute(
         text("SELECT DISTINCT ticker FROM ticker_universe WHERE active = TRUE ORDER BY ticker")
@@ -116,9 +185,11 @@ def single_date_replay(
 
     # ── Counters ──────────────────────────────────────────────────────────────
     grade_counts = {"A": 0, "B": 0, "C": 0, "F": 0}
-    graded  = 0
-    skipped = 0
+    graded       = 0
+    skipped      = 0
     result_rows: list = []
+    breadth_bullish = 0   # tickers with trend == 'bullish' (EMA20 > EMA50 proxy)
+    breadth_total   = 0
 
     for i, ticker in enumerate(tickers, 1):
         # ── Reconstruct factors ───────────────────────────────────────────────
@@ -141,6 +212,12 @@ def single_date_replay(
         grade_counts[grade] = grade_counts.get(grade, 0) + 1
         graded += 1
 
+        # Track market breadth (EMA20 > EMA50 proxy = trend 'bullish')
+        if factors.get("trend") is not None:
+            breadth_total += 1
+            if factors["trend"] == "bullish":
+                breadth_bullish += 1
+
         entry_close = factors.get("current_close")
         if entry_close is None:
             skipped += 1
@@ -155,12 +232,24 @@ def single_date_replay(
                     logger.warning("measure_outcome failed %s hd=%d sp=%.2f: %s", ticker, hd, sp, exc)
                     continue
 
-                result_rows.append(_to_tuple(scored, ps_scored, outcome, vix_on_entry, vix_regime))
+                result_rows.append(
+                    _to_tuple(scored, ps_scored, outcome, vix_on_entry, vix_regime, spy_regime, None)
+                )
 
         if i % PROGRESS_EVERY == 0:
             elapsed = (datetime.now() - t_start).total_seconds()
             logger.info("[%d/%d] graded=%d skipped=%d  grades=%s  %.0fs elapsed",
                         i, total, graded, skipped, grade_counts, elapsed)
+
+    # ── Compute market breadth ────────────────────────────────────────────────
+    market_breadth_50: Optional[float] = None
+    if breadth_total > 0:
+        market_breadth_50 = round(breadth_bullish / breadth_total * 100.0, 2)
+    logger.info("Market breadth (%%above EMA50 proxy): %.1f%%  (%d/%d bullish)",
+                market_breadth_50 or 0.0, breadth_bullish, breadth_total)
+
+    # Backfill market_breadth_50 into all result rows (computed after the loop)
+    result_rows = [r[:-1] + (market_breadth_50,) for r in result_rows]
 
     # ── Insert backtest_runs row ───────────────────────────────────────────────
     run_id = _insert_run(
@@ -188,9 +277,16 @@ def single_date_replay(
 # Private helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _to_tuple(scored: dict, ps_scored: dict, outcome: dict,
-              vix_on_entry: Optional[float], vix_regime: Optional[str]) -> tuple:
-    """Flatten scored + ps_scored + outcome + VIX into a flat tuple (no run_id yet)."""
+def _to_tuple(
+    scored: dict,
+    ps_scored: dict,
+    outcome: dict,
+    vix_on_entry: Optional[float],
+    vix_regime: Optional[str],
+    spy_regime: dict,
+    market_breadth_50: Optional[float],
+) -> tuple:
+    """Flatten scored + ps_scored + outcome + market context into a flat tuple (no run_id yet)."""
     return (
         # identity / legacy grade
         scored["ticker"],
@@ -255,6 +351,12 @@ def _to_tuple(scored: dict, ps_scored: dict, outcome: dict,
         # VIX regime
         vix_on_entry,
         vix_regime,
+        # SPY regime
+        spy_regime.get("spy_above_ema50"),
+        spy_regime.get("spy_above_ema200"),
+        spy_regime.get("spy_20d_return"),
+        # market breadth (backfilled after loop)
+        market_breadth_50,
     )
 
 
@@ -324,7 +426,9 @@ def _bulk_insert_results(rows: list, run_id: int) -> None:
                     hit_5down, hit_8down, hit_10down,
                     time_to_5up, time_to_8up, time_to_10up,
                     time_to_5down, time_to_8down, time_to_10down,
-                    vix_on_entry, vix_regime
+                    vix_on_entry, vix_regime,
+                    spy_above_ema50, spy_above_ema200, spy_20d_return,
+                    market_breadth_50
                 ) VALUES %s
                 """,
                 tagged,
@@ -422,6 +526,12 @@ def _ensure_backtest_tables(engine) -> None:
         # ── VIX regime columns (v3) ───────────────────────────────────────────
         "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS vix_on_entry DOUBLE PRECISION",
         "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS vix_regime VARCHAR(20)",
+        # ── SPY regime + market breadth columns (v4) ──────────────────────────
+        "ALTER TABLE backtest_runs ADD COLUMN IF NOT EXISTS market_context TEXT",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS spy_above_ema50 BOOLEAN",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS spy_above_ema200 BOOLEAN",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS spy_20d_return DOUBLE PRECISION",
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS market_breadth_50 DOUBLE PRECISION",
     ]
     with engine.begin() as conn:
         for ddl in ddls:
