@@ -243,6 +243,61 @@ def _bulk_insert_results(rows: list[tuple], run_id: int) -> None:
         raw.close()
 
 
+def _ensure_backtest_tables(engine) -> None:
+    """Create backtest tables + indexes if they don't exist (idempotent)."""
+    ddls = [
+        """CREATE TABLE IF NOT EXISTS backtest_runs (
+            id SERIAL PRIMARY KEY,
+            test_date DATE NOT NULL,
+            hold_days INTEGER[] NOT NULL,
+            strike_pcts DOUBLE PRECISION[] NOT NULL,
+            total_tickers INTEGER,
+            graded_tickers INTEGER,
+            grade_a INTEGER,
+            grade_b INTEGER,
+            grade_c INTEGER,
+            grade_f INTEGER,
+            factors_available TEXT DEFAULT 'partial_v1',
+            parameters JSONB,
+            created_at TIMESTAMP DEFAULT NOW()
+        )""",
+        """CREATE TABLE IF NOT EXISTS backtest_results (
+            id SERIAL PRIMARY KEY,
+            run_id INTEGER REFERENCES backtest_runs(id),
+            ticker VARCHAR(20) NOT NULL,
+            test_date DATE NOT NULL,
+            grade VARCHAR(1),
+            vrp_state VARCHAR(20),
+            iv_rank DOUBLE PRECISION,
+            vrp_spread DOUBLE PRECISION,
+            extension_ratio DOUBLE PRECISION,
+            distribution_days INTEGER,
+            trend VARCHAR(10),
+            available_factors INTEGER,
+            missing_factors JSONB,
+            fail_reasons JSONB,
+            strike DOUBLE PRECISION,
+            strike_pct DOUBLE PRECISION,
+            hold_days INTEGER,
+            touched BOOLEAN,
+            breached BOOLEAN,
+            time_to_touch INTEGER,
+            time_to_breach INTEGER,
+            mae_pct DOUBLE PRECISION,
+            mfe_pct DOUBLE PRECISION,
+            final_close DOUBLE PRECISION,
+            final_distance_pct DOUBLE PRECISION,
+            complete BOOLEAN
+        )""",
+        "CREATE INDEX IF NOT EXISTS idx_backtest_results_run    ON backtest_results(run_id)",
+        "CREATE INDEX IF NOT EXISTS idx_backtest_results_grade  ON backtest_results(grade)",
+        "CREATE INDEX IF NOT EXISTS idx_backtest_results_ticker ON backtest_results(ticker, test_date)",
+    ]
+    with engine.begin() as conn:
+        for ddl in ddls:
+            conn.execute(text(ddl))
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # CLI runner
 # ─────────────────────────────────────────────────────────────────────────────
@@ -257,9 +312,9 @@ if __name__ == "__main__":
 
     engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
-    # Run init_db to ensure backtest tables exist
-    from app.database import init_db
-    init_db()
+    # Ensure backtest tables exist without importing models (avoids Python 3.9
+    # incompatibility with `X | None` union syntax in models.py)
+    _ensure_backtest_tables(engine)
 
     Session = sessionmaker(bind=engine)
     session = Session()
