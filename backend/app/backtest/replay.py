@@ -210,9 +210,10 @@ def single_date_replay(
 
     # ── Load universe ─────────────────────────────────────────────────────────
     rows = db_session.execute(
-        text("SELECT DISTINCT ticker FROM ticker_universe WHERE active = TRUE ORDER BY ticker")
+        text("SELECT ticker, sector FROM ticker_universe WHERE active = TRUE ORDER BY ticker")
     ).fetchall()
     tickers = [r[0] for r in rows]
+    ticker_sectors: dict = {r[0]: r[1] for r in rows}   # ticker → sector (may be None)
     total = len(tickers)
     logger.info("Universe: %d active tickers", total)
 
@@ -225,6 +226,8 @@ def single_date_replay(
     breadth_total   = 0
 
     for i, ticker in enumerate(tickers, 1):
+        sector = ticker_sectors.get(ticker)   # None for ETFs / not-yet-backfilled
+
         # ── Reconstruct factors ───────────────────────────────────────────────
         try:
             factors = reconstruct_factors(ticker, test_date, db_session)
@@ -270,7 +273,7 @@ def single_date_replay(
 
                 result_rows.append(
                     _to_tuple(scored, ps_scored, outcome, vix_on_entry, vix_regime,
-                              spy_regime, earnings, None)
+                              spy_regime, earnings, None, sector)
                 )
 
         if i % PROGRESS_EVERY == 0:
@@ -323,6 +326,7 @@ def _to_tuple(
     spy_regime: dict,
     earnings: dict,
     market_breadth_50: Optional[float],
+    sector: Optional[str] = None,
 ) -> tuple:
     """Flatten scored + ps_scored + outcome + market context into a flat tuple (no run_id yet)."""
     return (
@@ -396,7 +400,9 @@ def _to_tuple(
         # earnings window
         earnings.get("earnings_in_window"),
         earnings.get("days_to_earnings"),
-        # market breadth (backfilled after loop)
+        # sector classification
+        sector,
+        # market breadth (backfilled after loop — MUST be last)
         market_breadth_50,
     )
 
@@ -470,6 +476,7 @@ def _bulk_insert_results(rows: list, run_id: int) -> None:
                     vix_on_entry, vix_regime,
                     spy_above_ema50, spy_above_ema200, spy_20d_return,
                     earnings_in_window, days_to_earnings,
+                    sector,
                     market_breadth_50
                 ) VALUES %s
                 """,
@@ -577,6 +584,8 @@ def _ensure_backtest_tables(engine) -> None:
         # ── Earnings window columns (v5) ──────────────────────────────────────
         "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS earnings_in_window BOOLEAN",
         "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS days_to_earnings INTEGER",
+        # ── Sector classification (v6) ────────────────────────────────────────
+        "ALTER TABLE backtest_results ADD COLUMN IF NOT EXISTS sector VARCHAR(50)",
     ]
     with engine.begin() as conn:
         for ddl in ddls:
