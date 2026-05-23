@@ -717,14 +717,15 @@ def _is_sane_contract(contract: dict, price: float) -> bool:
     return True
 
 
-def _find_25delta_iv(options: list[dict], option_type: str) -> float | None:
-    """Return IV (smv_vol) of the option contract closest to 25-delta.
+def _find_delta_iv(options: list[dict], option_type: str, target_delta: float = 0.25) -> float | None:
+    """Return IV (smv_vol) of the option contract closest to the specified delta.
 
-    Target delta: +0.25 for calls, -0.25 for puts.
+    target_delta: absolute delta value (e.g. 0.25 or 0.30).
+    Sign convention: positive for calls, negative for puts (applied internally).
     Requires greeks.delta to be present in the contract — returns None for
     illiquid names where Tradier doesn't populate greeks.
     """
-    target = 0.25 if option_type == "call" else -0.25
+    target = target_delta if option_type == "call" else -target_delta
     best_diff: float | None = None
     best_iv: float | None = None
 
@@ -1022,6 +1023,9 @@ class ScanRowResult:
     iv_25d_put: float | None = None
     iv_25d_call: float | None = None
     put_skew: float | None = None
+    iv_30d_put: float | None = None
+    iv_30d_call: float | None = None
+    put_skew_30d: float | None = None
     iv_front_month: float | None = None
     iv_back_month: float | None = None
     term_structure: float | None = None
@@ -1170,18 +1174,25 @@ def scan_ticker(
             except Exception as exc:
                 logger.debug("%s: IV chain fetch failed (%s): %s", ticker, iv_exp, exc)
 
-        # 25-delta IV extraction from IV-expiry chain (Phase 1 Risk Quality)
+        # 25-delta and 30-delta IV extraction from IV-expiry chain (Phase 1 Risk Quality)
         iv_25d_call: float | None = None
         iv_25d_put: float | None = None
         put_skew: float | None = None
+        iv_30d_call: float | None = None
+        iv_30d_put: float | None = None
+        put_skew_30d: float | None = None
         if iv_exp and iv_exp in chain_cache:
             try:
-                iv_25d_call = _find_25delta_iv(chain_cache[iv_exp], "call")
-                iv_25d_put  = _find_25delta_iv(chain_cache[iv_exp], "put")
+                iv_25d_call = _find_delta_iv(chain_cache[iv_exp], "call", 0.25)
+                iv_25d_put  = _find_delta_iv(chain_cache[iv_exp], "put",  0.25)
                 if iv_25d_put is not None and iv_25d_call is not None:
                     put_skew = round(iv_25d_put - iv_25d_call, 4)
+                iv_30d_call = _find_delta_iv(chain_cache[iv_exp], "call", 0.30)
+                iv_30d_put  = _find_delta_iv(chain_cache[iv_exp], "put",  0.30)
+                if iv_30d_put is not None and iv_30d_call is not None:
+                    put_skew_30d = round(iv_30d_put - iv_30d_call, 4)
             except Exception as exc:
-                logger.debug("%s: 25-delta IV extraction failed: %s", ticker, exc)
+                logger.debug("%s: delta IV extraction failed: %s", ticker, exc)
 
         # IV rank (shared across all expiries for this ticker)
         iv_rank = _iv_rank_from_history(closes, atm_iv)
@@ -1417,6 +1428,9 @@ def scan_ticker(
                 iv_25d_put=round(iv_25d_put, 4) if iv_25d_put is not None else None,
                 iv_25d_call=round(iv_25d_call, 4) if iv_25d_call is not None else None,
                 put_skew=put_skew,
+                iv_30d_put=round(iv_30d_put, 4) if iv_30d_put is not None else None,
+                iv_30d_call=round(iv_30d_call, 4) if iv_30d_call is not None else None,
+                put_skew_30d=put_skew_30d,
                 # Phase 2 pre-computed inputs (not persisted directly)
                 range_score=range_score,
                 recent_bars=recent_bars_for_rv,
@@ -1639,6 +1653,9 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
         iv_25d_put=result.iv_25d_put,
         iv_25d_call=result.iv_25d_call,
         put_skew=result.put_skew,
+        iv_30d_put=result.iv_30d_put,
+        iv_30d_call=result.iv_30d_call,
+        put_skew_30d=result.put_skew_30d,
         iv_front_month=result.iv_front_month,
         iv_back_month=result.iv_back_month,
         term_structure=result.term_structure,
@@ -1976,6 +1993,7 @@ def run_scan(
                             "iv_front_month": result.iv_front_month,
                             "iv_back_month": result.iv_back_month,
                             "put_skew": result.put_skew,
+                            "put_skew_30d": result.put_skew_30d,
                             "support_1": result.support_1,
                             "support_2": result.support_2,
                             "resistance_1": result.resistance_1,

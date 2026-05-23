@@ -133,6 +133,13 @@ def init_db() -> None:
         "ALTER TABLE scan_results ADD COLUMN put_skew FLOAT",
     ]:
         _add_column_if_missing(_ddl)
+    # 30-delta IV + skew — v20
+    for _ddl in [
+        "ALTER TABLE scan_results ADD COLUMN iv_30d_put FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN iv_30d_call FLOAT",
+        "ALTER TABLE scan_results ADD COLUMN put_skew_30d FLOAT",
+    ]:
+        _add_column_if_missing(_ddl)
     # Term structure (front vs back month ATM IV)
     for _ddl in [
         "ALTER TABLE scan_results ADD COLUMN iv_front_month FLOAT",
