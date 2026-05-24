@@ -50,7 +50,7 @@ TICKER_TIMEOUT = 60   # seconds — multi-expiry fetches need more time
 
 _sma_sr_debug_count = 0  # log SMA/SR values for first 3 tickers to verify calculation
 
-TRADIER_BASE = "https://sandbox.tradier.com"
+TRADIER_BASE = "https://api.tradier.com"
 
 
 # ── Tradier HTTP client ───────────────────────────────────────────────────────
