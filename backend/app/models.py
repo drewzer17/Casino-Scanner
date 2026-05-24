@@ -112,6 +112,9 @@ class ScanResult(Base):
     iv_25d_put: Mapped[float | None] = mapped_column(Float, nullable=True)   # IV at 25-delta put
     iv_25d_call: Mapped[float | None] = mapped_column(Float, nullable=True)  # IV at 25-delta call
     put_skew: Mapped[float | None] = mapped_column(Float, nullable=True)     # iv_25d_put - iv_25d_call
+    iv_30d_put: Mapped[float | None] = mapped_column(Float, nullable=True)   # IV at 30-delta put
+    iv_30d_call: Mapped[float | None] = mapped_column(Float, nullable=True)  # IV at 30-delta call
+    put_skew_30d: Mapped[float | None] = mapped_column(Float, nullable=True) # iv_30d_put - iv_30d_call
     iv_front_month: Mapped[float | None] = mapped_column(Float, nullable=True)  # ATM IV, nearest expiry
     iv_back_month: Mapped[float | None] = mapped_column(Float, nullable=True)   # ATM IV, second expiry
     term_structure: Mapped[float | None] = mapped_column(Float, nullable=True)  # iv_back - iv_front (+= contango)

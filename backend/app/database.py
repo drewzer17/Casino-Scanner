@@ -328,6 +328,15 @@ def init_db() -> None:
         ")"
     )
 
+    # Clean up ghost scans left by app restarts / deploys
+    from sqlalchemy import text as _text
+    with engine.connect() as _conn:
+        _conn.execute(_text(
+            "UPDATE scan_runs SET status='failed', finished_at=NOW() "
+            "WHERE status IN ('running', 'pending')"
+        ))
+        _conn.commit()
+
 
 def _add_column_if_missing(ddl: str) -> None:
     from sqlalchemy import text
