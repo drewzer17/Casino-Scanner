@@ -773,30 +773,29 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
       {regime && (
         <div style={{
           width: '100%',
-          background: regime.color === 'red' ? '#c62828' : regime.color === 'yellow' ? '#f57f17' : '#2e7d32',
+          background: regime.color === 'red' ? 'rgba(198,40,40,0.85)' : regime.color === 'yellow' ? 'rgba(245,127,23,0.85)' : 'rgba(46,125,50,0.85)',
           color: '#fff',
-          padding: '10px 20px',
+          padding: '8px 16px',
           borderRadius: 6,
           marginBottom: 8,
-          fontSize: 14,
+          fontSize: 13,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          flexWrap: 'wrap',
           gap: 8,
         }}>
           <span>
-            <span style={{ marginRight: 8 }}>●</span>
+            <span style={{ marginRight: 6 }}>●</span>
             <strong>{regime.name}</strong>
             {' — '}{regime.desc}
           </span>
           <span style={{ opacity: 0.9 }}>
-            {regime.duration}{' | '}{regime.strike}
+            {'⊙ '}{regime.duration}{'  |  🎯 '}{regime.strike}
           </span>
-          <span style={{ opacity: 0.85, fontSize: 13 }}>
-            VIX {regime.vix != null ? regime.vix.toFixed(1) : '—'}
+          <span style={{ opacity: 0.85 }}>
+            {'VIX '}{regime.vix != null ? regime.vix.toFixed(1) : '—'}
             {' · SPY '}
-            {regime.spy_above_ema50 ? '↑ above' : '↓ below'} EMA50
+            {regime.spy_above_ema50 ? '↑ above' : '↓ below'}{' EMA50'}
           </span>
         </div>
       )}
