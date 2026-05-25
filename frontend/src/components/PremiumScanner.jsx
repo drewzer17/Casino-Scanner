@@ -567,6 +567,14 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const [vrpFilter, setVrpFilter] = useState(new Set());
   const [stratFilter, setStratFilter] = useState(new Set());
   const [tableExpanded, setTableExpanded] = useState(true);
+  const [regime, setRegime] = useState(null);
+
+  useEffect(() => {
+    fetch('/api/probability/SPY', { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => setRegime(d.regime))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => { setVisibleCount(100); }, [dteSelected, typeFilter, otmSelected, earnBuckets, showAll, showLeaps]);
 
@@ -761,6 +769,37 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
         </button>
       </div>
       {showExcl && <ExclusionTable allExcluded={allExcluded} />}
+
+      {regime && (
+        <div style={{
+          width: '100%',
+          background: regime.color === 'red' ? '#c62828' : regime.color === 'yellow' ? '#f57f17' : '#2e7d32',
+          color: '#fff',
+          padding: '10px 20px',
+          borderRadius: 6,
+          marginBottom: 8,
+          fontSize: 14,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 8,
+        }}>
+          <span>
+            <span style={{ marginRight: 8 }}>●</span>
+            <strong>{regime.name}</strong>
+            {' — '}{regime.desc}
+          </span>
+          <span style={{ opacity: 0.9 }}>
+            {regime.duration}{' | '}{regime.strike}
+          </span>
+          <span style={{ opacity: 0.85, fontSize: 13 }}>
+            VIX {regime.vix != null ? regime.vix.toFixed(1) : '—'}
+            {' · SPY '}
+            {regime.spy_above_ema50 ? '↑ above' : '↓ below'} EMA50
+          </span>
+        </div>
+      )}
 
       <button onClick={() => setTableExpanded(v => !v)} style={{background:'transparent',border:'1px solid #555',color:'#ccc',padding:'6px 16px',borderRadius:4,cursor:'pointer',marginBottom:8}}>
         {tableExpanded ? '⊟ Collapse' : '⊞ Expand'}
