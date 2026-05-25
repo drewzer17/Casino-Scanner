@@ -2185,3 +2185,123 @@ def scan_leaps_latest(db: Session = Depends(get_db)) -> LeapsScanOut:
         tickers_scanned=len(set(r.ticker for r in result_rows)),
         results=results,
     )
+
+
+# ── Probability engine endpoint ───────────────────────────────────────────────
+
+@router.get("/probability/{ticker}")
+def get_probability(
+    ticker: str,
+    strike_pct: float = 0.02,
+    hold_days: int = 21,
+    cohort: str = "all",
+    db: Session = Depends(get_db),
+    _user: int = Depends(require_login),
+) -> dict:
+    """
+    Return empirical CSP assignment probabilities for a ticker in the current regime.
+
+    Determines path safety grade by reconstructing live factors; falls back to
+    the most recent scan result's risk_grade if reconstruction fails.
+    """
+    from ..probability_engine import (
+        get_current_regime,
+        get_probabilities,
+        get_hold_window_comparison,
+        get_strike_comparison,
+        check_industry_warning,
+        check_earnings_proximity,
+    )
+
+    # ── Regime ───────────────────────────────────────────────────────────────
+    try:
+        regime = get_current_regime(db)
+    except Exception as exc:
+        logger.warning("get_current_regime failed: %s", exc)
+        raise HTTPException(status_code=500, detail=f"Regime fetch failed: {exc}")
+
+    # ── Path safety grade ─────────────────────────────────────────────────────
+    path_safety_grade = None
+    try:
+        from datetime import date
+        from ..backtest.factor_reconstruction import reconstruct_factors
+        from ..backtest.path_safety_scorer import score_path_safety
+        factors = reconstruct_factors(ticker.upper(), date.today(), db)
+        ps = score_path_safety(factors)
+        path_safety_grade = ps.get("path_safety_grade")
+    except Exception as exc:
+        logger.debug("factor reconstruction failed for %s, falling back to scan grade: %s", ticker, exc)
+
+    # Fallback: use risk_grade from most recent scan result
+    if not path_safety_grade:
+        try:
+            scan_row = db.execute(text(
+                "SELECT risk_grade FROM scan_results WHERE ticker = :t "
+                "ORDER BY created_at DESC LIMIT 1"
+            ), {"t": ticker.upper()}).fetchone()
+            if scan_row and scan_row[0]:
+                path_safety_grade = scan_row[0]
+        except Exception:
+            pass
+
+    # ── Sector + industry from ticker_universe ────────────────────────────────
+    sector = None
+    industry = None
+    try:
+        tu_row = db.execute(text(
+            "SELECT sector, industry FROM ticker_universe WHERE ticker = :t LIMIT 1"
+        ), {"t": ticker.upper()}).fetchone()
+        if tu_row:
+            sector = tu_row[0]
+            industry = tu_row[1]
+    except Exception:
+        pass
+
+    # ── Current price from price_history ─────────────────────────────────────
+    current_price = None
+    try:
+        ph_row = db.execute(text(
+            "SELECT close FROM price_history WHERE ticker = :t ORDER BY date DESC LIMIT 1"
+        ), {"t": ticker.upper()}).fetchone()
+        if ph_row:
+            current_price = float(ph_row[0])
+    except Exception:
+        pass
+
+    # ── Probabilities ─────────────────────────────────────────────────────────
+    probabilities = get_probabilities(
+        db,
+        regime["vix_regime"],
+        regime["spy_above_ema50"],
+        path_safety_grade,
+        strike_pct,
+        hold_days,
+        sector,
+        cohort,
+    )
+
+    # ── Comparison tables ─────────────────────────────────────────────────────
+    hold_compare = get_hold_window_comparison(
+        db, regime["vix_regime"], regime["spy_above_ema50"], path_safety_grade, strike_pct, cohort
+    )
+    strike_compare = get_strike_comparison(
+        db, regime["vix_regime"], regime["spy_above_ema50"], path_safety_grade, hold_days, cohort
+    )
+
+    # ── Warnings ──────────────────────────────────────────────────────────────
+    industry_warning = check_industry_warning(industry)
+    earnings = check_earnings_proximity(db, ticker.upper(), hold_days)
+
+    return {
+        "ticker":                ticker.upper(),
+        "current_price":         current_price,
+        "regime":                regime,
+        "grade":                 path_safety_grade,
+        "sector":                sector,
+        "industry":              industry,
+        "probabilities":         probabilities,
+        "hold_window_comparison": hold_compare,
+        "strike_comparison":     strike_compare,
+        "industry_warning":      industry_warning,
+        "earnings":              earnings,
+    }

@@ -328,6 +328,19 @@ def init_db() -> None:
         ")"
     )
 
+    # dataset_cohort on backtest_runs — v22
+    _add_column_if_missing(
+        "ALTER TABLE backtest_runs ADD COLUMN IF NOT EXISTS dataset_cohort VARCHAR(30) DEFAULT 'foundation_v1'"
+    )
+    with engine.connect() as _bc:
+        try:
+            _bc.execute(_text(
+                "UPDATE backtest_runs SET dataset_cohort = 'foundation_v1' WHERE dataset_cohort IS NULL"
+            ))
+            _bc.commit()
+        except Exception:
+            _bc.rollback()
+
     # Clean up ghost scans left by app restarts / deploys
     from sqlalchemy import text as _text
     with engine.connect() as _conn:
