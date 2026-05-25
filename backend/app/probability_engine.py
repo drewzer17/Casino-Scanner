@@ -157,21 +157,15 @@ def get_probabilities(
     }
 
     if path_safety_grade:
-        conditions.append("br.grade = :grade")
+        conditions.append("br.path_safety_grade = :grade")
         params['grade'] = path_safety_grade
 
-    # Cohort filter via backtest_runs join
-    cohort_join = ""
+    # Cohort filter via backtest_runs join (always join for cohort access)
+    cohort_join = "JOIN backtest_runs r ON br.run_id = r.id"
     if cohort in ('foundation_v1', 'ongoing'):
-        cohort_join = (
-            " JOIN backtest_runs brun ON br.run_id = brun.id"
-            " AND brun.dataset_cohort = :cohort"
-        )
+        conditions.append("r.dataset_cohort = :cohort")
         params['cohort'] = cohort
-    elif cohort == 'all_with_tails':
-        # include all cohorts including experimental
-        pass
-    # 'all' = no cohort filter
+    # 'all' / 'all_with_tails' = no cohort filter
 
     sector_applied = False
     if sector:
@@ -183,18 +177,22 @@ def get_probabilities(
 
     sql = f"""
         SELECT
-            COUNT(*)                                            AS n,
-            ROUND(AVG(CASE WHEN br.assigned THEN 1.0 ELSE 0.0 END)::numeric * 100, 1) AS assigned_pct,
-            ROUND(AVG(CASE WHEN br.mae_pct  <= -0.01 THEN 1.0 ELSE 0.0 END)::numeric * 100, 1) AS touch_pct,
-            ROUND(AVG(CASE WHEN br.mfe_pct  >=  4.0  THEN 1.0 ELSE 0.0 END)::numeric * 100, 1) AS runaway_pct,
-            ROUND(AVG(CASE WHEN br.assigned AND br.recovery_return IS NOT NULL
-                           THEN br.recovery_return ELSE NULL END)::numeric, 3)         AS recovery_rate,
-            ROUND(AVG(br.mae_pct)::numeric, 2)                                         AS avg_mae,
-            ROUND(AVG(br.mfe_pct)::numeric, 2)                                         AS avg_mfe,
-            ROUND(AVG(br.final_dist_pct)::numeric, 2)                                  AS avg_final_dist,
-            ROUND(AVG(CASE WHEN br.mae_pct <= -10.0 THEN 1.0 ELSE 0.0 END)::numeric * 100, 1) AS pct_worse_than_10,
-            ROUND(AVG(CASE WHEN br.mae_pct <= -15.0 THEN 1.0 ELSE 0.0 END)::numeric * 100, 1) AS pct_worse_than_15,
-            ROUND(AVG(CASE WHEN br.mae_pct <= -20.0 THEN 1.0 ELSE 0.0 END)::numeric * 100, 1) AS pct_worse_than_20
+            COUNT(*) AS n,
+            ROUND((100.0 * SUM(CASE WHEN br.final_distance_pct < 0 THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS assigned_pct,
+            ROUND((100.0 * SUM(CASE WHEN br.touched THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS touch_pct,
+            ROUND((100.0 * SUM(CASE WHEN br.mfe_pct >= 4.0 THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS runaway_pct,
+            ROUND(AVG(br.mae_pct)::numeric, 2)          AS avg_mae,
+            ROUND(AVG(br.mfe_pct)::numeric, 2)          AS avg_mfe,
+            ROUND(AVG(br.final_distance_pct)::numeric, 2) AS avg_final_dist,
+            ROUND((100.0 * SUM(CASE WHEN br.mae_pct < -10 THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS pct_worse_than_10,
+            ROUND((100.0 * SUM(CASE WHEN br.mae_pct < -15 THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS pct_worse_than_15,
+            ROUND((100.0 * SUM(CASE WHEN br.mae_pct < -20 THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS pct_worse_than_20
         FROM backtest_results br
         {cohort_join}
         WHERE {where}
@@ -229,20 +227,29 @@ def get_probabilities(
     else:
         confidence = 'insufficient'
 
+    assigned_pct = _f(row[1])
+    touch_pct    = _f(row[2])
+    # Recovery rate = pct that touched but did NOT get assigned (recovered)
+    recovery_rate = (
+        round(touch_pct - assigned_pct, 1)
+        if touch_pct is not None and assigned_pct is not None
+        else None
+    )
+
     return {
-        'n':                n,
-        'confidence':       confidence,
-        'sector_matched':   sector_applied,
-        'assigned_pct':     _f(row[1]),
-        'touch_pct':        _f(row[2]),
-        'runaway_pct':      _f(row[3]),
-        'recovery_rate':    _f(row[4]),
-        'avg_mae':          _f(row[5]),
-        'avg_mfe':          _f(row[6]),
-        'avg_final_dist':   _f(row[7]),
-        'pct_worse_than_10': _f(row[8]),
-        'pct_worse_than_15': _f(row[9]),
-        'pct_worse_than_20': _f(row[10]),
+        'n':                 n,
+        'confidence':        confidence,
+        'sector_matched':    sector_applied,
+        'assigned_pct':      assigned_pct,
+        'touch_pct':         touch_pct,
+        'runaway_pct':       _f(row[3]),
+        'recovery_rate':     recovery_rate,
+        'avg_mae':           _f(row[4]),
+        'avg_mfe':           _f(row[5]),
+        'avg_final_dist':    _f(row[6]),
+        'pct_worse_than_10': _f(row[7]),
+        'pct_worse_than_15': _f(row[8]),
+        'pct_worse_than_20': _f(row[9]),
     }
 
 
@@ -271,7 +278,7 @@ def get_hold_window_comparison(
         'strike_hi':       strike_pct + 0.005,
     }
     if path_safety_grade:
-        conditions.append("br.grade = :grade")
+        conditions.append("br.path_safety_grade = :grade")
         params['grade'] = path_safety_grade
 
     where = " AND ".join(conditions)
@@ -280,9 +287,11 @@ def get_hold_window_comparison(
         SELECT
             br.hold_days,
             COUNT(*) AS n,
-            ROUND(AVG(CASE WHEN br.assigned THEN 1.0 ELSE 0.0 END)::numeric * 100, 1) AS assigned_pct,
+            ROUND((100.0 * SUM(CASE WHEN br.final_distance_pct < 0 THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS assigned_pct,
             ROUND(AVG(br.mae_pct)::numeric, 2) AS avg_mae
         FROM backtest_results br
+        JOIN backtest_runs r ON br.run_id = r.id
         WHERE {where}
         GROUP BY br.hold_days
         HAVING COUNT(*) >= 10
@@ -326,7 +335,7 @@ def get_strike_comparison(
         'hold_hi':         hold_days + 3,
     }
     if path_safety_grade:
-        conditions.append("br.grade = :grade")
+        conditions.append("br.path_safety_grade = :grade")
         params['grade'] = path_safety_grade
 
     where = " AND ".join(conditions)
@@ -335,9 +344,11 @@ def get_strike_comparison(
         SELECT
             br.strike_pct,
             COUNT(*) AS n,
-            ROUND(AVG(CASE WHEN br.assigned THEN 1.0 ELSE 0.0 END)::numeric * 100, 1) AS assigned_pct,
+            ROUND((100.0 * SUM(CASE WHEN br.final_distance_pct < 0 THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS assigned_pct,
             ROUND(AVG(br.mae_pct)::numeric, 2) AS avg_mae
         FROM backtest_results br
+        JOIN backtest_runs r ON br.run_id = r.id
         WHERE {where}
         GROUP BY br.strike_pct
         HAVING COUNT(*) >= 10
