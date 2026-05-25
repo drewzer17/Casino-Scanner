@@ -3,6 +3,7 @@ import { api } from "../api/client.js";
 import EarningsTile from "./EarningsTile.jsx";
 import ResearchButton from "./ResearchButton.jsx";
 import { formatFailKey } from "./RiskQualityScanner.jsx";
+import ProbabilityPanel from "./ProbabilityPanel.jsx";
 
 function fmt(v, digits = 2) {
   if (v == null) return "—";
@@ -623,6 +624,12 @@ export default function TickerModal({ row, onClose, onResearch }) {
 
         {/* ── Risk Quality section (full width) ── */}
         <RiskQualitySection row={row} />
+
+        {/* ── CSP Probability (full width) ── */}
+        <div className="expiry-section">
+          <div className="modal-section-title">CSP Probability</div>
+          <ProbabilityPanel ticker={row.ticker} embedded={true} />
+        </div>
 
         {/* ── Live multi-expiry table (full width, fetched on demand) ── */}
         <div className="expiry-section">
