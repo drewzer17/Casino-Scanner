@@ -147,6 +147,14 @@ class ScanResultOut(BaseModel):
     high_beta_moderate: bool = False         # Moderate VRP + rv20 > 35% proxy
     extension_ratio: float | None = None    # Factor 9: price / ema_50 (CSP path risk)
     is_leaps: bool = False                   # True when row came from LEAPS on-demand scan
+    # Probability fields computed during scan
+    path_safety_grade: str | None = None
+    prob_assign_pct: float | None = None
+    prob_mae: float | None = None
+    prob_exit_pct: float | None = None
+    prob_regime: str | None = None
+    prob_n: int | None = None
+    prob_confidence: str | None = None
 
 
 class ScanLatestOut(BaseModel):

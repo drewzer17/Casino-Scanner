@@ -147,6 +147,15 @@ class ScanResult(Base):
     # LEAPS flag — True when this row was produced by the on-demand LEAPS scan (180-365 DTE)
     is_leaps: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    # Probability fields — computed during scan from backtest_results
+    path_safety_grade: Mapped[str | None] = mapped_column(String(2), nullable=True)
+    prob_assign_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    prob_mae: Mapped[float | None] = mapped_column(Float, nullable=True)
+    prob_exit_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    prob_regime: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    prob_n: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    prob_confidence: Mapped[str | None] = mapped_column(String(20), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 

@@ -320,6 +320,14 @@ def _to_out(
         high_beta_moderate=bool(row.high_beta_moderate),
         extension_ratio=_san(row.extension_ratio),
         is_leaps=bool(row.is_leaps) if row.is_leaps is not None else False,
+        # Probability fields
+        path_safety_grade=row.path_safety_grade,
+        prob_assign_pct=_san(row.prob_assign_pct),
+        prob_mae=_san(row.prob_mae),
+        prob_exit_pct=_san(row.prob_exit_pct),
+        prob_regime=row.prob_regime,
+        prob_n=row.prob_n,
+        prob_confidence=row.prob_confidence,
     )
 
 

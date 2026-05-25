@@ -328,6 +328,18 @@ def init_db() -> None:
         ")"
     )
 
+    # Probability fields computed during scan — v23
+    for _ddl in [
+        "ALTER TABLE scan_results ADD COLUMN IF NOT EXISTS path_safety_grade VARCHAR(2)",
+        "ALTER TABLE scan_results ADD COLUMN IF NOT EXISTS prob_assign_pct DOUBLE PRECISION",
+        "ALTER TABLE scan_results ADD COLUMN IF NOT EXISTS prob_mae DOUBLE PRECISION",
+        "ALTER TABLE scan_results ADD COLUMN IF NOT EXISTS prob_exit_pct DOUBLE PRECISION",
+        "ALTER TABLE scan_results ADD COLUMN IF NOT EXISTS prob_regime VARCHAR(50)",
+        "ALTER TABLE scan_results ADD COLUMN IF NOT EXISTS prob_n INTEGER",
+        "ALTER TABLE scan_results ADD COLUMN IF NOT EXISTS prob_confidence VARCHAR(20)",
+    ]:
+        _add_column_if_missing(_ddl)
+
     # dataset_cohort on backtest_runs — v22
     _add_column_if_missing(
         "ALTER TABLE backtest_runs ADD COLUMN IF NOT EXISTS dataset_cohort VARCHAR(30) DEFAULT 'foundation_v1'"

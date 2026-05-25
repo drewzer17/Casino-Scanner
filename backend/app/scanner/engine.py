@@ -1049,6 +1049,14 @@ class ScanRowResult:
     technical_location_eligible: bool = False
     income_grind_eligible: bool = False
     is_leaps: bool = False                      # True when row came from on-demand LEAPS scan
+    # Probability fields (populated in run_scan loop)
+    path_safety_grade: str | None = None
+    prob_assign_pct: float | None = None
+    prob_mae: float | None = None
+    prob_exit_pct: float | None = None
+    prob_regime: str | None = None
+    prob_n: int | None = None
+    prob_confidence: str | None = None
 
 
 def scan_ticker(
@@ -1676,6 +1684,14 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
         technical_location_eligible=result.technical_location_eligible,
         income_grind_eligible=result.income_grind_eligible,
         is_leaps=result.is_leaps,
+        # Probability fields
+        path_safety_grade=result.path_safety_grade,
+        prob_assign_pct=result.prob_assign_pct,
+        prob_mae=result.prob_mae,
+        prob_exit_pct=result.prob_exit_pct,
+        prob_regime=result.prob_regime,
+        prob_n=result.prob_n,
+        prob_confidence=result.prob_confidence,
     ))
 
     # Record IV snapshot for IV rank history (one row per ticker per day)
@@ -1932,6 +1948,25 @@ def run_scan(
 
     cat_debug_logged = 0  # log earn_days for first 5 tickers to diagnose CAT=0
 
+    # Pre-load regime + sector map once for the entire scan — lazy imports
+    _scan_regime = None
+    _scan_sectors: dict[str, str] = {}
+    try:
+        from ..probability_engine import get_current_regime, get_probabilities
+        from ..backtest.path_safety_scorer import score_path_safety as _score_path_safety
+        _scan_regime = get_current_regime(db)
+        sector_rows = db.execute(
+            _text("SELECT ticker, sector FROM ticker_universe WHERE sector IS NOT NULL")
+        ).fetchall()
+        for _sr in sector_rows:
+            _scan_sectors[_sr[0]] = _sr[1]
+        logger.info("probability pre-load OK — regime=%s, sectors=%d",
+                    _scan_regime.get("name"), len(_scan_sectors))
+    except Exception as _prob_pre_exc:
+        logger.warning("probability pre-load failed (probs will be null): %s", _prob_pre_exc)
+        _scan_regime = None
+        _scan_sectors = {}
+
     for batch_start in range(0, len(remaining), BATCH_SIZE):
         batch = remaining[batch_start : batch_start + BATCH_SIZE]
         logger.info("run_id=%s batch %d-%d / %d", run.id,
@@ -2029,6 +2064,39 @@ def run_scan(
                         result.income_grind_eligible = rq.get("income_grind_eligible", False)
                     except Exception as rq_exc:
                         logger.warning("risk_quality compute failed for %s: %s", ticker, rq_exc)
+
+                    # Probability computation — uses regime pre-loaded before loop
+                    if _scan_regime is not None:
+                        try:
+                            ps_factors = {
+                                "extension_ratio": result.extension_ratio,
+                                "rv20": result.realized_vol_20d,
+                                "vrp_state": result.vrp_state,
+                                "iv_rank": result.metrics.iv_rank,
+                            }
+                            ps_result = _score_path_safety(ps_factors)
+                            _ps_grade = ps_result.get("path_safety_grade")
+                            result.path_safety_grade = _ps_grade
+                            _sector = _scan_sectors.get(ticker)
+                            if _ps_grade:
+                                _probs = get_probabilities(
+                                    db,
+                                    _scan_regime["vix_regime"],
+                                    _scan_regime["spy_above_ema50"],
+                                    _ps_grade,
+                                    0.02, 21,
+                                    _sector, "all",
+                                )
+                                if _probs:
+                                    result.prob_assign_pct = _probs["assigned_pct"]
+                                    result.prob_mae = _probs["avg_mae"]
+                                    result.prob_exit_pct = _probs["runaway_pct"]
+                                    result.prob_regime = _scan_regime["name"]
+                                    result.prob_n = _probs["n"]
+                                    result.prob_confidence = _probs["confidence"]
+                        except Exception:
+                            pass  # silently skip — scan continues without prob data
+
                     _persist_result(db, run.id, result)
                 scanned += 1
 

@@ -257,26 +257,29 @@ function getPutData(row, dteSelected) {
 
 const COLS = [
   { key: "ticker",        label: "Ticker",   align: "left" },
-  { key: "risk_grade",   label: "GRADE",    align: "center", compact: true },
-  { key: "vrp_state",    label: "VRP",      align: "center", compact: true },
-  { key: "strategy_type",label: "STRATEGY", align: "center", compact: true },
-  { key: "earnings",     label: "EARNINGS", align: "center" },
-  { key: "type",       label: "Type",      align: "left" },
-  { key: "otm",        label: "OTM",       align: "center" },
-  { key: "price",      label: "Price",     align: "right", compact: true },
-  { key: "strike",     label: "Strike",    align: "right", compact: true },
-  { key: "premium",    label: "Prem $",    align: "right" },
-  { key: "spread",     label: "Spread",    align: "right" },
-  { key: "bid_ask",    label: "Bid/Mark",  align: "right" },
-  { key: "premiumPct", label: "Prem %",    align: "right", compact: true },
-  { key: "dte",        label: "DTE",       align: "right", compact: true },
-  { key: "oi",         label: "OI",        align: "right", compact: true },
-  { key: "s1_dist",    label: "S1",        align: "right", compact: true },
-  { key: "s2_dist",    label: "S2",        align: "right", compact: true, groupEnd: true },
-  { key: "r2_dist",    label: "R2",        align: "right", compact: true },
-  { key: "r1_dist",    label: "R1",        align: "right", compact: true },
-  { key: "score",      label: "Score",     align: "right" },
-  { key: "asymmetric", label: "ASYMMETRIC",  align: "center" },
+  { key: "risk_grade",    label: "GRADE",    align: "center", compact: true },
+  { key: "vrp_state",     label: "VRP",      align: "center", compact: true },
+  { key: "strategy_type", label: "STRATEGY", align: "center", compact: true },
+  { key: "earnings",      label: "EARNINGS", align: "center" },
+  { key: "type",          label: "Type",     align: "left" },
+  { key: "otm",           label: "OTM",      align: "center" },
+  { key: "price",         label: "Price",    align: "right", compact: true },
+  { key: "strike",        label: "Strike",   align: "right", compact: true },
+  { key: "premium",       label: "Prem $",   align: "right" },
+  { key: "spread",        label: "Spread",   align: "right" },
+  { key: "bid_ask",       label: "Bid/Mark", align: "right" },
+  { key: "premiumPct",    label: "Prem %",   align: "right", compact: true },
+  { key: "dte",           label: "DTE",      align: "right", compact: true },
+  { key: "oi",            label: "OI",       align: "right", compact: true },
+  { key: "prob_assign",   label: "ASSIGN%",  align: "right", compact: true },
+  { key: "prob_mae",      label: "MAE",      align: "right", compact: true },
+  { key: "prob_exit",     label: "EXIT%",    align: "right", compact: true },
+  { key: "s1_dist",       label: "S1",       align: "right", compact: true },
+  { key: "s2_dist",       label: "S2",       align: "right", compact: true, groupEnd: true },
+  { key: "r2_dist",       label: "R2",       align: "right", compact: true },
+  { key: "r1_dist",       label: "R1",       align: "right", compact: true },
+  { key: "score",         label: "Score",    align: "right" },
+  { key: "asymmetric",    label: "ASYMMETRIC", align: "center" },
 ];
 
 function cellValue(item, key, onResearch) {
@@ -423,6 +426,24 @@ function cellValue(item, key, onResearch) {
       const stratColors = {'Income Grind':'#888','Event Ramp':'#ffc107','Technical Location':'#64b5f6'};
       return <span style={{color:stratColors[strat]||'#888',fontSize:11}}>{strat}</span>;
     }
+    case "prob_assign": {
+      const v = item.prob_assign_pct;
+      if (v == null) return <span style={{color:'#555'}}>—</span>;
+      const color = v < 25 ? '#4caf50' : v < 40 ? '#ffc107' : '#f44336';
+      return <span style={{color, fontWeight:700}}>{v.toFixed(1)}%</span>;
+    }
+    case "prob_mae": {
+      const v = item.prob_mae;
+      if (v == null) return <span style={{color:'#555'}}>—</span>;
+      const color = v > -5 ? '#4caf50' : v > -10 ? '#ffc107' : '#f44336';
+      return <span style={{color, fontWeight:700}}>{v.toFixed(2)}%</span>;
+    }
+    case "prob_exit": {
+      const v = item.prob_exit_pct;
+      if (v == null) return <span style={{color:'#555'}}>—</span>;
+      const color = v > 70 ? '#4caf50' : v > 50 ? '#ffc107' : '#f44336';
+      return <span style={{color, fontWeight:700}}>{v.toFixed(0)}%</span>;
+    }
     default: return "—";
   }
 }
@@ -457,6 +478,9 @@ function sortValue(item, key) {
         : -1;
     case "score": return item._type === "CC" ? (item.cc_score ?? -1) : (item.csp_score ?? -1);
     case "asymmetric": return item.asymmetric_any_flag ? 1 : 0;
+    case "prob_assign": return item.prob_assign_pct ?? Infinity;
+    case "prob_mae": return item.prob_mae ?? Infinity;
+    case "prob_exit": return item.prob_exit_pct != null ? -item.prob_exit_pct : Infinity;
     case "risk_grade": return {A:1,B:2,C:3,F:4}[item.risk_grade] ?? 5;
     case "vrp_state": return {Rich:1,Moderate:2,Weak:3,Negative:4}[item.vrp_state] ?? 5;
     case "strategy_type": return item.strategy_type || 'zzz';
