@@ -52,9 +52,12 @@ function ConfidenceDot({ confidence }) {
 }
 
 // Horizontal comparison bar
-function ComparisonBar({ label, assignedPct, isSelected, n }) {
-  const barWidth = assignedPct != null ? Math.min(100, assignedPct * 2) : 0;
-  const color = assignColor(assignedPct);
+function ComparisonBar({ label, assignedPct, isSelected, n, showKeepPremium = false }) {
+  const display = showKeepPremium && assignedPct != null ? 100 - assignedPct : assignedPct;
+  const color = showKeepPremium
+    ? (display > 75 ? "#4caf50" : display > 60 ? "#ffc107" : "#f44336")
+    : assignColor(assignedPct);
+  const barWidth = display != null ? Math.min(100, display * 2) : 0;
   return (
     <div style={{
       padding: "4px 6px",
@@ -64,16 +67,16 @@ function ComparisonBar({ label, assignedPct, isSelected, n }) {
       marginBottom: 3,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-        <span style={{ fontSize: 11, color: "#bbb", minWidth: 44 }}>{label}</span>
+        <span style={{ fontSize: 11, color: "#bbb", minWidth: 60 }}>{label}</span>
         <div style={{ flex: 1, height: 6, background: "#333", borderRadius: 3, overflow: "hidden" }}>
           <div style={{ width: `${barWidth}%`, height: "100%", background: color, borderRadius: 3, transition: "width 0.3s" }} />
         </div>
         <span style={{ fontSize: 11, color, fontWeight: 700, minWidth: 36, textAlign: "right" }}>
-          {assignedPct != null ? `${assignedPct}%` : "—"}
+          {display != null ? `${display.toFixed ? display.toFixed(1) : display}%` : "—"}
         </span>
       </div>
       {n != null && (
-        <div style={{ fontSize: 10, color: "#666", paddingLeft: 50 }}>n={n}</div>
+        <div style={{ fontSize: 10, color: "#666", paddingLeft: 66 }}>n={n}</div>
       )}
     </div>
   );
@@ -82,11 +85,12 @@ function ComparisonBar({ label, assignedPct, isSelected, n }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function ProbabilityPanel({ ticker, embedded = false, onClose }) {
-  const [strikePct, setStrikePct] = useState(0.02);
-  const [holdDays,  setHoldDays]  = useState(21);
-  const [data,      setData]      = useState(null);
-  const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState(null);
+  const [strikePct,       setStrikePct]       = useState(0.02);
+  const [holdDays,        setHoldDays]        = useState(21);
+  const [data,            setData]            = useState(null);
+  const [loading,         setLoading]         = useState(true);
+  const [error,           setError]           = useState(null);
+  const [showKeepPremium, setShowKeepPremium] = useState(false);
 
   useEffect(() => {
     if (!ticker) return;
@@ -105,18 +109,23 @@ export default function ProbabilityPanel({ ticker, embedded = false, onClose }) 
   const content = (
     <div style={{ fontFamily: "inherit" }}>
       {/* Selectors */}
-      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 10 }}>
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 10, alignItems: "flex-end" }}>
         <div>
           <div style={{ fontSize: 11, color: "#888", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>Strike</div>
           <div style={{ display: "flex", gap: 4 }}>
-            {STRIKE_OPTIONS.map(o => (
-              <button key={o.value} onClick={() => setStrikePct(o.value)} style={{
-                padding: "4px 10px", fontSize: 12, borderRadius: 4, cursor: "pointer",
-                background: strikePct === o.value ? "#2e7d32" : "#1e1e2e",
-                color: strikePct === o.value ? "#fff" : "#aaa",
-                border: strikePct === o.value ? "1px solid #4caf50" : "1px solid #444",
-              }}>{o.label}</button>
-            ))}
+            {STRIKE_OPTIONS.map(o => {
+              const px = data?.current_price;
+              const dollarStr = px ? ` ($${Math.round(px * (1 - o.value))})` : "";
+              const label = o.value === 0 ? `ATM${dollarStr}` : `${(o.value * 100).toFixed(0)}%${dollarStr}`;
+              return (
+                <button key={o.value} onClick={() => setStrikePct(o.value)} style={{
+                  padding: "4px 10px", fontSize: 12, borderRadius: 4, cursor: "pointer",
+                  background: strikePct === o.value ? "#2e7d32" : "#1e1e2e",
+                  color: strikePct === o.value ? "#fff" : "#aaa",
+                  border: strikePct === o.value ? "1px solid #4caf50" : "1px solid #444",
+                }}>{label}</button>
+              );
+            })}
           </div>
         </div>
         <div>
@@ -132,6 +141,19 @@ export default function ProbabilityPanel({ ticker, embedded = false, onClose }) 
             ))}
           </div>
         </div>
+        <div style={{ marginLeft: "auto" }}>
+          <button
+            onClick={() => setShowKeepPremium(v => !v)}
+            style={{
+              padding: "4px 12px", fontSize: 12, borderRadius: 4, cursor: "pointer",
+              background: showKeepPremium ? "#1a3a5e" : "transparent",
+              color: showKeepPremium ? "#7ec8f7" : "#888",
+              border: showKeepPremium ? "1px solid #4a90d9" : "1px solid #555",
+            }}
+          >
+            {showKeepPremium ? "VIEW: Keep Premium %" : "VIEW: Assignment Risk"}
+          </button>
+        </div>
       </div>
 
       {loading && (
@@ -144,7 +166,7 @@ export default function ProbabilityPanel({ ticker, embedded = false, onClose }) 
       {!loading && !error && data && (() => {
         const { regime, grade, sector, industry, probabilities: probs,
                 hold_window_comparison: holdComp, strike_comparison: strikeComp,
-                industry_warning, earnings } = data;
+                industry_warning, earnings, current_price: price } = data;
         const c = regime?.color ?? "yellow";
 
         return (
@@ -210,14 +232,25 @@ export default function ProbabilityPanel({ ticker, embedded = false, onClose }) 
                 {/* Three cards */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
 
-                  {/* Card 1: Assignment Risk */}
+                  {/* Card 1: Assignment Risk / Keep Premium */}
                   <div style={{ background: "#12121e", border: "1px solid #333", borderRadius: 6, padding: "10px 12px" }}>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: assignColor(probs.assigned_pct), lineHeight: 1 }}>
-                      {probs.assigned_pct != null ? `${probs.assigned_pct}%` : "—"}
-                    </div>
-                    <div style={{ fontSize: 10, color: "#888", textTransform: "uppercase", letterSpacing: "0.5px", margin: "4px 0 8px" }}>
-                      Assignment Risk
-                    </div>
+                    {(() => {
+                      const raw = probs.assigned_pct;
+                      const display = showKeepPremium && raw != null ? 100 - raw : raw;
+                      const color = showKeepPremium
+                        ? (display > 75 ? "#4caf50" : display > 60 ? "#ffc107" : "#f44336")
+                        : assignColor(raw);
+                      return (
+                        <>
+                          <div style={{ fontSize: 28, fontWeight: 800, color, lineHeight: 1 }}>
+                            {display != null ? `${display.toFixed(1)}%` : "—"}
+                          </div>
+                          <div style={{ fontSize: 10, color: "#888", textTransform: "uppercase", letterSpacing: "0.5px", margin: "4px 0 8px" }}>
+                            {showKeepPremium ? "Keep Premium" : "Assignment Risk"}
+                          </div>
+                        </>
+                      );
+                    })()}
                     <div style={{ fontSize: 11, color: "#aaa" }}>
                       <ConfidenceDot confidence={probs.confidence} />
                       n={probs.n} · {probs.confidence}
@@ -287,7 +320,7 @@ export default function ProbabilityPanel({ ticker, embedded = false, onClose }) 
                   {/* Hold window */}
                   <div>
                     <div style={{ fontSize: 11, color: "#888", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6 }}>
-                      Hold Window
+                      {showKeepPremium ? "Keep Premium by Hold" : "Assignment by Hold"}
                     </div>
                     {holdComp && holdComp.length > 0 ? holdComp.map(row => (
                       <ComparisonBar
@@ -296,6 +329,7 @@ export default function ProbabilityPanel({ ticker, embedded = false, onClose }) 
                         assignedPct={row.assigned_pct}
                         isSelected={Math.abs(row.hold_days - holdDays) <= 3}
                         n={row.n}
+                        showKeepPremium={showKeepPremium}
                       />
                     )) : (
                       <div style={{ color: "#666", fontSize: 12 }}>No comparison data</div>
@@ -305,17 +339,24 @@ export default function ProbabilityPanel({ ticker, embedded = false, onClose }) 
                   {/* Strike distance */}
                   <div>
                     <div style={{ fontSize: 11, color: "#888", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6 }}>
-                      Strike Distance
+                      {showKeepPremium ? "Keep Premium by Strike" : "Assignment by Strike"}
                     </div>
-                    {strikeComp && strikeComp.length > 0 ? strikeComp.map(row => (
-                      <ComparisonBar
-                        key={row.strike_pct}
-                        label={row.strike_pct === 0 ? "ATM" : `${(row.strike_pct * 100).toFixed(0)}%`}
-                        assignedPct={row.assigned_pct}
-                        isSelected={Math.abs(row.strike_pct - strikePct) < 0.005}
-                        n={row.n}
-                      />
-                    )) : (
+                    {strikeComp && strikeComp.length > 0 ? strikeComp.map(row => {
+                      const dollarStr = price ? ` $${Math.round(price * (1 - row.strike_pct))}` : "";
+                      const label = row.strike_pct === 0
+                        ? `ATM${dollarStr}`
+                        : `${(row.strike_pct * 100).toFixed(0)}%${dollarStr}`;
+                      return (
+                        <ComparisonBar
+                          key={row.strike_pct}
+                          label={label}
+                          assignedPct={row.assigned_pct}
+                          isSelected={Math.abs(row.strike_pct - strikePct) < 0.005}
+                          n={row.n}
+                          showKeepPremium={showKeepPremium}
+                        />
+                      );
+                    }) : (
                       <div style={{ color: "#666", fontSize: 12 }}>No comparison data</div>
                     )}
                   </div>

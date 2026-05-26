@@ -272,7 +272,7 @@ const COLS = [
   { key: "premiumPct",    label: "Prem %",   align: "right", compact: true },
   { key: "dte",           label: "DTE",      align: "right", compact: true },
   { key: "oi",            label: "OI",       align: "right", compact: true },
-  { key: "prob_assign",   label: "ASSIGN%",  align: "right", compact: true },
+  { key: "prob_assign",   label: "ASSIGN%",  align: "right", compact: true, dynamicLabel: true },
   { key: "prob_mae",      label: "MAE",      align: "right", compact: true },
   { key: "prob_exit",     label: "EXIT%",    align: "right", compact: true },
   { key: "s1_dist",       label: "S1",       align: "right", compact: true },
@@ -283,7 +283,8 @@ const COLS = [
   { key: "asymmetric",    label: "ASYMMETRIC", align: "center" },
 ];
 
-function cellValue(item, key, onResearch) {
+function cellValue(item, key, onResearch, opts = {}) {
+  const { showKeepPremium = false } = opts;
   switch (key) {
     case "ticker":     return (
       <span>
@@ -428,10 +429,15 @@ function cellValue(item, key, onResearch) {
       return <span style={{color:stratColors[strat]||'#888',fontSize:11}}>{strat}</span>;
     }
     case "prob_assign": {
-      const v = item.prob_assign_pct;
-      if (v == null) return <span style={{color:'#555'}}>—</span>;
-      const color = v < 25 ? '#4caf50' : v < 40 ? '#ffc107' : '#f44336';
-      return <span style={{color, fontWeight:700}}>{v.toFixed(1)}%</span>;
+      const raw = item.prob_assign_pct;
+      if (raw == null) return <span style={{color:'#555'}}>—</span>;
+      if (showKeepPremium) {
+        const v = 100 - raw;
+        const color = v > 75 ? '#4caf50' : v > 60 ? '#ffc107' : '#f44336';
+        return <span style={{color, fontWeight:700}}>{v.toFixed(1)}%</span>;
+      }
+      const color = raw < 25 ? '#4caf50' : raw < 40 ? '#ffc107' : '#f44336';
+      return <span style={{color, fontWeight:700}}>{raw.toFixed(1)}%</span>;
     }
     case "prob_mae": {
       const v = item.prob_mae;
@@ -479,7 +485,7 @@ function sortValue(item, key) {
         : -1;
     case "score": return item._type === "CC" ? (item.cc_score ?? -1) : (item.csp_score ?? -1);
     case "asymmetric": return item.asymmetric_any_flag ? 1 : 0;
-    case "prob_assign": return item.prob_assign_pct ?? Infinity;
+    case "prob_assign": return item.prob_assign_pct != null ? item.prob_assign_pct : Infinity;
     case "prob_mae": return item.prob_mae ?? Infinity;
     case "prob_exit": return item.prob_exit_pct != null ? -item.prob_exit_pct : Infinity;
     case "risk_grade": return {A:1,B:2,C:3,F:4}[item.risk_grade] ?? 5;
@@ -594,6 +600,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const [tableExpanded, setTableExpanded] = useState(true);
   const [regime, setRegime] = useState(null);
   const [showPlaybook, setShowPlaybook] = useState(false);
+  const [showKeepPremium, setShowKeepPremium] = useState(false);
 
   useEffect(() => {
     fetch('/api/probability/SPY', { credentials: 'include' })
@@ -900,6 +907,15 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
         <span style={{position:'absolute',left:640,display:'flex',alignItems:'center',gap:8}}>
           <span style={{fontWeight:600,fontSize:13}}>STRATEGY</span>
           {['Income Grind','Event Ramp','Technical Location'].map(v => <button key={v} style={stratFilter.has(v) ? {background:'#2e7d32',border:'1px solid #4caf50',color:'#fff',padding:'4px 10px',borderRadius:4,cursor:'pointer',fontSize:13} : {background:'transparent',border:'1px solid #555',color:'#ccc',padding:'4px 10px',borderRadius:4,cursor:'pointer',fontSize:13}} onClick={() => toggleStrat(v)}>{v}</button>)}
+          <button
+            onClick={() => setShowKeepPremium(v => !v)}
+            style={showKeepPremium
+              ? {background:'#1a3a5e',border:'1px solid #4a90d9',color:'#7ec8f7',padding:'4px 12px',borderRadius:4,cursor:'pointer',fontSize:12,marginLeft:8}
+              : {background:'transparent',border:'1px solid #555',color:'#888',padding:'4px 12px',borderRadius:4,cursor:'pointer',fontSize:12,marginLeft:8}}
+            title="Toggle between Assignment Risk and Keep Premium % view"
+          >
+            {showKeepPremium ? "VIEW: Keep Premium %" : "VIEW: Assignment Risk"}
+          </button>
         </span>
       </div>
       <div className="dte-filter-row" style={{position:'relative'}}>
@@ -957,7 +973,9 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                         ...(col.key.startsWith("rq_") ? { cursor: "default" } : {}),
                       }}
                     >
-                      {col.label}
+                      {col.dynamicLabel && col.key === "prob_assign"
+                        ? (showKeepPremium ? "KEEP%" : "ASSIGN%")
+                        : col.label}
                       {sortCol === col.key && !col.key.startsWith("rq_") && (
                         <span className="sort-arrow">{sortAsc ? " ▲" : " ▼"}</span>
                       )}
@@ -1003,7 +1021,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                             className={`prem-scanner-td${col.align === "right" ? " right" : col.align === "center" ? " center" : ""}${col.key === "ticker" ? " ticker-col" : ""}${col.key === "premium" ? " prem-col" : ""}${col.compact ? " compact-col" : ""}`}
                             style={col.groupEnd ? { borderRight: "1px solid rgba(255,255,255,0.15)" } : undefined}
                           >
-                            {cellValue(item, col.key, onResearch)}
+                            {cellValue(item, col.key, onResearch, { showKeepPremium })}
                           </td>
                         );
                       })}
