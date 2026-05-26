@@ -110,11 +110,79 @@ def get_current_regime(db_session) -> dict:
     cell_key = (vix_regime, spy_above_ema50)
     cell_info = REGIME_CELLS.get(cell_key, REGIME_CELLS[('Normal', True)])
 
+    # ── Best Grade+VRP combos for this regime ────────────────────────────────
+    best_combos = []
+    avoid = None
+    try:
+        combo_rows = db_session.execute(text("""
+            SELECT
+                path_safety_grade,
+                vrp_state,
+                COUNT(*) AS n,
+                ROUND((100.0 * SUM(CASE WHEN final_distance_pct < 0 THEN 1 ELSE 0 END)
+                       / NULLIF(COUNT(*), 0))::numeric, 1) AS assign_pct,
+                ROUND((100.0 * SUM(CASE WHEN mfe_pct >= 4.0 THEN 1 ELSE 0 END)
+                       / NULLIF(COUNT(*), 0))::numeric, 1) AS exit_pct
+            FROM backtest_results
+            WHERE strike_pct = 0.02 AND hold_days = 21
+              AND vix_regime = :vix AND spy_above_ema50 = :spy
+              AND path_safety_grade IN ('A', 'B') AND vrp_state IS NOT NULL
+            GROUP BY path_safety_grade, vrp_state
+            HAVING COUNT(*) >= 30
+            ORDER BY assign_pct ASC
+            LIMIT 3
+        """), {"vix": vix_regime, "spy": spy_above_ema50}).fetchall()
+
+        for row in combo_rows:
+            best_combos.append({
+                "grade":      row[0],
+                "vrp":        row[1],
+                "n":          int(row[2]),
+                "assign_pct": float(row[3]) if row[3] is not None else None,
+                "exit_pct":   float(row[4]) if row[4] is not None else None,
+            })
+
+        # Worst: highest assignment among A/B + Negative VRP; fallback to worst overall
+        avoid_row = db_session.execute(text("""
+            SELECT
+                path_safety_grade,
+                vrp_state,
+                COUNT(*) AS n,
+                ROUND((100.0 * SUM(CASE WHEN final_distance_pct < 0 THEN 1 ELSE 0 END)
+                       / NULLIF(COUNT(*), 0))::numeric, 1) AS assign_pct
+            FROM backtest_results
+            WHERE strike_pct = 0.02 AND hold_days = 21
+              AND vix_regime = :vix AND spy_above_ema50 = :spy
+              AND vrp_state = 'Negative'
+              AND path_safety_grade IS NOT NULL
+            GROUP BY path_safety_grade, vrp_state
+            HAVING COUNT(*) >= 30
+            ORDER BY assign_pct DESC
+            LIMIT 1
+        """), {"vix": vix_regime, "spy": spy_above_ema50}).fetchone()
+
+        if avoid_row and avoid_row[3] is not None:
+            avoid = {
+                "grade":      avoid_row[0],
+                "vrp":        avoid_row[1],
+                "n":          int(avoid_row[2]),
+                "assign_pct": float(avoid_row[3]),
+            }
+        elif best_combos:
+            # No Negative VRP data — use the worst of the best_combos list as avoid signal
+            worst = max(best_combos, key=lambda c: c["assign_pct"] or 0)
+            if (worst["assign_pct"] or 0) > 40:
+                avoid = worst
+    except Exception:
+        pass  # non-fatal — banner works without combos
+
     return {
         'vix': vix,
         'vix_regime': vix_regime,
         'spy_above_ema50': spy_above_ema50,
         'cell_key': list(cell_key),
+        'best_combos': best_combos,
+        'avoid': avoid,
         **cell_info,
     }
 
