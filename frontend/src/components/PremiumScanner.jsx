@@ -835,58 +835,23 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
           marginBottom: 8,
           fontSize: 13,
           display: 'flex',
-          flexDirection: 'column',
-          gap: 4,
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
         }}>
-          {/* Row 1: regime identity + duration/strike guidance + VIX/SPY */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-            <span>
-              <span style={{ marginRight: 6 }}>●</span>
-              <strong>{regime.name}</strong>
-              {' — '}{regime.desc}
-            </span>
-            <span style={{ opacity: 0.9 }}>
-              {'⊙ '}{regime.duration}{'  |  🎯 '}{regime.strike}
-            </span>
-            <span style={{ opacity: 0.85 }}>
-              {'VIX '}{regime.vix != null ? regime.vix.toFixed(1) : '—'}
-              {' · SPY '}
-              {regime.spy_above_ema50 ? '↑ above' : '↓ below'}{' EMA50'}
-            </span>
-          </div>
-          {/* Row 2: best Grade+VRP combos (only when data available) */}
-          {regime.best_combos && regime.best_combos.length > 0 && (
-            <div style={{ fontSize: 11, opacity: 0.88, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-              <span style={{ fontWeight: 700, opacity: 0.7, marginRight: 2 }}>Best:</span>
-              {regime.best_combos.map((c, i) => (
-                <span key={i}>
-                  {i > 0 && <span style={{ opacity: 0.5, marginRight: 6 }}>·</span>}
-                  <span style={{ fontWeight: 700 }}>{c.grade}+{c.vrp}</span>
-                  <span style={{ opacity: 0.8 }}>
-                    {' ('}
-                    {c.assign_pct != null ? c.assign_pct.toFixed(0) : '—'}{'% assign'}
-                    {c.exit_pct != null ? `, ${c.exit_pct.toFixed(0)}% exit` : ''}
-                    {c.n != null ? `, n=${c.n}` : ''}
-                    {')'}
-                  </span>
-                </span>
-              ))}
-              {regime.avoid && (
-                <span style={{ marginLeft: 8 }}>
-                  <span style={{ opacity: 0.5, marginRight: 6 }}>|</span>
-                  <span style={{ fontWeight: 700, opacity: 0.75 }}>Avoid:</span>
-                  {' '}
-                  <span style={{ fontWeight: 700 }}>{regime.avoid.vrp} VRP</span>
-                  <span style={{ opacity: 0.8 }}>
-                    {' ('}
-                    {regime.avoid.assign_pct != null ? regime.avoid.assign_pct.toFixed(0) : '—'}{'% assign'}
-                    {regime.avoid.n != null ? `, n=${regime.avoid.n}` : ''}
-                    {')'}
-                  </span>
-                </span>
-              )}
-            </div>
-          )}
+          <span>
+            <span style={{ marginRight: 6 }}>●</span>
+            <strong>{regime.name}</strong>
+            {' — '}{regime.desc}
+          </span>
+          <span style={{ opacity: 0.9 }}>
+            {'⊙ '}{regime.duration}{'  |  🎯 '}{regime.strike}
+          </span>
+          <span style={{ opacity: 0.85 }}>
+            {'VIX '}{regime.vix != null ? regime.vix.toFixed(1) : '—'}
+            {' · SPY '}
+            {regime.spy_above_ema50 ? '↑ above' : '↓ below'}{' EMA50'}
+          </span>
         </div>
       )}
 
