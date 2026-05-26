@@ -866,6 +866,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                     {' ('}
                     {c.assign_pct != null ? c.assign_pct.toFixed(0) : '—'}{'% assign'}
                     {c.exit_pct != null ? `, ${c.exit_pct.toFixed(0)}% exit` : ''}
+                    {c.n != null ? `, n=${c.n}` : ''}
                     {')'}
                   </span>
                 </span>
@@ -878,7 +879,9 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
                   <span style={{ fontWeight: 700 }}>{regime.avoid.vrp} VRP</span>
                   <span style={{ opacity: 0.8 }}>
                     {' ('}
-                    {regime.avoid.assign_pct != null ? regime.avoid.assign_pct.toFixed(0) : '—'}{'% assign)'}
+                    {regime.avoid.assign_pct != null ? regime.avoid.assign_pct.toFixed(0) : '—'}{'% assign'}
+                    {regime.avoid.n != null ? `, n=${regime.avoid.n}` : ''}
+                    {')'}
                   </span>
                 </span>
               )}
