@@ -416,7 +416,21 @@ function cellValue(item, key, onResearch, opts = {}) {
     case "risk_grade": {
       const grade = item.risk_grade || '—';
       const gradeColors = {A:'#4caf50',B:'#ffc107',C:'#ff9800',F:'#f44336'};
-      return <span style={{color:gradeColors[grade]||'#888',fontWeight:700}}>{grade}</span>;
+      const ext = item.extension_ratio;
+      const isParabolic = grade === 'F' && ext != null && ext >= 1.50;
+      const isExtreme   = grade === 'F' && ext != null && ext >= 2.00;
+      const icon = isExtreme ? '⚠' : isParabolic ? '⚡' : null;
+      const tooltip = isExtreme
+        ? `Extreme Extension (${ext.toFixed(2)}x) — 100% touch rate historically. Expect 2x worse MAE than standard F.`
+        : isParabolic
+        ? `Parabolic (${ext.toFixed(2)}x) — extension-driven F-grade. Expect 2x worse MAE than standard F.`
+        : null;
+      return (
+        <span style={{color:gradeColors[grade]||'#888',fontWeight:700}} title={tooltip ?? undefined}>
+          {icon && <span style={{marginRight:2,fontSize:11}}>{icon}</span>}
+          {grade}
+        </span>
+      );
     }
     case "vrp_state": {
       const vrp = item.vrp_state || '—';

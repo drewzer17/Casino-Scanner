@@ -2320,6 +2320,7 @@ def get_probability(
         get_strike_comparison,
         check_industry_warning,
         check_earnings_proximity,
+        get_parabolic_stats,
     )
 
     # ── Regime ───────────────────────────────────────────────────────────────
@@ -2341,15 +2342,29 @@ def get_probability(
     except Exception as exc:
         logger.debug("factor reconstruction failed for %s, falling back to scan grade: %s", ticker, exc)
 
-    # Fallback: use risk_grade from most recent scan result
+    # Fallback: use risk_grade + grab extension_ratio from most recent scan result
+    extension_ratio = None
     if not path_safety_grade:
         try:
             scan_row = db.execute(text(
-                "SELECT risk_grade FROM scan_results WHERE ticker = :t "
+                "SELECT risk_grade, extension_ratio FROM scan_results WHERE ticker = :t "
                 "ORDER BY created_at DESC LIMIT 1"
             ), {"t": ticker.upper()}).fetchone()
             if scan_row and scan_row[0]:
                 path_safety_grade = scan_row[0]
+            if scan_row and scan_row[1] is not None:
+                extension_ratio = float(scan_row[1])
+        except Exception:
+            pass
+    else:
+        # Grade resolved via factor reconstruction — still grab extension_ratio from scan
+        try:
+            ext_row = db.execute(text(
+                "SELECT extension_ratio FROM scan_results WHERE ticker = :t "
+                "ORDER BY created_at DESC LIMIT 1"
+            ), {"t": ticker.upper()}).fetchone()
+            if ext_row and ext_row[0] is not None:
+                extension_ratio = float(ext_row[0])
         except Exception:
             pass
 
@@ -2401,6 +2416,16 @@ def get_probability(
     industry_warning = check_industry_warning(industry)
     earnings = check_earnings_proximity(db, ticker.upper(), hold_days)
 
+    # ── Parabolic stats (only if extension_ratio >= 1.50) ─────────────────────
+    parabolic = None
+    if extension_ratio is not None and extension_ratio >= 1.50:
+        try:
+            parabolic = get_parabolic_stats(
+                db, regime["vix_regime"], regime["spy_above_ema50"], extension_ratio
+            )
+        except Exception as exc:
+            logger.debug("get_parabolic_stats failed for %s: %s", ticker, exc)
+
     return {
         "ticker":                ticker.upper(),
         "current_price":         current_price,
@@ -2413,4 +2438,5 @@ def get_probability(
         "strike_comparison":     strike_compare,
         "industry_warning":      industry_warning,
         "earnings":              earnings,
+        "parabolic":             parabolic,
     }

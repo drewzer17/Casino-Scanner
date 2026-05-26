@@ -367,6 +367,100 @@ def check_industry_warning(industry: Optional[str]) -> Optional[str]:
     return None
 
 
+# ── Parabolic stats ───────────────────────────────────────────────────────────
+
+def get_parabolic_stats(
+    db_session,
+    vix_regime: str,
+    spy_above_ema50: bool,
+    extension_ratio: float,
+) -> dict:
+    """
+    Query parabolic/extreme-extension stats from backtest_results.
+    Only call when extension_ratio >= 1.50.
+    Returns dict with all_regimes, current_regime, standard_f_comparison.
+    """
+    is_extreme = extension_ratio >= 2.00
+
+    def _f(v):
+        return float(v) if v is not None else None
+
+    def _confidence(n: int) -> str:
+        if n >= 100: return 'high'
+        if n >= 50:  return 'moderate'
+        if n >= 30:  return 'low'
+        return 'very low'
+
+    all_row = db_session.execute(text("""
+        SELECT COUNT(*) AS n,
+            ROUND((100.0 * SUM(CASE WHEN final_distance_pct < 0 THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS assigned_pct,
+            ROUND(AVG(mae_pct)::numeric, 2)              AS avg_mae,
+            ROUND(AVG(mfe_pct)::numeric, 2)              AS avg_mfe,
+            ROUND((100.0 * SUM(CASE WHEN touched THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS touch_pct,
+            ROUND((100.0 * SUM(CASE WHEN mfe_pct >= 4.0 THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS exit_pct
+        FROM backtest_results
+        WHERE strike_pct = 0.02 AND hold_days = 21 AND extension_ratio >= 1.50
+    """)).fetchone()
+
+    regime_row = db_session.execute(text("""
+        SELECT COUNT(*) AS n,
+            ROUND((100.0 * SUM(CASE WHEN final_distance_pct < 0 THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS assigned_pct,
+            ROUND(AVG(mae_pct)::numeric, 2)              AS avg_mae,
+            ROUND(AVG(mfe_pct)::numeric, 2)              AS avg_mfe,
+            ROUND((100.0 * SUM(CASE WHEN touched THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS touch_pct,
+            ROUND((100.0 * SUM(CASE WHEN mfe_pct >= 4.0 THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS exit_pct
+        FROM backtest_results
+        WHERE strike_pct = 0.02 AND hold_days = 21 AND extension_ratio >= 1.50
+          AND vix_regime = :vr AND spy_above_ema50 = :spy
+    """), {'vr': vix_regime, 'spy': spy_above_ema50}).fetchone()
+
+    std_f_row = db_session.execute(text("""
+        SELECT
+            ROUND(AVG(mae_pct)::numeric, 2) AS avg_mae,
+            ROUND(AVG(mfe_pct)::numeric, 2) AS avg_mfe
+        FROM backtest_results
+        WHERE strike_pct = 0.02 AND hold_days = 21
+          AND path_safety_grade = 'F'
+          AND (extension_ratio IS NULL OR extension_ratio < 1.30)
+    """)).fetchone()
+
+    all_n    = int(all_row[0])    if all_row    and all_row[0]    else 0
+    regime_n = int(regime_row[0]) if regime_row and regime_row[0] else 0
+
+    return {
+        'is_parabolic':    True,
+        'is_extreme':      is_extreme,
+        'extension_ratio': extension_ratio,
+        'all_regimes': {
+            'n':            all_n,
+            'assigned_pct': _f(all_row[1]) if all_n > 0 else None,
+            'avg_mae':      _f(all_row[2]) if all_n > 0 else None,
+            'avg_mfe':      _f(all_row[3]) if all_n > 0 else None,
+            'touch_pct':    _f(all_row[4]) if all_n > 0 else None,
+            'exit_pct':     _f(all_row[5]) if all_n > 0 else None,
+        },
+        'current_regime': {
+            'n':            regime_n,
+            'assigned_pct': _f(regime_row[1]) if regime_n > 0 else None,
+            'avg_mae':      _f(regime_row[2]) if regime_n > 0 else None,
+            'avg_mfe':      _f(regime_row[3]) if regime_n > 0 else None,
+            'touch_pct':    _f(regime_row[4]) if regime_n > 0 else None,
+            'exit_pct':     _f(regime_row[5]) if regime_n > 0 else None,
+            'confidence':   _confidence(regime_n),
+        },
+        'standard_f_comparison': {
+            'avg_mae': _f(std_f_row[0]) if std_f_row else None,
+            'avg_mfe': _f(std_f_row[1]) if std_f_row else None,
+        },
+    }
+
+
 # ── Earnings proximity check ──────────────────────────────────────────────────
 
 def check_earnings_proximity(db_session, ticker: str, hold_days: int = 21) -> Optional[dict]:

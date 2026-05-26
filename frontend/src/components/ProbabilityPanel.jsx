@@ -166,7 +166,8 @@ export default function ProbabilityPanel({ ticker, embedded = false, onClose }) 
       {!loading && !error && data && (() => {
         const { regime, grade, sector, industry, probabilities: probs,
                 hold_window_comparison: holdComp, strike_comparison: strikeComp,
-                industry_warning, earnings, current_price: price } = data;
+                industry_warning, earnings, current_price: price,
+                parabolic } = data;
         const c = regime?.color ?? "yellow";
 
         return (
@@ -222,6 +223,35 @@ export default function ProbabilityPanel({ ticker, embedded = false, onClose }) 
                 }}>⚡ Earnings {earnings.days_until}d</span>
               )}
             </div>
+
+            {/* Parabolic banner */}
+            {parabolic?.is_parabolic && (
+              <div style={{
+                background: parabolic.is_extreme ? "rgba(180,0,0,0.18)" : "rgba(180,100,0,0.18)",
+                border: `1px solid ${parabolic.is_extreme ? "#c62828" : "#e65100"}`,
+                borderRadius: 6,
+                padding: "8px 12px",
+                marginBottom: 8,
+                fontSize: 12,
+              }}>
+                <div style={{ fontWeight: 700, color: parabolic.is_extreme ? "#ef5350" : "#ff9800", marginBottom: 3 }}>
+                  {parabolic.is_extreme ? "⚠" : "⚡"}{" "}
+                  {parabolic.is_extreme
+                    ? `Extreme Extension (${parabolic.extension_ratio.toFixed(2)}x) — highest risk bucket. 100% touch rate historically.`
+                    : `Parabolic (ext ${parabolic.extension_ratio.toFixed(2)}x)`}
+                </div>
+                {!parabolic.is_extreme && parabolic.all_regimes?.avg_mae != null && parabolic.standard_f_comparison?.avg_mae != null && (
+                  <div style={{ color: "#aaa" }}>
+                    When wrong, avg dip{" "}
+                    <span style={{ color: "#f44336", fontWeight: 700 }}>{parabolic.all_regimes.avg_mae}%</span>
+                    {" "}vs{" "}
+                    <span style={{ color: "#ffc107" }}>{parabolic.standard_f_comparison.avg_mae}%</span>
+                    {" "}standard F-grade
+                    {parabolic.all_regimes.n > 0 && <span style={{ color: "#555", marginLeft: 6 }}>n={parabolic.all_regimes.n}</span>}
+                  </div>
+                )}
+              </div>
+            )}
 
             {!probs ? (
               <div style={{ color: "#666", fontSize: 13, padding: "12px 0" }}>
@@ -361,6 +391,56 @@ export default function ProbabilityPanel({ ticker, embedded = false, onClose }) 
                     )}
                   </div>
                 </div>
+
+                {/* Parabolic detail section */}
+                {parabolic?.is_parabolic && (
+                  <div style={{
+                    marginTop: 10,
+                    background: "#12121e",
+                    border: "1px solid #2a2a3a",
+                    borderRadius: 6,
+                    padding: "8px 12px",
+                    fontSize: 12,
+                  }}>
+                    <div style={{ fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6, fontSize: 10 }}>
+                      Parabolic Detail
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+                      <div>
+                        <span style={{ color: "#555" }}>All regimes</span>
+                        {parabolic.all_regimes.n > 0 ? (
+                          <span style={{ color: "#aaa", marginLeft: 6 }}>
+                            n={parabolic.all_regimes.n} ·{" "}
+                            <span style={{ color: parabolic.all_regimes.assigned_pct < 40 ? "#4caf50" : "#f44336" }}>
+                              {parabolic.all_regimes.assigned_pct}% assign
+                            </span>
+                            {" · "}
+                            <span style={{ color: "#f44336" }}>{parabolic.all_regimes.avg_mae}% MAE</span>
+                            {" · "}
+                            <span style={{ color: "#4caf50" }}>+{parabolic.all_regimes.avg_mfe}% MFE</span>
+                          </span>
+                        ) : <span style={{ color: "#555" }}> —</span>}
+                      </div>
+                      <div>
+                        <span style={{ color: "#555" }}>Your regime</span>
+                        {parabolic.current_regime.n > 0 ? (
+                          <span style={{ color: "#aaa", marginLeft: 6 }}>
+                            n={parabolic.current_regime.n} ·{" "}
+                            <span style={{ color: parabolic.current_regime.assigned_pct < 40 ? "#4caf50" : "#f44336" }}>
+                              {parabolic.current_regime.assigned_pct}% assign
+                            </span>
+                            {" · "}
+                            <span style={{ color: "#f44336" }}>{parabolic.current_regime.avg_mae}% MAE</span>
+                            {" · "}
+                            <span style={{ color: "#4caf50" }}>+{parabolic.current_regime.avg_mfe}% MFE</span>
+                            {" "}
+                            <span style={{ color: "#555", fontSize: 10 }}>[{parabolic.current_regime.confidence}]</span>
+                          </span>
+                        ) : <span style={{ color: "#555" }}> insufficient data</span>}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </>
