@@ -2195,7 +2195,108 @@ def scan_leaps_latest(db: Session = Depends(get_db)) -> LeapsScanOut:
     )
 
 
-# ── Probability engine endpoint ───────────────────────────────────────────────
+# ── Probability engine endpoints ──────────────────────────────────────────────
+
+@router.get("/probability/playbook")
+def get_playbook(db: Session = Depends(get_db)) -> dict:
+    """
+    Return regime-specific playbook: assignment% by grade, VRP state, and sector.
+    Must be defined BEFORE /probability/{ticker} so FastAPI doesn't treat 'playbook'
+    as a ticker parameter.
+    """
+    from ..probability_engine import get_current_regime
+
+    regime = get_current_regime(db)
+    vr  = regime["vix_regime"]
+    spy = regime["spy_above_ema50"]
+    params = {"vr": vr, "spy": spy}
+
+    grade_sql = text("""
+        SELECT br.path_safety_grade AS grade, COUNT(*) AS n,
+            ROUND((100.0 * SUM(CASE WHEN br.final_distance_pct < 0 THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS assigned_pct,
+            ROUND(AVG(br.mae_pct)::numeric, 2) AS avg_mae
+        FROM backtest_results br
+        JOIN backtest_runs r ON br.run_id = r.id
+        WHERE br.vix_regime = :vr AND br.spy_above_ema50 = :spy
+            AND br.strike_pct = 0.02 AND br.hold_days = 21
+            AND br.path_safety_grade IS NOT NULL
+            AND r.dataset_cohort IN ('foundation_v1', 'ongoing')
+        GROUP BY br.path_safety_grade
+        ORDER BY assigned_pct
+    """)
+
+    vrp_sql = text("""
+        SELECT br.vrp_state AS vrp, COUNT(*) AS n,
+            ROUND((100.0 * SUM(CASE WHEN br.final_distance_pct < 0 THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS assigned_pct,
+            ROUND(AVG(br.mae_pct)::numeric, 2) AS avg_mae
+        FROM backtest_results br
+        JOIN backtest_runs r ON br.run_id = r.id
+        WHERE br.vix_regime = :vr AND br.spy_above_ema50 = :spy
+            AND br.strike_pct = 0.02 AND br.hold_days = 21
+            AND br.vrp_state IS NOT NULL
+            AND r.dataset_cohort IN ('foundation_v1', 'ongoing')
+        GROUP BY br.vrp_state
+        ORDER BY assigned_pct
+    """)
+
+    sector_sql = text("""
+        SELECT br.sector, COUNT(*) AS n,
+            ROUND((100.0 * SUM(CASE WHEN br.final_distance_pct < 0 THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS assigned_pct,
+            ROUND(AVG(br.mae_pct)::numeric, 2) AS avg_mae
+        FROM backtest_results br
+        JOIN backtest_runs r ON br.run_id = r.id
+        WHERE br.vix_regime = :vr AND br.spy_above_ema50 = :spy
+            AND br.strike_pct = 0.02 AND br.hold_days = 21
+            AND br.sector IS NOT NULL
+            AND r.dataset_cohort IN ('foundation_v1', 'ongoing')
+        GROUP BY br.sector
+        HAVING COUNT(*) >= 30
+        ORDER BY assigned_pct
+    """)
+
+    sweet_sql = text("""
+        SELECT COUNT(*) AS n,
+            ROUND((100.0 * SUM(CASE WHEN br.final_distance_pct < 0 THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS assigned_pct,
+            ROUND(AVG(br.mae_pct)::numeric, 2) AS avg_mae,
+            ROUND((100.0 * SUM(CASE WHEN br.mfe_pct >= 4.0 THEN 1 ELSE 0 END)
+                   / NULLIF(COUNT(*), 0))::numeric, 1) AS exit_pct
+        FROM backtest_results br
+        JOIN backtest_runs r ON br.run_id = r.id
+        WHERE br.vix_regime = :vr AND br.spy_above_ema50 = :spy
+            AND br.strike_pct = 0.02 AND br.hold_days = 21
+            AND br.path_safety_grade = 'A' AND br.vrp_state = 'Rich'
+            AND r.dataset_cohort IN ('foundation_v1', 'ongoing')
+    """)
+
+    def _rows(sql):
+        return [dict(row._mapping) for row in db.execute(sql, params)]
+
+    grades  = _rows(grade_sql)
+    vrps    = _rows(vrp_sql)
+    sectors = _rows(sector_sql)
+    sweet   = db.execute(sweet_sql, params).fetchone()
+
+    sweet_spot = None
+    if sweet and sweet[0] and int(sweet[0]) >= 10:
+        sweet_spot = {
+            "n":            int(sweet[0]),
+            "assigned_pct": float(sweet[1]) if sweet[1] is not None else None,
+            "avg_mae":      float(sweet[2]) if sweet[2] is not None else None,
+            "exit_pct":     float(sweet[3]) if sweet[3] is not None else None,
+        }
+
+    return {
+        "regime":    regime,
+        "by_grade":  grades,
+        "by_vrp":    vrps,
+        "by_sector": sectors,
+        "sweet_spot": sweet_spot,
+    }
+
 
 @router.get("/probability/{ticker}")
 def get_probability(

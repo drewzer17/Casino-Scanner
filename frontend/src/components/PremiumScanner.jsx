@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import RegimePlaybook from "./RegimePlaybook.jsx";
 import CrossConflictWarning from "./CrossConflictWarning.jsx";
 import ResearchAsterisk from "./ResearchAsterisk.jsx";
 import ScrollArrows from "./ScrollArrows.jsx";
@@ -592,6 +593,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const [stratFilter, setStratFilter] = useState(new Set());
   const [tableExpanded, setTableExpanded] = useState(true);
   const [regime, setRegime] = useState(null);
+  const [showPlaybook, setShowPlaybook] = useState(false);
 
   useEffect(() => {
     fetch('/api/probability/SPY', { credentials: 'include' })
@@ -790,6 +792,14 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
           title="Show/hide Risk Quality columns (Grade, VRP, Strategy)"
         >
           {showRiskCols ? "Risk ▼" : "Risk ▶"}
+        </button>
+        <button
+          className="excl-toggle-btn"
+          style={showPlaybook ? { background: "#0e7490", borderColor: "#0891b2", color: "#fff" } : {}}
+          onClick={() => setShowPlaybook(v => !v)}
+          title="Toggle Regime Playbook sidebar"
+        >
+          {showPlaybook ? "Playbook ▼" : "Playbook ▶"}
         </button>
       </div>
       {showExcl && <ExclusionTable allExcluded={allExcluded} />}
@@ -1022,6 +1032,23 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
         </div>
       )}
       </>)}
+
+      {/* ── Regime Playbook sidebar (fixed, right side) ── */}
+      {showPlaybook && (
+        <div style={{
+          position: "fixed",
+          top: 80,
+          right: 12,
+          zIndex: 200,
+        }}>
+          <RegimePlaybook
+            onApplyFilters={({ grades, vrps }) => {
+              setGradeFilter(grades);
+              setVrpFilter(vrps);
+            }}
+          />
+        </div>
+      )}
     </div>
     </>
   );
