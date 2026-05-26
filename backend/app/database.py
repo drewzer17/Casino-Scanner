@@ -340,6 +340,32 @@ def init_db() -> None:
     ]:
         _add_column_if_missing(_ddl)
 
+    # Option chain snapshots table — v24
+    _add_column_if_missing(
+        "CREATE TABLE IF NOT EXISTS option_snapshots ("
+        "id SERIAL PRIMARY KEY, "
+        "scan_date DATE NOT NULL, "
+        "scan_timestamp TIMESTAMP NOT NULL DEFAULT NOW(), "
+        "ticker VARCHAR(10) NOT NULL, "
+        "expiration DATE NOT NULL, "
+        "strike DOUBLE PRECISION NOT NULL, "
+        "option_type VARCHAR(4) NOT NULL, "
+        "bid DOUBLE PRECISION, "
+        "ask DOUBLE PRECISION, "
+        "mark DOUBLE PRECISION, "
+        "iv DOUBLE PRECISION, "
+        "delta DOUBLE PRECISION, "
+        "theta DOUBLE PRECISION, "
+        "gamma DOUBLE PRECISION, "
+        "volume INTEGER, "
+        "open_interest INTEGER"
+        ")"
+    )
+    _add_column_if_missing(
+        "CREATE INDEX IF NOT EXISTS ix_option_snapshots_ticker_date "
+        "ON option_snapshots(ticker, scan_date)"
+    )
+
     # dataset_cohort on backtest_runs — v22
     _add_column_if_missing(
         "ALTER TABLE backtest_runs ADD COLUMN IF NOT EXISTS dataset_cohort VARCHAR(30) DEFAULT 'foundation_v1'"

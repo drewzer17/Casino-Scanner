@@ -217,6 +217,37 @@ class UserPosition(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class OptionSnapshot(Base):
+    """Daily snapshot of option chain data captured during each scan.
+
+    Only puts within 5% of the current price are stored, for the nearest
+    2-3 expiration dates.  One snapshot set per ticker per day (dedup enforced
+    at write time in the scanner).
+    """
+    __tablename__ = "option_snapshots"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    scan_date: Mapped[date] = mapped_column(Date, index=True)
+    scan_timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    ticker: Mapped[str] = mapped_column(String(10), index=True)
+    expiration: Mapped[date] = mapped_column(Date)
+    strike: Mapped[float] = mapped_column(Float)
+    option_type: Mapped[str] = mapped_column(String(4))  # "put" or "call"
+    bid: Mapped[float | None] = mapped_column(Float, nullable=True)
+    ask: Mapped[float | None] = mapped_column(Float, nullable=True)
+    mark: Mapped[float | None] = mapped_column(Float, nullable=True)
+    iv: Mapped[float | None] = mapped_column(Float, nullable=True)
+    delta: Mapped[float | None] = mapped_column(Float, nullable=True)
+    theta: Mapped[float | None] = mapped_column(Float, nullable=True)
+    gamma: Mapped[float | None] = mapped_column(Float, nullable=True)
+    volume: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    open_interest: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    __table_args__ = (
+        Index("ix_option_snapshots_ticker_date", "ticker", "scan_date"),
+    )
+
+
 class User(Base):
     """Application user — used for session-based authentication."""
     __tablename__ = "users"

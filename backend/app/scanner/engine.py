@@ -1057,6 +1057,9 @@ class ScanRowResult:
     prob_regime: str | None = None
     prob_n: int | None = None
     prob_confidence: str | None = None
+    # Option chain snapshot data (populated in scan_ticker, consumed by _persist_result)
+    # List of dicts with keys: expiration, strike, bid, ask, mark, iv, delta, theta, gamma, volume, open_interest
+    chain_snapshot_data: list | None = None
 
 
 def scan_ticker(
@@ -1445,6 +1448,55 @@ def scan_ticker(
                 is_leaps=leaps_only,
             ))
 
+        # Collect option chain snapshots for nearest 2-3 expirations.
+        # Only puts within 5% of current price. Stored on first result so
+        # _persist_result() can bulk-insert them into option_snapshots.
+        if results and price and chain_cache:
+            try:
+                _snap_rows: list[dict] = []
+                _snap_exps = [e for _, e in exp_list[:3]]
+                # Also include iv_exp if not already covered
+                if iv_exp and iv_exp not in _snap_exps and iv_exp in chain_cache:
+                    _snap_exps = ([iv_exp] + _snap_exps)[:3]
+                _price_lo = price * 0.95
+                _price_hi = price * 1.05
+                for _se in _snap_exps:
+                    if _se not in chain_cache:
+                        continue
+                    for _o in chain_cache[_se]:
+                        if _o.get("option_type") != "put":
+                            continue
+                        _sk_raw = _o.get("strike")
+                        if not _is_valid(_sk_raw):
+                            continue
+                        _sk = float(_sk_raw)
+                        if not (_price_lo <= _sk <= _price_hi):
+                            continue
+                        _bid = _o.get("bid")
+                        _ask = _o.get("ask")
+                        _mid: float | None = None
+                        if _is_valid(_bid) and _is_valid(_ask):
+                            _mid = (float(_bid) + float(_ask)) / 2.0
+                        _greeks = _o.get("greeks") or {}
+                        _iv_raw = _greeks.get("smv_vol") or _greeks.get("mid_iv") or _greeks.get("iv")
+                        _snap_rows.append({
+                            "expiration": _se,
+                            "strike": _sk,
+                            "bid": float(_bid) if _is_valid(_bid) else None,
+                            "ask": float(_ask) if _is_valid(_ask) else None,
+                            "mark": round(_mid, 4) if _mid is not None else None,
+                            "iv": float(_iv_raw) if _is_valid(_iv_raw) else None,
+                            "delta": float(_greeks["delta"]) if _is_valid(_greeks.get("delta")) else None,
+                            "theta": float(_greeks["theta"]) if _is_valid(_greeks.get("theta")) else None,
+                            "gamma": float(_greeks["gamma"]) if _is_valid(_greeks.get("gamma")) else None,
+                            "volume": int(float(_o["volume"])) if _is_valid(_o.get("volume")) else None,
+                            "open_interest": int(float(_o["open_interest"])) if _is_valid(_o.get("open_interest")) else None,
+                        })
+                if _snap_rows:
+                    results[0].chain_snapshot_data = _snap_rows
+            except Exception as _snap_exc:
+                logger.debug("%s: snapshot collection failed: %s", ticker, _snap_exc)
+
         return results
 
     except Exception as exc:
@@ -1708,6 +1760,53 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
             )
         except Exception as _exc:
             logger.debug("iv_history insert failed for %s: %s", result.ticker, _exc)
+
+    # Store option chain snapshots (one set per ticker per day)
+    if result.chain_snapshot_data:
+        try:
+            _today = date.today()
+            _today_str = str(_today)
+            # Daily dedup: skip if we already have snapshots for this ticker today
+            _existing = db.execute(
+                _text(
+                    "SELECT 1 FROM option_snapshots WHERE ticker = :ticker AND scan_date = :sd LIMIT 1"
+                ),
+                {"ticker": result.ticker, "sd": _today_str},
+            ).fetchone()
+            if _existing is None:
+                _now = datetime.utcnow()
+                _rows = [
+                    {
+                        "scan_date": _today_str,
+                        "scan_timestamp": _now,
+                        "ticker": result.ticker,
+                        "expiration": row["expiration"],
+                        "strike": row["strike"],
+                        "option_type": "put",
+                        "bid": row["bid"],
+                        "ask": row["ask"],
+                        "mark": row["mark"],
+                        "iv": row["iv"],
+                        "delta": row["delta"],
+                        "theta": row["theta"],
+                        "gamma": row["gamma"],
+                        "volume": row["volume"],
+                        "open_interest": row["open_interest"],
+                    }
+                    for row in result.chain_snapshot_data
+                ]
+                db.execute(
+                    _text(
+                        "INSERT INTO option_snapshots "
+                        "(scan_date, scan_timestamp, ticker, expiration, strike, option_type, "
+                        "bid, ask, mark, iv, delta, theta, gamma, volume, open_interest) "
+                        "VALUES (:scan_date, :scan_timestamp, :ticker, :expiration, :strike, :option_type, "
+                        ":bid, :ask, :mark, :iv, :delta, :theta, :gamma, :volume, :open_interest)"
+                    ),
+                    _rows,
+                )
+        except Exception as _snap_exc:
+            logger.debug("option_snapshots insert failed for %s: %s", result.ticker, _snap_exc)
 
 
 # ── Main scan orchestrator ────────────────────────────────────────────────────
