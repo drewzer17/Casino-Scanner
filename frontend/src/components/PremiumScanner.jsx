@@ -1046,6 +1046,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
               setGradeFilter(grades);
               setVrpFilter(vrps);
             }}
+            onClose={() => setShowPlaybook(false)}
           />
         </div>
       )}

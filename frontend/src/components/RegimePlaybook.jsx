@@ -60,7 +60,7 @@ function RowItem({ label, labelColor, pct, badge }) {
   );
 }
 
-export default function RegimePlaybook({ onApplyFilters }) {
+export default function RegimePlaybook({ onApplyFilters, onClose }) {
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
@@ -74,6 +74,7 @@ export default function RegimePlaybook({ onApplyFilters }) {
   }, []);
 
   const containerStyle = {
+    position: "relative",
     width: 272,
     background: "#12121e",
     border: "1px solid #2a2a3a",
@@ -117,7 +118,33 @@ export default function RegimePlaybook({ onApplyFilters }) {
 
   return (
     <div style={containerStyle}>
+      {/* Close button */}
+      {onClose && (
+        <button
+          onClick={onClose}
+          style={{
+            position: "absolute",
+            top: 8,
+            right: 8,
+            background: "none",
+            border: "none",
+            color: "#fff",
+            fontSize: 18,
+            cursor: "pointer",
+            lineHeight: 1,
+            padding: "0 2px",
+            opacity: 0.85,
+          }}
+          onMouseEnter={e => e.currentTarget.style.opacity = 0.5}
+          onMouseLeave={e => e.currentTarget.style.opacity = 0.85}
+          title="Close"
+        >
+          ✕
+        </button>
+      )}
+
       {/* Header */}
+      <div style={{ paddingRight: onClose ? 20 : 0 }}>
       <div style={{
         background: regimeBg,
         border: `1px solid ${regimeDot}44`,
@@ -135,6 +162,7 @@ export default function RegimePlaybook({ onApplyFilters }) {
         <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
           {regime.duration}
         </div>
+      </div>
       </div>
 
       {/* By Grade */}
