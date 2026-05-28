@@ -619,11 +619,21 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const [regime, setRegime] = useState(null);
   const [showPlaybook, setShowPlaybook] = useState(false);
   const [showKeepPremium, setShowKeepPremium] = useState(false);
+  const [lensGroups, setLensGroups] = useState([]);
+  const [selectedLenses, setSelectedLenses] = useState(new Set());
+  const [showLensDropdown, setShowLensDropdown] = useState(false);
 
   useEffect(() => {
     fetch('/api/probability/SPY', { credentials: 'include' })
       .then(r => r.json())
       .then(d => setRegime(d.regime))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/ai-lenses', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && d.groups) setLensGroups(d.groups); })
       .catch(() => {});
   }, []);
 
@@ -635,6 +645,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const toggleGrade = (v) => setGradeFilter(prev => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n; });
   const toggleVrp   = (v) => setVrpFilter(prev => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n; });
   const toggleStrat = (v) => setStratFilter(prev => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n; });
+  const toggleLens  = (v) => setSelectedLenses(prev => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n; });
 
   const handleSort = (key) => {
     if (key === "earnings") {
@@ -657,6 +668,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
     if (gradeFilter.size > 0 && !gradeFilter.has(r.risk_grade)) return false;
     if (vrpFilter.size > 0 && !vrpFilter.has(r.vrp_state)) return false;
     if (stratFilter.size > 0 && !stratFilter.has(r.strategy_type)) return false;
+    if (selectedLenses.size > 0 && !(r.lenses && r.lenses.some(l => selectedLenses.has(l)))) return false;
     return true;
   });
 
@@ -953,6 +965,73 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
             })}
           >{b.label}</button>
         ))}
+        {/* AI Lens sub-filter — only shown when lens data is available */}
+        {lensGroups.length > 0 && (
+          <span style={{position:'absolute', left:640, display:'flex', alignItems:'center', gap:8}}>
+            <span style={{fontWeight:600, fontSize:13}}>LENS</span>
+            <div style={{position:'relative'}}>
+              <button
+                style={selectedLenses.size > 0 || showLensDropdown
+                  ? {background:'#2e3a5c', border:'1px solid #4a90d9', color:'#7ec8f7', padding:'4px 10px', borderRadius:4, cursor:'pointer', fontSize:13}
+                  : {background:'transparent', border:'1px solid #555', color:'#ccc', padding:'4px 10px', borderRadius:4, cursor:'pointer', fontSize:13}}
+                onClick={() => setShowLensDropdown(v => !v)}
+              >
+                {selectedLenses.size > 0 ? `AI Lens (${selectedLenses.size})` : 'AI Lens ▾'}
+              </button>
+              {showLensDropdown && (
+                <>
+                  {/* Transparent overlay to close dropdown on outside click */}
+                  <div
+                    style={{position:'fixed', inset:0, zIndex:19}}
+                    onClick={() => setShowLensDropdown(false)}
+                  />
+                  <div style={{
+                    position:'absolute', top:'calc(100% + 4px)', left:0, zIndex:20,
+                    background:'#1a1a2e', border:'1px solid #333',
+                    borderRadius:6, padding:'12px', minWidth:320,
+                    maxHeight:400, overflowY:'auto',
+                    boxShadow:'0 4px 16px rgba(0,0,0,0.5)',
+                  }}>
+                    {lensGroups.map((group, gi) => (
+                      <div key={group.name}>
+                        <div style={{
+                          fontSize:11, color:'#888', textTransform:'uppercase',
+                          letterSpacing:'0.5px', marginBottom:4,
+                          marginTop: gi === 0 ? 0 : 10,
+                        }}>
+                          {group.name}
+                        </div>
+                        <div style={{display:'flex', flexWrap:'wrap', gap:4}}>
+                          {group.lenses.map(lens => (
+                            <button
+                              key={lens.id}
+                              onClick={() => toggleLens(lens.name)}
+                              style={selectedLenses.has(lens.name)
+                                ? {background:'#2e7d32', border:'1px solid #4caf50', color:'#fff', padding:'3px 8px', borderRadius:4, cursor:'pointer', fontSize:12}
+                                : {background:'transparent', border:'1px solid #444', color:'#ccc', padding:'3px 8px', borderRadius:4, cursor:'pointer', fontSize:12}}
+                            >
+                              {lens.name} ({lens.count})
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    {selectedLenses.size > 0 && (
+                      <div style={{marginTop:10, borderTop:'1px solid #333', paddingTop:8}}>
+                        <button
+                          style={{background:'none', border:'none', color:'#888', cursor:'pointer', fontSize:12, textDecoration:'underline', padding:0}}
+                          onClick={() => setSelectedLenses(new Set())}
+                        >
+                          Clear all
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </span>
+        )}
       </div>
       <div style={{width:'100%'}}>
         {sorted.length === 0 ? (
