@@ -90,13 +90,15 @@ function getCallData(row, dteSelected) {
   if (dteSelected.size === 0) {
     // ALL: use stored best call directly
     if (row.atm_call_premium != null) {
+      const _ed = (row.expiry_data || []);
+      const _m = _ed.find(e => e.expiry === row.best_expiry) || _ed[0];
       return {
         premium: row.atm_call_premium,
         premiumPct: row.premium_pct,
         strike: row.best_strike,
         expiry: row.best_expiry,
         dte: row.best_dte,
-        delta: null,
+        delta: _m?.atm_call_delta ?? null,
       };
     }
     const entries = (row.expiry_data || []).filter(e => e.atm_call_prem != null);
@@ -130,13 +132,15 @@ function getCallData(row, dteSelected) {
   }
   // Fall back to stored best if it fits
   if (row.best_dte != null && dteInAny(row.best_dte, dteSelected) && row.atm_call_premium != null) {
+    const _ed = (row.expiry_data || []);
+    const _m = _ed.find(e => e.expiry === row.best_expiry) || _ed[0];
     return {
       premium: row.atm_call_premium,
       premiumPct: row.premium_pct,
       strike: row.best_strike,
       expiry: row.best_expiry,
       dte: row.best_dte,
-      delta: null,
+      delta: _m?.atm_call_delta ?? null,
     };
   }
   return null;
@@ -146,13 +150,15 @@ function getPutData(row, dteSelected) {
   if (dteSelected.size === 0) {
     // ALL: prefer stored atm_put_premium directly
     if (row.atm_put_premium != null) {
+      const _ed = (row.expiry_data || []);
+      const _m = _ed.find(e => e.expiry === row.best_put_expiry) || _ed[0];
       return {
         premium: row.atm_put_premium,
         premiumPct: (row.atm_put_premium && row.price) ? row.atm_put_premium / row.price : null,
         strike: row.best_put_strike,
         expiry: row.best_put_expiry,
         dte: row.best_put_dte,
-        delta: null,
+        delta: _m?.atm_put_delta ?? null,
       };
     }
     const entries = (row.expiry_data || []).filter(e => e.atm_put_prem != null);
@@ -186,13 +192,15 @@ function getPutData(row, dteSelected) {
   }
   // Fall back to stored put if it fits
   if (row.best_put_dte != null && dteInAny(row.best_put_dte, dteSelected) && row.atm_put_premium != null) {
+    const _ed = (row.expiry_data || []);
+    const _m = _ed.find(e => e.expiry === row.best_put_expiry) || _ed[0];
     return {
       premium: row.atm_put_premium,
       premiumPct: (row.atm_put_premium && row.price) ? row.atm_put_premium / row.price : null,
       strike: row.best_put_strike,
       expiry: row.best_put_expiry,
       dte: row.best_put_dte,
-      delta: null,
+      delta: _m?.atm_put_delta ?? null,
     };
   }
   return null;
