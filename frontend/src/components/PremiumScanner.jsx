@@ -54,7 +54,7 @@ function getOtmCallsFromExpiry(row, dteSelected) {
   const result = [];
   (best.calls || []).forEach((s, idx) => {
     if (s.prem != null)
-      result.push({ level: idx + 1, premium: s.prem, premiumPct: row.price ? s.prem / row.price : null, strike: s.strike, expiry: best.expiry, dte: best.dte });
+      result.push({ level: idx + 1, premium: s.prem, premiumPct: row.price ? s.prem / row.price : null, strike: s.strike, expiry: best.expiry, dte: best.dte, delta: s.delta ?? null });
   });
   return result;
 }
@@ -68,7 +68,7 @@ function getOtmPutsFromExpiry(row, dteSelected) {
   const result = [];
   (best.puts || []).forEach((s, idx) => {
     if (s.prem != null)
-      result.push({ level: idx + 1, premium: s.prem, premiumPct: row.price ? s.prem / row.price : null, strike: s.strike, expiry: best.expiry, dte: best.dte });
+      result.push({ level: idx + 1, premium: s.prem, premiumPct: row.price ? s.prem / row.price : null, strike: s.strike, expiry: best.expiry, dte: best.dte, delta: s.delta ?? null });
   });
   return result;
 }
@@ -96,6 +96,7 @@ function getCallData(row, dteSelected) {
         strike: row.best_strike,
         expiry: row.best_expiry,
         dte: row.best_dte,
+        delta: null,
       };
     }
     const entries = (row.expiry_data || []).filter(e => e.atm_call_prem != null);
@@ -108,6 +109,7 @@ function getCallData(row, dteSelected) {
       strike: e.atm_strike,
       expiry: e.expiry,
       dte: e.dte,
+      delta: e.atm_call_delta ?? null,
     };
   }
   // Range-filtered: prefer expiry_data entries within any selected range
@@ -123,6 +125,7 @@ function getCallData(row, dteSelected) {
       strike: e.atm_strike,
       expiry: e.expiry,
       dte: e.dte,
+      delta: e.atm_call_delta ?? null,
     };
   }
   // Fall back to stored best if it fits
@@ -133,6 +136,7 @@ function getCallData(row, dteSelected) {
       strike: row.best_strike,
       expiry: row.best_expiry,
       dte: row.best_dte,
+      delta: null,
     };
   }
   return null;
@@ -148,6 +152,7 @@ function getPutData(row, dteSelected) {
         strike: row.best_put_strike,
         expiry: row.best_put_expiry,
         dte: row.best_put_dte,
+        delta: null,
       };
     }
     const entries = (row.expiry_data || []).filter(e => e.atm_put_prem != null);
@@ -160,6 +165,7 @@ function getPutData(row, dteSelected) {
       strike: e.atm_strike,
       expiry: e.expiry,
       dte: e.dte,
+      delta: e.atm_put_delta ?? null,
     };
   }
   // Range-filtered: prefer expiry_data entries within any selected range
@@ -175,6 +181,7 @@ function getPutData(row, dteSelected) {
       strike: e.atm_strike,
       expiry: e.expiry,
       dte: e.dte,
+      delta: e.atm_put_delta ?? null,
     };
   }
   // Fall back to stored put if it fits
@@ -185,6 +192,7 @@ function getPutData(row, dteSelected) {
       strike: row.best_put_strike,
       expiry: row.best_put_expiry,
       dte: row.best_put_dte,
+      delta: null,
     };
   }
   return null;
@@ -197,6 +205,7 @@ const COLS = [
   { key: "earnings",   label: "EARNINGS",  align: "center" },
   { key: "type",       label: "Type",      align: "left" },
   { key: "otm",        label: "OTM",       align: "center" },
+  { key: "delta",      label: "Delta",     align: "right", compact: true },
   { key: "price",      label: "Price",     align: "right", compact: true },
   { key: "strike",     label: "Strike",    align: "right", compact: true },
   { key: "premium",    label: "Prem $",    align: "right" },
@@ -286,6 +295,9 @@ function cellValue(item, key, onResearch) {
       const n = Math.min(lvl, 5);
       return <span className="otm-2plus">{n}{lvl >= 5 ? "+" : ""} OTM{distStr && <span className={distCls}>{distStr}</span>}</span>;
     }
+    case "delta":
+      if (item._d.delta == null) return "—";
+      return <span style={{ fontSize: "0.88em" }}>{item._d.delta.toFixed(2)}</span>;
     case "bid_ask": {
       const mid = item._d.premium;
       const spr = item.bid_ask_spread_pct;

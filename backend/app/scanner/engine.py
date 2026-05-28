@@ -597,7 +597,7 @@ def _collect_otm_calls(options: list[dict], price: float, n: int = 4) -> list[di
     scan_idx = atm_idx + 1
     while len(result) < n:
         if scan_idx >= len(calls):
-            result.append({"strike": None, "prem": None})
+            result.append({"strike": None, "prem": None, "delta": None})
         else:
             c = calls[scan_idx]
             c_strike = float(c["strike"])
@@ -609,6 +609,7 @@ def _collect_otm_calls(options: list[dict], price: float, n: int = 4) -> list[di
             result.append({
                 "strike": round(c_strike, 2),
                 "prem": round(mid, 4) if mid else None,
+                "delta": round(float((c.get("greeks") or {}).get("delta") or 0), 4),
             })
         scan_idx += 1
     return result
@@ -634,7 +635,7 @@ def _collect_otm_puts(options: list[dict], price: float, n: int = 4) -> list[dic
     scan_idx = atm_idx - 1
     while len(result) < n:
         if scan_idx < 0:
-            result.append({"strike": None, "prem": None})
+            result.append({"strike": None, "prem": None, "delta": None})
         else:
             c = puts[scan_idx]
             c_strike = float(c["strike"])
@@ -646,6 +647,7 @@ def _collect_otm_puts(options: list[dict], price: float, n: int = 4) -> list[dic
             result.append({
                 "strike": round(c_strike, 2),
                 "prem": round(mid, 4) if mid else None,
+                "delta": round(float((c.get("greeks") or {}).get("delta") or 0), 4),
             })
         scan_idx -= 1
     return result
@@ -1589,15 +1591,19 @@ def scan_ticker_extensive(ticker: str, price: float | None = None, earn_days: in
                     key=lambda o: float(o["strike"]),
                 )
                 w_atm_put_mid: float | None = None
+                w_atm_put_contract = None
                 if w_puts and w_atm_strike:
                     pi = min(range(len(w_puts)), key=lambda i: abs(float(w_puts[i]["strike"]) - w_atm_strike))
-                    w_atm_put_mid = _contract_mid(w_puts[pi])
+                    w_atm_put_contract = w_puts[pi]
+                    w_atm_put_mid = _contract_mid(w_atm_put_contract)
                 expiry_rows.append({
                     "expiry": weekly_exp,
                     "dte": w_dte,
                     "atm_strike": w_atm_strike,
                     "atm_call_prem": round(w_atm_prem, 4) if w_atm_prem else None,
                     "atm_put_prem": round(w_atm_put_mid, 4) if w_atm_put_mid else None,
+                    "atm_call_delta": round(float((w_atm.get("greeks") or {}).get("delta") or 0), 4) if w_atm else None,
+                    "atm_put_delta": round(float((w_atm_put_contract.get("greeks") or {}).get("delta") or 0), 4) if w_atm_put_contract else None,
                     "calls": _collect_otm_calls(w_chain, w_price),
                     "puts": _collect_otm_puts(w_chain, w_price),
                 })
@@ -1626,6 +1632,8 @@ def scan_ticker_extensive(ticker: str, price: float | None = None, earn_days: in
                 "atm_strike": result.best_strike,
                 "atm_call_prem": round(result.atm_call_premium, 4) if result.atm_call_premium else None,
                 "atm_put_prem": None,
+                "atm_call_delta": None,
+                "atm_put_delta": None,
                 "calls": base_calls,
                 "puts": base_puts,
             })
