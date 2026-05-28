@@ -206,6 +206,63 @@ function getPutData(row, dteSelected) {
   return null;
 }
 
+// ── DualSlider ────────────────────────────────────────────────────
+
+function DualSlider({ min, max, value, onChange, step = 1, fmt = v => String(v) }) {
+  const [lo, hi] = value;
+  const [editLo, setEditLo] = useState(null);
+  const [editHi, setEditHi] = useState(null);
+  const pctLo = ((lo - min) / (max - min)) * 100;
+  const pctHi = ((hi - min) / (max - min)) * 100;
+
+  const commitLo = (raw) => {
+    const v = Number(raw);
+    if (!isNaN(v)) onChange([Math.min(Math.max(v, min), hi), hi]);
+    setEditLo(null);
+  };
+  const commitHi = (raw) => {
+    const v = Number(raw);
+    if (!isNaN(v)) onChange([lo, Math.max(Math.min(v, max), lo)]);
+    setEditHi(null);
+  };
+
+  return (
+    <div className="ds-wrap">
+      <div className="ds-vals">
+        {editLo !== null ? (
+          <input className="ds-edit-input" type="number" value={editLo}
+            onChange={e => setEditLo(e.target.value)}
+            onBlur={() => commitLo(editLo)}
+            onKeyDown={e => { if (e.key === "Enter") commitLo(editLo); if (e.key === "Escape") setEditLo(null); }}
+            autoFocus
+          />
+        ) : (
+          <span className="ds-val-clickable" onClick={() => setEditLo(String(lo))}>{fmt(lo)}</span>
+        )}
+        {editHi !== null ? (
+          <input className="ds-edit-input" type="number" value={editHi}
+            onChange={e => setEditHi(e.target.value)}
+            onBlur={() => commitHi(editHi)}
+            onKeyDown={e => { if (e.key === "Enter") commitHi(editHi); if (e.key === "Escape") setEditHi(null); }}
+            autoFocus
+          />
+        ) : (
+          <span className="ds-val-clickable" onClick={() => setEditHi(String(hi))}>{fmt(hi)}</span>
+        )}
+      </div>
+      <div className="ds-track">
+        <div className="ds-fill" style={{ left: `${pctLo}%`, width: `${pctHi - pctLo}%` }} />
+        <input type="range" className="ds-input" min={min} max={max} step={step} value={lo}
+          onChange={e => { const v = Number(e.target.value); onChange([Math.min(v, hi), hi]); }}
+        />
+        <input type="range" className="ds-input" min={min} max={max} step={step} value={hi}
+          onChange={e => { const v = Number(e.target.value); onChange([lo, Math.max(v, lo)]); }}
+        />
+      </div>
+    </div>
+  );
+}
+
 // ── Columns ───────────────────────────────────────────────────────
 
 const COLS = [
@@ -486,6 +543,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const [showExcl, setShowExcl] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [earnBuckets, setEarnBuckets] = useState(new Set());
+  const [deltaRange, setDeltaRange] = useState([0, 1.0]);
   const [tableExpanded, setTableExpanded] = useState(false);
 
   const toggleDte = (label) => {
@@ -556,6 +614,13 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
     ? items
     : items.filter(i => earnBucketMatch(i.earnings_days, earnBuckets));
 
+  const deltaFiltered = (deltaRange[0] === 0 && deltaRange[1] === 1.0)
+    ? earnFiltered
+    : earnFiltered.filter(i => {
+        const d = Math.abs(i._d.delta ?? 0);
+        return d >= deltaRange[0] && d <= deltaRange[1];
+      });
+
   // ── Internal exclusions (rows that passed Dashboard but have no items) ──
   const passedTickerSet = new Set(items.map(i => i.ticker));
   const internalExcluded = baseRows
@@ -583,7 +648,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
 
   const allExcluded = [...(showAll ? [] : excludedRows), ...internalExcluded];
 
-  const sorted = [...earnFiltered].sort((a, b) => {
+  const sorted = [...deltaFiltered].sort((a, b) => {
     if (sortCol === "earnings") {
       const an = a.earnings_days == null;
       const bn = b.earnings_days == null;
@@ -687,6 +752,12 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
             })}
           >{b.label}</button>
         ))}
+      </div>
+      <div className="dte-filter-row">
+        <span className="dte-filter-label">DELTA</span>
+        <DualSlider min={0} max={1} step={0.01} value={deltaRange}
+          onChange={setDeltaRange}
+          fmt={v => v.toFixed(2)} />
       </div>
       <div className="dte-filter-row" style={{ justifyContent: "flex-end", paddingRight: "4px" }}>
         <button
