@@ -586,9 +586,9 @@ def _pick_call_strikes(
     return atm, otm1, otm2
 
 
-def _collect_otm_calls(options: list[dict], price: float, n: int = 4) -> list[dict]:
+def _collect_otm_calls(options: list[dict], price: float, n: int = 5) -> list[dict]:
     """Return up to n OTM call dicts (1 OTM → n OTM above ATM).
-    Each: {"strike": float|None, "prem": float|None}
+    Each: {"strike": float|None, "prem": float|None, "delta": float|None}
     Skips adjusted/phantom contracts: strike must be strictly above ATM strike,
     and premium must not exceed ATM premium (OTM can't be worth more than ATM).
     """
@@ -606,7 +606,7 @@ def _collect_otm_calls(options: list[dict], price: float, n: int = 4) -> list[di
     scan_idx = atm_idx + 1
     while len(result) < n:
         if scan_idx >= len(calls):
-            result.append({"strike": None, "prem": None})
+            result.append({"strike": None, "prem": None, "delta": None})
         else:
             c = calls[scan_idx]
             c_strike = float(c["strike"])
@@ -615,17 +615,19 @@ def _collect_otm_calls(options: list[dict], price: float, n: int = 4) -> list[di
                 # adjusted/phantom contract — skip to next index
                 scan_idx += 1
                 continue
+            c_delta = (c.get("greeks") or {}).get("delta")
             result.append({
                 "strike": round(c_strike, 2),
                 "prem": round(mid, 4) if mid else None,
+                "delta": round(float(c_delta), 4) if c_delta is not None else None,
             })
         scan_idx += 1
     return result
 
 
-def _collect_otm_puts(options: list[dict], price: float, n: int = 4) -> list[dict]:
+def _collect_otm_puts(options: list[dict], price: float, n: int = 5) -> list[dict]:
     """Return up to n OTM put dicts (1 OTM → n OTM below ATM).
-    Each: {"strike": float|None, "prem": float|None}
+    Each: {"strike": float|None, "prem": float|None, "delta": float|None}
     Skips adjusted/phantom contracts: strike must be strictly below ATM strike,
     and premium must not exceed ATM premium.
     """
@@ -643,7 +645,7 @@ def _collect_otm_puts(options: list[dict], price: float, n: int = 4) -> list[dic
     scan_idx = atm_idx - 1
     while len(result) < n:
         if scan_idx < 0:
-            result.append({"strike": None, "prem": None})
+            result.append({"strike": None, "prem": None, "delta": None})
         else:
             c = puts[scan_idx]
             c_strike = float(c["strike"])
@@ -652,9 +654,11 @@ def _collect_otm_puts(options: list[dict], price: float, n: int = 4) -> list[dic
                 # adjusted/phantom contract — skip to next index
                 scan_idx -= 1
                 continue
+            c_delta = (c.get("greeks") or {}).get("delta")
             result.append({
                 "strike": round(c_strike, 2),
                 "prem": round(mid, 4) if mid else None,
+                "delta": round(float(c_delta), 4) if c_delta is not None else None,
             })
         scan_idx -= 1
     return result
@@ -1376,12 +1380,26 @@ def scan_ticker(
             if is_ai and exp in chain_cache and price:
                 try:
                     ed_chain = chain_cache[exp]
+                    ed_atm_c, _, _ = _pick_call_strikes(ed_chain, price)
+                    ed_atm_call_delta_raw = (ed_atm_c.get("greeks") or {}).get("delta") if ed_atm_c else None
+                    ed_atm_call_delta = round(float(ed_atm_call_delta_raw), 4) if ed_atm_call_delta_raw is not None else None
+                    ed_puts = sorted(
+                        [o for o in ed_chain if o.get("option_type") == "put" and _is_valid(o.get("strike")) and _is_sane_contract(o, price)],
+                        key=lambda o: float(o["strike"]),
+                    )
+                    ed_atm_put_delta: float | None = None
+                    if ed_puts and best_strike:
+                        ed_pi = min(range(len(ed_puts)), key=lambda i: abs(float(ed_puts[i]["strike"]) - best_strike))
+                        ed_put_delta_raw = (ed_puts[ed_pi].get("greeks") or {}).get("delta")
+                        ed_atm_put_delta = round(float(ed_put_delta_raw), 4) if ed_put_delta_raw is not None else None
                     row_expiry_data = json.dumps([{
                         "expiry": exp,
                         "dte": dte,
                         "atm_strike": best_strike,
                         "atm_call_prem": round(best_atm_premium, 4) if best_atm_premium else None,
                         "atm_put_prem": round(best_put_premium, 4) if best_put_premium else None,
+                        "atm_call_delta": ed_atm_call_delta,
+                        "atm_put_delta": ed_atm_put_delta,
                         "calls": _collect_otm_calls(ed_chain, price),
                         "puts": _collect_otm_puts(ed_chain, price),
                     }])
@@ -1875,15 +1893,21 @@ def scan_ticker_extensive(
                     key=lambda o: float(o["strike"]),
                 )
                 w_atm_put_mid: float | None = None
+                w_atm_put_c: dict | None = None
                 if w_puts and w_atm_strike:
                     pi = min(range(len(w_puts)), key=lambda i: abs(float(w_puts[i]["strike"]) - w_atm_strike))
-                    w_atm_put_mid = _contract_mid(w_puts[pi])
+                    w_atm_put_c = w_puts[pi]
+                    w_atm_put_mid = _contract_mid(w_atm_put_c)
+                w_call_delta_raw = (w_atm.get("greeks") or {}).get("delta") if w_atm else None
+                w_put_delta_raw = (w_atm_put_c.get("greeks") or {}).get("delta") if w_atm_put_c else None
                 expiry_rows.append({
                     "expiry": weekly_exp,
                     "dte": w_dte,
                     "atm_strike": w_atm_strike,
                     "atm_call_prem": round(w_atm_prem, 4) if w_atm_prem else None,
                     "atm_put_prem": round(w_atm_put_mid, 4) if w_atm_put_mid else None,
+                    "atm_call_delta": round(float(w_call_delta_raw), 4) if w_call_delta_raw is not None else None,
+                    "atm_put_delta": round(float(w_put_delta_raw), 4) if w_put_delta_raw is not None else None,
                     "calls": _collect_otm_calls(w_chain, w_price),
                     "puts": _collect_otm_puts(w_chain, w_price),
                 })
@@ -1903,14 +1927,28 @@ def scan_ticker_extensive(
                 base_price = result.price or 100.0
                 base_calls = _collect_otm_calls(base_chain, base_price)
                 base_puts  = _collect_otm_puts(base_chain, base_price)
+                base_atm_c, _, _ = _pick_call_strikes(base_chain, base_price)
+                base_call_delta_raw = (base_atm_c.get("greeks") or {}).get("delta") if base_atm_c else None
+                base_puts_sorted = sorted(
+                    [o for o in base_chain if o.get("option_type") == "put" and _is_valid(o.get("strike")) and _is_sane_contract(o, base_price)],
+                    key=lambda o: float(o["strike"]),
+                )
+                base_atm_put_delta_raw: float | None = None
+                if base_puts_sorted and result.best_strike:
+                    bpi = min(range(len(base_puts_sorted)), key=lambda i: abs(float(base_puts_sorted[i]["strike"]) - result.best_strike))
+                    base_atm_put_delta_raw = (base_puts_sorted[bpi].get("greeks") or {}).get("delta")
             except Exception:
                 base_calls, base_puts = [], []
+                base_call_delta_raw = None
+                base_atm_put_delta_raw = None
             expiry_rows.append({
                 "expiry": result.best_expiry,
                 "dte": result.best_dte,
                 "atm_strike": result.best_strike,
                 "atm_call_prem": round(result.atm_call_premium, 4) if result.atm_call_premium else None,
                 "atm_put_prem": None,
+                "atm_call_delta": round(float(base_call_delta_raw), 4) if base_call_delta_raw is not None else None,
+                "atm_put_delta": round(float(base_atm_put_delta_raw), 4) if base_atm_put_delta_raw is not None else None,
                 "calls": base_calls,
                 "puts": base_puts,
             })
