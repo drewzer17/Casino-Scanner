@@ -304,8 +304,10 @@ function cellValue(item, key, onResearch, opts = {}) {
             marginRight: "4px",
             cursor: "default",
             whiteSpace: "normal",
-            maxWidth: "155px",
+            maxWidth: "190px",
             lineHeight: "1.3",
+            overflow: "visible",
+            wordBreak: "keep-all",
             verticalAlign: "middle",
           }}>
             {item.primary_lens}
