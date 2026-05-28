@@ -150,6 +150,9 @@ def _parse_json_list(raw: str | None) -> list[str]:
 
 _DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
 
+# Module-level cache for /api/ai-lenses — file read once per app lifecycle
+_AI_LENSES_CACHE: dict | None = None
+
 
 def _build_ai_metadata() -> dict[str, dict]:
     """Build {ticker: {primary_lens, lenses, category, subcategory}} once per request.
@@ -1711,6 +1714,49 @@ def get_ai_overview_lenses():
         if l.get("id") != "defense_aerospace"
     ]
     return data
+
+
+@router.get("/ai-lenses", include_in_schema=True)
+def get_ai_lenses(_user: int = Depends(require_login)) -> dict:
+    """Return lens groups for the AI lens filter dropdown.
+
+    Groups lenses by their 'group' field and returns id, name, and ticker
+    count per lens.  Result is cached at module level — JSON file read once
+    per app lifecycle, not per request.
+    """
+    global _AI_LENSES_CACHE
+    if _AI_LENSES_CACHE is not None:
+        return _AI_LENSES_CACHE
+
+    lens_path = _DATA_DIR / "ai_overview_lenses.json"
+    if not lens_path.exists():
+        return {"groups": []}
+
+    try:
+        with open(lens_path) as f:
+            data = json.load(f)
+    except Exception:
+        return {"groups": []}
+
+    # Preserve group order from the JSON (insertion order in Python 3.7+)
+    groups_ordered: dict[str, list[dict]] = {}
+    for lens in data.get("lenses", []):
+        group_name = lens.get("group") or "Other"
+        entry = {
+            "id":    lens.get("id", ""),
+            "name":  lens.get("name", ""),
+            "count": len(lens.get("tickers", [])),
+        }
+        groups_ordered.setdefault(group_name, []).append(entry)
+
+    result = {
+        "groups": [
+            {"name": group_name, "lenses": lenses}
+            for group_name, lenses in groups_ordered.items()
+        ]
+    }
+    _AI_LENSES_CACHE = result
+    return result
 
 
 @router.get("/sitrep/{ticker}", include_in_schema=True)
