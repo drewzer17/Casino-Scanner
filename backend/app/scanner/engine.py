@@ -577,7 +577,7 @@ def _pick_call_strikes(
     return atm, otm1, otm2
 
 
-def _collect_otm_calls(options: list[dict], price: float, n: int = 4) -> list[dict]:
+def _collect_otm_calls(options: list[dict], price: float, n: int = 5) -> list[dict]:
     """Return up to n OTM call dicts (1 OTM → n OTM above ATM).
     Each: {"strike": float|None, "prem": float|None}
     Skips adjusted/phantom contracts: strike must be strictly above ATM strike,
@@ -615,7 +615,7 @@ def _collect_otm_calls(options: list[dict], price: float, n: int = 4) -> list[di
     return result
 
 
-def _collect_otm_puts(options: list[dict], price: float, n: int = 4) -> list[dict]:
+def _collect_otm_puts(options: list[dict], price: float, n: int = 5) -> list[dict]:
     """Return up to n OTM put dicts (1 OTM → n OTM below ATM).
     Each: {"strike": float|None, "prem": float|None}
     Skips adjusted/phantom contracts: strike must be strictly below ATM strike,
