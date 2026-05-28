@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict
 class StrikeData(BaseModel):
     strike: float | None = None
     prem: float | None = None
+    delta: float | None = None
 
 
 class ExpiryRow(BaseModel):
@@ -17,6 +18,8 @@ class ExpiryRow(BaseModel):
     atm_strike: float | None = None
     atm_call_prem: float | None = None
     atm_put_prem: float | None = None
+    atm_call_delta: float | None = None
+    atm_put_delta: float | None = None
     calls: list[StrikeData] = []   # 1 OTM through 4 OTM above price (covered calls)
     puts: list[StrikeData] = []    # 1 OTM through 4 OTM below price (cash-secured puts)
 
