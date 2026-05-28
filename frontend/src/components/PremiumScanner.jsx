@@ -12,12 +12,41 @@ const DTE_RANGES = [
   { label: "61+",   min: 62, max: Infinity },
 ];
 
+const DELTA_RANGES = [
+  { label: ".10–.15", min: 0.10, max: 0.15 },
+  { label: ".15–.20", min: 0.15, max: 0.20 },
+  { label: ".20–.30", min: 0.20, max: 0.30 },
+  { label: ".30–.45", min: 0.30, max: 0.45 },
+  { label: ".50–.70", min: 0.50, max: 0.70 },
+];
+
+const DELTA_HOTKEYS = [
+  { label: ".15–.25", min: 0.15, max: 0.25 },
+  { label: ".15–.37", min: 0.15, max: 0.37 },
+  { label: ".20–.40", min: 0.20, max: 0.40 },
+  { label: ".25–.38", min: 0.25, max: 0.38 },
+];
+
 function dteInAny(dte, dteSelected) {
   if (dteSelected.size === 0) return true;
   if (dte == null) return false;
   for (const label of dteSelected) {
     const r = DTE_RANGES.find(r => r.label === label);
     if (r && dte >= r.min && dte <= r.max) return true;
+  }
+  return false;
+}
+
+function deltaInAnyButton(delta, deltaButtons, deltaHotkeys) {
+  if (deltaButtons.size === 0 && deltaHotkeys.size === 0) return true;
+  const d = Math.abs(delta ?? 0);
+  for (const label of deltaButtons) {
+    const r = DELTA_RANGES.find(r => r.label === label);
+    if (r && d >= r.min && d <= r.max) return true;
+  }
+  for (const label of deltaHotkeys) {
+    const r = DELTA_HOTKEYS.find(r => r.label === label);
+    if (r && d >= r.min && d <= r.max) return true;
   }
   return false;
 }
@@ -544,6 +573,8 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const [showAll, setShowAll] = useState(false);
   const [earnBuckets, setEarnBuckets] = useState(new Set());
   const [deltaRange, setDeltaRange] = useState([0, 1.0]);
+  const [deltaButtons, setDeltaButtons] = useState(new Set());
+  const [deltaHotkeys, setDeltaHotkeys] = useState(new Set());
   const [tableExpanded, setTableExpanded] = useState(false);
 
   const toggleDte = (label) => {
@@ -614,12 +645,14 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
     ? items
     : items.filter(i => earnBucketMatch(i.earnings_days, earnBuckets));
 
-  const deltaFiltered = (deltaRange[0] === 0 && deltaRange[1] === 1.0)
-    ? earnFiltered
-    : earnFiltered.filter(i => {
-        const d = Math.abs(i._d.delta ?? 0);
-        return d >= deltaRange[0] && d <= deltaRange[1];
-      });
+  const deltaFiltered = earnFiltered.filter(i => {
+    const d = Math.abs(i._d.delta ?? 0);
+    if (!(deltaRange[0] === 0 && deltaRange[1] === 1.0)) {
+      if (d < deltaRange[0] || d > deltaRange[1]) return false;
+    }
+    if (!deltaInAnyButton(i._d.delta, deltaButtons, deltaHotkeys)) return false;
+    return true;
+  });
 
   // ── Internal exclusions (rows that passed Dashboard but have no items) ──
   const passedTickerSet = new Set(items.map(i => i.ticker));
@@ -758,6 +791,41 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
         <DualSlider min={0} max={1} step={0.01} value={deltaRange}
           onChange={setDeltaRange}
           fmt={v => v.toFixed(2)} />
+      </div>
+      <div className="dte-filter-row">
+        <span className="dte-filter-label">DELTA</span>
+        {DELTA_RANGES.map(r => (
+          <button
+            key={r.label}
+            className={`dte-filter-btn${deltaButtons.has(r.label) ? " active" : ""}`}
+            onClick={() => setDeltaButtons(prev => {
+              const n = new Set(prev);
+              n.has(r.label) ? n.delete(r.label) : n.add(r.label);
+              return n;
+            })}
+          >{r.label}</button>
+        ))}
+        <button
+          className={`dte-filter-btn${deltaButtons.size === 0 && deltaHotkeys.size === 0 ? " active" : ""}`}
+          onClick={() => { setDeltaButtons(new Set()); setDeltaHotkeys(new Set()); }}
+        >ALL</button>
+      </div>
+      <div className="dte-filter-row">
+        <span className="dte-filter-label" style={{ color: "#60a5fa" }}>HOTKEYS</span>
+        {DELTA_HOTKEYS.map(r => (
+          <button
+            key={r.label}
+            className={`dte-filter-btn${deltaHotkeys.has(r.label) ? " active" : ""}`}
+            style={deltaHotkeys.has(r.label)
+              ? { background: "#2563eb", borderColor: "#2563eb", color: "#fff" }
+              : { borderColor: "#2563eb", color: "#60a5fa" }}
+            onClick={() => setDeltaHotkeys(prev => {
+              const n = new Set(prev);
+              n.has(r.label) ? n.delete(r.label) : n.add(r.label);
+              return n;
+            })}
+          >{r.label}</button>
+        ))}
       </div>
       <div className="dte-filter-row" style={{ justifyContent: "flex-end", paddingRight: "4px" }}>
         <button
