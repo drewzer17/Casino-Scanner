@@ -1,4 +1,4 @@
-"""APScheduler background jobs: Extensive Scan at 8:40 AM and 7:00 PM CT, weekdays."""
+"""APScheduler background jobs: Extensive Scan at 8:35 AM and 3:30 PM CT, weekdays."""
 from __future__ import annotations
 
 import logging
@@ -59,12 +59,12 @@ def _run_extensive_scan(slot: str) -> None:
 
 
 def _morning_extensive_scan() -> None:
-    """8:40 AM CT job."""
+    """8:35 AM CT job."""
     _run_extensive_scan("am")
 
 
 def _afternoon_extensive_scan() -> None:
-    """7:00 PM CT job."""
+    """3:30 PM CT job."""
     _run_extensive_scan("pm")
 
 
@@ -75,7 +75,7 @@ def start_scheduler() -> None:
         trigger="cron",
         day_of_week="mon-fri",
         hour=8,
-        minute=40,
+        minute=35,
         timezone=_CT,
         id="morning_extensive_scan",
         replace_existing=True,
@@ -84,15 +84,15 @@ def start_scheduler() -> None:
         _afternoon_extensive_scan,
         trigger="cron",
         day_of_week="mon-fri",
-        hour=19,
-        minute=0,
+        hour=15,
+        minute=30,
         timezone=_CT,
         id="afternoon_extensive_scan",
         replace_existing=True,
     )
     scheduler.start()
     logger.info(
-        "scheduler: started — extensive scan jobs registered for 8:40 AM and 7:00 PM CT Mon-Fri"
+        "scheduler: started — extensive scan jobs registered for 8:35 AM and 3:30 PM CT Mon-Fri"
     )
 
 
