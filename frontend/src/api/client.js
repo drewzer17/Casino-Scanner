@@ -89,4 +89,8 @@ export const api = {
   // LEAPS — on-demand scan
   scanLeaps: () => post("/api/scan/leaps"),
   scanLeapsLatest: () => get("/api/scan/leaps/latest"),
+
+  // Chain Analyzer proxy
+  chainTickers: () => get("/api/chain/tickers"),
+  chainHistory: (ticker) => get(`/api/chain/history/${encodeURIComponent(ticker)}`),
 };

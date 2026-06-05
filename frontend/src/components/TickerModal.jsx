@@ -319,6 +319,14 @@ export default function TickerModal({ row, onClose, onResearch }) {
   const [chainsLoading, setChainsLoading] = useState(true);
   const [chainsError, setChainsError] = useState(null);
 
+  // Live Chain state
+  const [chainLoading, setChainLoading] = useState(false);
+  const [chainTickers, setChainTickers] = useState([]);
+  const [chainSelected, setChainSelected] = useState(null);
+  const [chainData, setChainData] = useState(null);
+  const [chainError, setChainError] = useState(null);
+  const [showChain, setShowChain] = useState(false);
+
   // Editable S/R levels — seeded from wheel response on first load so display
   // and wheel suggestions always reference the same data source.
   const [overrides, setOverrides] = useState({
@@ -377,6 +385,47 @@ export default function TickerModal({ row, onClose, onResearch }) {
         setChainsLoading(false);
       });
   }, [row.ticker]);
+
+  // Live Chain handlers
+  const handleLiveChain = () => {
+    setShowChain(true);
+    setChainLoading(true);
+    setChainError(null);
+    setChainData(null);
+    api.chainTickers()
+      .then(async (data) => {
+        const tickers = data.tickers || [];
+        setChainTickers(tickers);
+        if (data.error || tickers.length === 0) {
+          setChainError("no_tickers");
+          return;
+        }
+        const match = tickers.find(t => t.ticker === row.ticker);
+        if (match) {
+          setChainSelected(match);
+          const histData = await api.chainHistory(match.ticker);
+          const analyses = histData.analyses || [];
+          const analysis = analyses.find(a => a.expiry === match.expiry) || analyses[0] || null;
+          setChainData(analysis);
+        }
+      })
+      .catch(() => setChainError("fetch_failed"))
+      .finally(() => setChainLoading(false));
+  };
+
+  const handleChainSelect = (entry) => {
+    setChainSelected(entry);
+    setChainData(null);
+    setChainLoading(true);
+    api.chainHistory(entry.ticker)
+      .then((histData) => {
+        const analyses = histData.analyses || [];
+        const analysis = analyses.find(a => a.expiry === entry.expiry) || analyses[0] || null;
+        setChainData(analysis);
+      })
+      .catch(() => setChainError("fetch_failed"))
+      .finally(() => setChainLoading(false));
+  };
 
   // Close on Escape
   useEffect(() => {
@@ -478,6 +527,22 @@ export default function TickerModal({ row, onClose, onResearch }) {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
             <ResearchButton ticker={row.ticker} hasSitrep={row.has_sitrep} onResearch={onResearch} />
+            <button
+              onClick={handleLiveChain}
+              style={{
+                background: showChain ? "#1e3a2a" : "#1a2a1a",
+                border: `1px solid ${showChain ? "#4ade80" : "#2d5a2d"}`,
+                color: "#4ade80",
+                fontSize: "12px",
+                fontWeight: 600,
+                padding: "4px 12px",
+                borderRadius: "4px",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Live Chain
+            </button>
             <button className="modal-close" onClick={onClose}>✕</button>
           </div>
         </div>
@@ -630,6 +695,177 @@ export default function TickerModal({ row, onClose, onResearch }) {
           <div className="modal-section-title">CSP Probability</div>
           <ProbabilityPanel ticker={row.ticker} embedded={true} />
         </div>
+
+        {/* ── Live Chain section (full width) ── */}
+        {showChain && (
+          <div style={{ borderTop: "1px solid #2a2a3a", padding: "16px 20px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div className="modal-section-title" style={{ margin: 0 }}>
+                Live Chain
+                {chainLoading && <span className="modal-hint"> · loading…</span>}
+              </div>
+              <button
+                onClick={() => { setShowChain(false); setChainData(null); setChainSelected(null); }}
+                style={{ background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: 13, padding: "2px 6px" }}
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            {/* Error states */}
+            {chainError === "no_tickers" && (
+              <div style={{ fontSize: 13, color: "#f87171" }}>
+                No chain data available. Upload screenshots at:{" "}
+                <a href="https://web-production-3ee9e.up.railway.app" target="_blank" rel="noreferrer" style={{ color: "#818cf8" }}>
+                  web-production-3ee9e.up.railway.app
+                </a>
+              </div>
+            )}
+            {chainError === "fetch_failed" && (
+              <div style={{ fontSize: 13, color: "#f87171" }}>
+                Failed to reach chain analyzer.{" "}
+                <a href="https://web-production-3ee9e.up.railway.app" target="_blank" rel="noreferrer" style={{ color: "#818cf8" }}>
+                  Open directly
+                </a>
+              </div>
+            )}
+
+            {/* Ticker dropdown */}
+            {!chainError && !chainLoading && chainTickers.length > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                <select
+                  value={chainSelected?.label ?? ""}
+                  onChange={(e) => {
+                    const entry = chainTickers.find(t => t.label === e.target.value);
+                    if (entry) handleChainSelect(entry);
+                  }}
+                  style={{
+                    background: "#1a1a2e", color: "#e2e8f0", border: "1px solid #3a3a5a",
+                    borderRadius: 4, padding: "4px 10px", fontSize: 13, cursor: "pointer",
+                  }}
+                >
+                  <option value="">-- select --</option>
+                  {chainTickers.map(t => (
+                    <option key={t.label} value={t.label}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Chain data tables */}
+            {chainData && !chainLoading && (() => {
+              const shares   = chainData.shares ?? 100;
+              const basis    = chainData.basis ?? 0;
+              const realized = chainData.realized ?? 0;
+              const fmtD  = (v) => v == null ? "—" : `$${Number(v).toFixed(2)}`;
+              const fmtDol = (v) => v == null ? "—" : `$${Math.round(v).toLocaleString()}`;
+              const dolCol = (v) => ({ color: v == null ? "#94a3b8" : v >= 0 ? "#4ade80" : "#f87171", fontWeight: 700 });
+
+              const ccRows = (chainData.cc_strikes || []).map(s => {
+                const premD  = s.mid != null ? s.mid * shares : null;
+                const stGain = s.strike != null ? (s.strike - basis) * shares : null;
+                const total  = premD != null && stGain != null ? premD + stGain + realized : null;
+                return { ...s, premD, stGain, total };
+              }).sort((a, b) => (b.total ?? -Infinity) - (a.total ?? -Infinity));
+
+              const cspRows = (chainData.csp_strikes || []).map(s => {
+                const premD   = s.mid != null ? s.mid * shares : null;
+                const beven   = s.mid != null && s.strike != null ? s.strike - s.mid : null;
+                const cashReq = s.strike != null ? s.strike * shares : null;
+                return { ...s, premD, beven, cashReq };
+              }).sort((a, b) => (b.premD ?? -Infinity) - (a.premD ?? -Infinity));
+
+              const TH = ({ children, left }) => (
+                <th style={{ textAlign: left ? "left" : "right", padding: "4px 8px", fontSize: 11,
+                  color: "#94a3b8", fontWeight: 600, borderBottom: "1px solid #2a2a3a", whiteSpace: "nowrap" }}>
+                  {children}
+                </th>
+              );
+              const TD = ({ children, style: s }) => (
+                <td style={{ textAlign: "right", padding: "4px 8px", fontSize: 12, color: "#e2e8f0", ...s }}>{children}</td>
+              );
+              const TDL = ({ children }) => (
+                <td style={{ textAlign: "left", padding: "4px 8px", fontSize: 12, fontWeight: 700, color: "#e2e8f0" }}>{children}</td>
+              );
+              const rowBorder = { borderBottom: "1px solid #1e1e2e" };
+
+              return (
+                <div>
+                  {/* Info header */}
+                  <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 14 }}>
+                    <strong style={{ color: "#e2e8f0", fontSize: 13 }}>{chainData.ticker} · {chainData.expiry}</strong>
+                    {"  "}basis: <strong style={{ color: "#e2e8f0" }}>${Number(basis).toFixed(2)}</strong>
+                    {"  "}shares: <strong style={{ color: "#e2e8f0" }}>{shares}</strong>
+                    {"  "}prior realized: <strong style={dolCol(realized)}>${Math.round(realized).toLocaleString()}</strong>
+                    {chainData.analyzed_at && <>{"  "}updated: <span>{chainData.analyzed_at}</span></>}
+                  </div>
+
+                  {/* CC table */}
+                  {ccRows.length > 0 && (
+                    <div style={{ marginBottom: 20 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#4ade80", marginBottom: 6 }}>Covered Call Strikes</div>
+                      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                        <thead>
+                          <tr>
+                            <TH left>STRIKE</TH>
+                            <TH>BID</TH><TH>ASK</TH><TH>MID</TH>
+                            <TH>PREMIUM $</TH><TH>STOCK GAIN</TH><TH>TOTAL IF CALLED</TH>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {ccRows.map((s, i) => (
+                            <tr key={i} style={rowBorder}>
+                              <TDL>${s.strike != null ? Number(s.strike).toFixed(2) : "—"}</TDL>
+                              <TD>{fmtD(s.bid)}</TD>
+                              <TD>{fmtD(s.ask)}</TD>
+                              <TD>{fmtD(s.mid)}</TD>
+                              <TD style={dolCol(s.premD)}>{fmtDol(s.premD)}</TD>
+                              <TD style={dolCol(s.stGain)}>{fmtDol(s.stGain)}</TD>
+                              <TD style={{ ...dolCol(s.total), fontSize: 13 }}>{fmtDol(s.total)}</TD>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* CSP table */}
+                  {cspRows.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#60a5fa", marginBottom: 6 }}>Cash Secured Put Strikes</div>
+                      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                        <thead>
+                          <tr>
+                            <TH left>STRIKE</TH>
+                            <TH>BID</TH><TH>ASK</TH><TH>MID</TH>
+                            <TH>PREMIUM $</TH><TH>BREAKEVEN</TH><TH>CASH REQUIRED</TH>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {cspRows.map((s, i) => (
+                            <tr key={i} style={rowBorder}>
+                              <TDL>${s.strike != null ? Number(s.strike).toFixed(2) : "—"}</TDL>
+                              <TD>{fmtD(s.bid)}</TD>
+                              <TD>{fmtD(s.ask)}</TD>
+                              <TD>{fmtD(s.mid)}</TD>
+                              <TD style={dolCol(s.premD)}>{fmtDol(s.premD)}</TD>
+                              <TD>{s.beven != null ? `$${Number(s.beven).toFixed(2)}` : "—"}</TD>
+                              <TD>{fmtDol(s.cashReq)}</TD>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {ccRows.length === 0 && cspRows.length === 0 && (
+                    <div style={{ color: "#94a3b8", fontSize: 13 }}>No strike data for this expiry.</div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        )}
 
         {/* ── Live multi-expiry table (full width, fetched on demand) ── */}
         <div className="expiry-section">
