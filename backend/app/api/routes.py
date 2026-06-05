@@ -5,6 +5,8 @@ import json
 import logging
 import math
 import threading
+
+import httpx
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -149,6 +151,7 @@ def _parse_json_list(raw: str | None) -> list[str]:
 
 
 _DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
+CHAIN_ANALYZER_URL = "https://web-production-3ee9e.up.railway.app"
 
 # Module-level cache for /api/ai-lenses — file read once per app lifecycle
 _AI_LENSES_CACHE: dict | None = None
@@ -2486,3 +2489,27 @@ def get_probability(
         "earnings":              earnings,
         "parabolic":             parabolic,
     }
+
+
+# ── Chain Analyzer proxy endpoints ───────────────────────────────────────────
+
+@router.get("/chain/tickers")
+def get_chain_tickers(_user: int = Depends(require_login)) -> dict:
+    try:
+        with httpx.Client(timeout=10) as client:
+            r = client.get(f"{CHAIN_ANALYZER_URL}/api/tickers")
+            r.raise_for_status()
+            return r.json()
+    except Exception:
+        return {"tickers": [], "error": "Chain analyzer unreachable"}
+
+
+@router.get("/chain/history/{ticker}")
+def get_chain_history(ticker: str, _user: int = Depends(require_login)) -> dict:
+    try:
+        with httpx.Client(timeout=10) as client:
+            r = client.get(f"{CHAIN_ANALYZER_URL}/api/history/{ticker}")
+            r.raise_for_status()
+            return r.json()
+    except Exception:
+        return {"analyses": [], "error": "Chain analyzer unreachable"}
