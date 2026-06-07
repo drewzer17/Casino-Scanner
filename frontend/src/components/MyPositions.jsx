@@ -4,11 +4,6 @@ import { GRADE_COLORS } from "./RiskQualityScanner.jsx";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-function fmt(v, d = 2) {
-  if (v == null) return "—";
-  return Number(v).toFixed(d);
-}
-
 function fmtDollar(v) {
   if (v == null) return "—";
   return `$${Number(v).toFixed(2)}`;
@@ -37,6 +32,13 @@ function timeAgo(isoString) {
 const POSITION_TYPES = ["", "CSP", "CC", "SHARES"];
 
 const VRP_COLORS = { Rich: "#4ade80", Moderate: "#facc15", Weak: "#fb923c", Negative: "#f87171" };
+
+const ACTION_TAG_STYLES = {
+  "CLOSE NOW": { background: "#16a34a", color: "#fff", fontWeight: 700 },
+  "DANGER":    { background: "#dc2626", color: "#fff", fontWeight: 700 },
+  "STALLED":   { background: "#ca8a04", color: "#000", fontWeight: 600 },
+  "HOLD":      { color: "#9ca3af", fontWeight: 400 },
+};
 
 // ── Inline editable cell ──────────────────────────────────────────────────────
 
@@ -168,6 +170,7 @@ function ScanResultRow({ row, fullScanGrade, onClick }) {
 
 export default function MyPositions({ allRows, onRowClick }) {
   const [positions, setPositions] = useState([]);
+  const [statusMap, setStatusMap] = useState({});   // id → status row from /positions/status
   const [lastScan, setLastScan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
@@ -190,6 +193,17 @@ export default function MyPositions({ allRows, onRowClick }) {
     }
   }
 
+  const loadStatus = useCallback(async () => {
+    try {
+      const rows = await api.getPositionsStatus();
+      const map = {};
+      for (const r of rows) map[r.id] = r;
+      setStatusMap(map);
+    } catch {
+      // non-fatal
+    }
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -206,12 +220,15 @@ export default function MyPositions({ allRows, onRowClick }) {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load().then(() => loadStatus());
+  }, [load, loadStatus]);
 
   const handleRemove = async (id) => {
     try {
       await api.deletePosition(id);
       setPositions(p => p.filter(pos => pos.id !== id));
+      setStatusMap(m => { const n = { ...m }; delete n[id]; return n; });
     } catch {
       // non-fatal
     }
@@ -221,6 +238,8 @@ export default function MyPositions({ allRows, onRowClick }) {
     try {
       const updated = await api.updatePosition(id, { [field]: value });
       setPositions(p => p.map(pos => pos.id === id ? { ...pos, ...updated } : pos));
+      // Refresh status after mark update
+      if (field === "current_mark") loadStatus();
     } catch {
       // non-fatal
     }
@@ -233,7 +252,7 @@ export default function MyPositions({ allRows, onRowClick }) {
       const opts = {};
       if (addType) opts.position_type = addType;
       if (addStrike !== "") opts.strike = Number(addStrike);
-      if (addExpiry) opts.expiry = addExpiry;           // stored as YYYY-MM-DD from date picker
+      if (addExpiry) opts.expiry = addExpiry;
       if (addPremium !== "") opts.entry_price = Number(addPremium);
       if (addContracts !== "") opts.contracts = Number(addContracts);
 
@@ -246,6 +265,7 @@ export default function MyPositions({ allRows, onRowClick }) {
       setAddPremium("");
       setAddContracts("");
       setAddMsg({ text: `Added ${created.ticker}`, ok: true });
+      loadStatus();
     } catch (e) {
       setAddMsg({ text: e.message, ok: false });
     } finally {
@@ -260,6 +280,7 @@ export default function MyPositions({ allRows, onRowClick }) {
     try {
       const result = await api.scanPositions();
       setLastScan(result);
+      loadStatus();
     } catch (e) {
       setScanError(e.message);
     } finally {
@@ -372,66 +393,96 @@ export default function MyPositions({ allRows, onRowClick }) {
                   <th>STRIKE</th>
                   <th>EXPIRY</th>
                   <th>PREMIUM $</th>
+                  <th>MARK $</th>
                   <th>CONTRACTS</th>
                   <th>ACTION TAG</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
-                {positions.map(pos => (
-                  <tr key={pos.id} className="pos-row">
-                    <td className="pos-td-ticker">{pos.ticker}</td>
-                    <td>
-                      <EditableCell
-                        value={pos.position_type}
-                        onSave={v => handleUpdate(pos.id, "position_type", v)}
-                        options={POSITION_TYPES}
-                        placeholder="type"
-                      />
-                    </td>
-                    <td>
-                      <EditableCell
-                        value={pos.strike}
-                        onSave={v => handleUpdate(pos.id, "strike", v)}
-                        type="number"
-                        placeholder="strike"
-                      />
-                    </td>
-                    <td>
-                      <EditableCell
-                        value={fmtExpiry(pos.expiry)}
-                        onSave={v => handleUpdate(pos.id, "expiry", v)}
-                        placeholder="expiry"
-                      />
-                    </td>
-                    <td>
-                      <EditableCell
-                        value={pos.entry_price}
-                        onSave={v => handleUpdate(pos.id, "entry_price", v)}
-                        type="number"
-                        placeholder="$"
-                      />
-                    </td>
-                    <td>
-                      <EditableCell
-                        value={pos.contracts}
-                        onSave={v => handleUpdate(pos.id, "contracts", v)}
-                        type="number"
-                        placeholder="#"
-                      />
-                    </td>
-                    <td className="pos-td-action-tag">—</td>
-                    <td>
-                      <button
-                        className="pos-remove-btn"
-                        onClick={() => handleRemove(pos.id)}
-                        title="Remove position"
-                      >
-                        ✕
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {positions.map(pos => {
+                  const st = statusMap[pos.id];
+                  const tag = st?.action_tag ?? null;
+                  const tagStyle = tag ? (ACTION_TAG_STYLES[tag] || {}) : {};
+                  const hasBg = tag && tag !== "HOLD";
+
+                  return (
+                    <tr key={pos.id} className="pos-row">
+                      <td className="pos-td-ticker">{pos.ticker}</td>
+                      <td>
+                        <EditableCell
+                          value={pos.position_type}
+                          onSave={v => handleUpdate(pos.id, "position_type", v)}
+                          options={POSITION_TYPES}
+                          placeholder="type"
+                        />
+                      </td>
+                      <td>
+                        <EditableCell
+                          value={pos.strike}
+                          onSave={v => handleUpdate(pos.id, "strike", v)}
+                          type="number"
+                          placeholder="strike"
+                        />
+                      </td>
+                      <td>
+                        <EditableCell
+                          value={fmtExpiry(pos.expiry)}
+                          onSave={v => handleUpdate(pos.id, "expiry", v)}
+                          placeholder="expiry"
+                        />
+                      </td>
+                      <td>
+                        <EditableCell
+                          value={pos.entry_price}
+                          onSave={v => handleUpdate(pos.id, "entry_price", v)}
+                          type="number"
+                          placeholder="$"
+                        />
+                      </td>
+                      <td>
+                        <EditableCell
+                          value={pos.current_mark}
+                          onSave={v => handleUpdate(pos.id, "current_mark", v)}
+                          type="number"
+                          placeholder="—"
+                        />
+                      </td>
+                      <td>
+                        <EditableCell
+                          value={pos.contracts}
+                          onSave={v => handleUpdate(pos.id, "contracts", v)}
+                          type="number"
+                          placeholder="#"
+                        />
+                      </td>
+                      <td className="pos-td-action-tag">
+                        {tag ? (
+                          <span
+                            style={{
+                              ...tagStyle,
+                              padding: hasBg ? "2px 7px" : undefined,
+                              borderRadius: hasBg ? 4 : undefined,
+                              fontSize: 11,
+                              display: "inline-block",
+                            }}
+                          >
+                            {tag}
+                          </span>
+                        ) : "—"}
+                      </td>
+                      <td>
+                        <button
+                          className="pos-remove-btn"
+                          onClick={() => handleRemove(pos.id)}
+                          title="Remove position"
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

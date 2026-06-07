@@ -397,6 +397,9 @@ def init_db() -> None:
     _add_column_if_missing(
         "ALTER TABLE user_positions ADD COLUMN IF NOT EXISTS manual_status_override_reason TEXT"
     )
+    _add_column_if_missing(
+        "ALTER TABLE user_positions ADD COLUMN IF NOT EXISTS current_mark DOUBLE PRECISION"
+    )
 
     # dataset_cohort on backtest_runs — v22
     _add_column_if_missing(

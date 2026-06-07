@@ -209,6 +209,16 @@ class PositionOut(BaseModel):
     notes: str | None = None
     active: bool
     created_at: datetime
+    profit_target_pct: float | None = None
+    entry_regime: str | None = None
+    entry_assign_pct: float | None = None
+    entry_mae: float | None = None
+    entry_exit_pct: float | None = None
+    entry_grade: str | None = None
+    entry_underlying_price: float | None = None
+    current_mark: float | None = None
+    last_alert_type: str | None = None
+    manual_status_override_reason: str | None = None
 
 
 class QuickAddIn(BaseModel):

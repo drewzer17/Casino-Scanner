@@ -1926,6 +1926,99 @@ def trigger_backfill_iv_history(background_tasks: BackgroundTasks) -> dict:
     }
 
 
+# ── My Positions — Status ─────────────────────────────────────────────────────
+
+@router.get("/positions/status")
+def get_positions_status(db: Session = Depends(get_db), _user: int = Depends(require_login)) -> list:
+    positions = db.query(models.UserPosition).filter(models.UserPosition.active == True).all()  # noqa: E712
+
+    from sqlalchemy import text as _text
+    from datetime import date as _date
+
+    result = []
+    for p in positions:
+        days_held = None
+        if p.entry_date:
+            try:
+                from datetime import datetime
+                entry = datetime.fromisoformat(p.entry_date).date()
+                days_held = (_date.today() - entry).days
+            except Exception:
+                pass
+
+        # Get current scan data for this ticker
+        scan_row = db.execute(_text(
+            "SELECT prob_assign_pct, prob_regime FROM scan_results "
+            "WHERE ticker = :t ORDER BY id DESC LIMIT 1"
+        ), {"t": p.ticker}).fetchone()
+
+        current_assign = float(scan_row.prob_assign_pct) if scan_row and scan_row.prob_assign_pct else None
+        current_regime = scan_row.prob_regime if scan_row else None
+        assign_drift = round(current_assign - p.entry_assign_pct, 1) if (current_assign and p.entry_assign_pct) else None
+
+        # Compute profit pct if mark is set
+        profit_pct = None
+        if p.current_mark is not None and p.entry_price:
+            profit_pct = round((p.entry_price - p.current_mark) / p.entry_price * 100, 1)
+
+        # DTE
+        dte = None
+        if p.expiry:
+            try:
+                exp = _date.fromisoformat(p.expiry)
+                dte = (exp - _date.today()).days
+            except Exception:
+                pass
+
+        # Action tag logic
+        target = p.profit_target_pct or 50
+        tag = "HOLD"
+
+        danger = False
+        if assign_drift and assign_drift >= 15 and current_assign and current_assign >= 35:
+            danger = True
+        if p.entry_regime and current_regime and p.entry_regime != current_regime:
+            if "Bull" in (p.entry_regime or "") and "Bear" in (current_regime or ""):
+                danger = True
+        if dte is not None and dte <= 5:
+            danger = True
+
+        close_now = profit_pct is not None and profit_pct >= target
+        stalled = (days_held or 0) > 10 and (profit_pct or 0) < 30
+
+        if close_now and danger:
+            tag = "CLOSE NOW"
+        elif danger:
+            tag = "DANGER"
+        elif close_now:
+            tag = "CLOSE NOW"
+        elif stalled:
+            tag = "STALLED"
+
+        result.append({
+            "id": p.id,
+            "ticker": p.ticker,
+            "position_type": p.position_type,
+            "strike": p.strike,
+            "expiry": p.expiry,
+            "entry_price": p.entry_price,
+            "current_mark": p.current_mark,
+            "contracts": p.contracts,
+            "profit_pct": profit_pct,
+            "days_held": days_held,
+            "dte": dte,
+            "entry_regime": p.entry_regime,
+            "current_regime": current_regime,
+            "entry_assign_pct": p.entry_assign_pct,
+            "current_assign_pct": current_assign,
+            "assign_drift": assign_drift,
+            "action_tag": tag,
+            "profit_target_pct": p.profit_target_pct or 50,
+        })
+
+    return result
+
+
 # ── My Positions — CRUD ───────────────────────────────────────────────────────
 
 @router.get("/positions", response_model=list[PositionOut])
