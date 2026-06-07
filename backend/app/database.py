@@ -420,6 +420,16 @@ def init_db() -> None:
         ))
         _conn.commit()
 
+    # One-time cleanup: remove inactive duplicate COHR rows left by pre-v25 testing
+    with engine.connect() as _conn:
+        try:
+            _conn.execute(_text(
+                "DELETE FROM user_positions WHERE ticker = 'COHR' AND active = false"
+            ))
+            _conn.commit()
+        except Exception:
+            _conn.rollback()
+
 
 def _add_column_if_missing(ddl: str) -> None:
     from sqlalchemy import text

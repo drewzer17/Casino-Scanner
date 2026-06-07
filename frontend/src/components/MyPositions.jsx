@@ -14,6 +14,14 @@ function fmtDollar(v) {
   return `$${Number(v).toFixed(2)}`;
 }
 
+// "2026-06-12" → "06-12-26"
+function fmtExpiry(v) {
+  if (!v) return "—";
+  const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return `${m[2]}-${m[3]}-${m[1].slice(2)}`;
+  return v;
+}
+
 function timeAgo(isoString) {
   if (!isoString) return null;
   const s = isoString.endsWith("Z") || isoString.includes("+") ? isoString : isoString + "Z";
@@ -104,7 +112,6 @@ function EditableCell({ value, onSave, type = "text", options = null, placeholde
 function ScanResultRow({ row, fullScanGrade, onClick }) {
   const grade = row.risk_grade;
   const gradeColor = grade ? GRADE_COLORS[grade] : "#6b7280";
-  const fullGradeColor = fullScanGrade ? GRADE_COLORS[fullScanGrade] : "#6b7280";
 
   const gradeChanged = fullScanGrade && fullScanGrade !== grade;
   const directionUp = gradeChanged && grade && fullScanGrade &&
@@ -161,14 +168,19 @@ function ScanResultRow({ row, fullScanGrade, onClick }) {
 
 export default function MyPositions({ allRows, onRowClick }) {
   const [positions, setPositions] = useState([]);
-  const [lastScan, setLastScan] = useState(null);        // PositionScanOut
+  const [lastScan, setLastScan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState(null);
 
-  // Bulk add input
-  const [bulkInput, setBulkInput] = useState("");
-  const [addMsg, setAddMsg] = useState(null);   // { text, ok }
+  // Add form state
+  const [addTicker, setAddTicker] = useState("");
+  const [addType, setAddType] = useState("");
+  const [addStrike, setAddStrike] = useState("");
+  const [addExpiry, setAddExpiry] = useState("");
+  const [addPremium, setAddPremium] = useState("");
+  const [addContracts, setAddContracts] = useState("");
+  const [addMsg, setAddMsg] = useState(null);  // { text, ok }
 
   // Build a grade map from the latest full scan for comparison
   const fullScanGradeMap = {};
@@ -214,17 +226,26 @@ export default function MyPositions({ allRows, onRowClick }) {
     }
   };
 
-  const handleBulkAdd = async () => {
-    if (!bulkInput.trim()) return;
+  const handleAdd = async () => {
+    const ticker = addTicker.trim().toUpperCase();
+    if (!ticker) return;
     try {
-      const created = await api.quickAddPositions(bulkInput);
-      if (created.length === 0) {
-        setAddMsg({ text: "All tickers already in positions", ok: false });
-      } else {
-        setAddMsg({ text: `Added: ${created.map(p => p.ticker).join(", ")}`, ok: true });
-        setPositions(p => [...p, ...created].sort((a, b) => a.ticker.localeCompare(b.ticker)));
-      }
-      setBulkInput("");
+      const opts = {};
+      if (addType) opts.position_type = addType;
+      if (addStrike !== "") opts.strike = Number(addStrike);
+      if (addExpiry) opts.expiry = addExpiry;           // stored as YYYY-MM-DD from date picker
+      if (addPremium !== "") opts.entry_price = Number(addPremium);
+      if (addContracts !== "") opts.contracts = Number(addContracts);
+
+      const created = await api.addPosition(ticker, opts);
+      setPositions(p => [...p, created].sort((a, b) => a.ticker.localeCompare(b.ticker)));
+      setAddTicker("");
+      setAddType("");
+      setAddStrike("");
+      setAddExpiry("");
+      setAddPremium("");
+      setAddContracts("");
+      setAddMsg({ text: `Added ${created.ticker}`, ok: true });
     } catch (e) {
       setAddMsg({ text: e.message, ok: false });
     } finally {
@@ -257,24 +278,6 @@ export default function MyPositions({ allRows, onRowClick }) {
         <div className="pos-section-header">
           <h2 className="pos-section-title">📋 My Positions</h2>
           <div className="pos-actions">
-            <div className="pos-bulk-wrap">
-              <input
-                className="pos-bulk-input"
-                type="text"
-                placeholder="AAPL, MSFT, CRDO"
-                value={bulkInput}
-                onChange={e => setBulkInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleBulkAdd()}
-              />
-              <button className="pos-add-btn" onClick={handleBulkAdd}>
-                + Add
-              </button>
-            </div>
-            {addMsg && (
-              <span className={`pos-add-msg${addMsg.ok ? " ok" : " err"}`}>
-                {addMsg.text}
-              </span>
-            )}
             <button
               className={`pos-scan-btn${scanning ? " scanning" : ""}`}
               onClick={handleQuickScan}
@@ -296,22 +299,81 @@ export default function MyPositions({ allRows, onRowClick }) {
           </div>
         </div>
 
+        {/* ── Add position form ── */}
+        <div className="pos-add-form">
+          <input
+            className="pos-form-input pos-form-ticker"
+            type="text"
+            placeholder="TICKER"
+            value={addTicker}
+            onChange={e => setAddTicker(e.target.value.toUpperCase())}
+            onKeyDown={e => e.key === "Enter" && handleAdd()}
+          />
+          <select
+            className="pos-form-select"
+            value={addType}
+            onChange={e => setAddType(e.target.value)}
+          >
+            <option value="">TYPE</option>
+            <option value="CSP">CSP</option>
+            <option value="CC">CC</option>
+            <option value="SHARES">SHARES</option>
+          </select>
+          <input
+            className="pos-form-input"
+            type="number"
+            placeholder="Strike Price"
+            value={addStrike}
+            onChange={e => setAddStrike(e.target.value)}
+            step="0.5"
+          />
+          <input
+            className="pos-form-input pos-form-date"
+            type="date"
+            value={addExpiry}
+            onChange={e => setAddExpiry(e.target.value)}
+          />
+          <input
+            className="pos-form-input"
+            type="number"
+            placeholder="Premium Received $"
+            value={addPremium}
+            onChange={e => setAddPremium(e.target.value)}
+            step="0.01"
+          />
+          <input
+            className="pos-form-input pos-form-contracts"
+            type="number"
+            placeholder="Contracts"
+            value={addContracts}
+            onChange={e => setAddContracts(e.target.value)}
+            step="1"
+            min="1"
+          />
+          <button className="pos-add-btn" onClick={handleAdd}>+ Add</button>
+          {addMsg && (
+            <span className={`pos-add-msg${addMsg.ok ? " ok" : " err"}`}>
+              {addMsg.text}
+            </span>
+          )}
+        </div>
+
         {positions.length === 0 ? (
           <div className="pos-empty">
-            No positions yet. Add tickers above.
+            No positions yet. Add one above.
           </div>
         ) : (
           <div className="pos-table-wrap">
             <table className="pos-table">
               <thead>
                 <tr>
-                  <th className="pos-th-ticker">Ticker</th>
-                  <th>Type</th>
-                  <th>Strike</th>
-                  <th>Expiry</th>
-                  <th>Contracts</th>
-                  <th>Entry $</th>
-                  <th>Notes</th>
+                  <th className="pos-th-ticker">TICKER</th>
+                  <th>TYPE</th>
+                  <th>STRIKE</th>
+                  <th>EXPIRY</th>
+                  <th>PREMIUM $</th>
+                  <th>CONTRACTS</th>
+                  <th>ACTION TAG</th>
                   <th></th>
                 </tr>
               </thead>
@@ -337,17 +399,9 @@ export default function MyPositions({ allRows, onRowClick }) {
                     </td>
                     <td>
                       <EditableCell
-                        value={pos.expiry}
+                        value={fmtExpiry(pos.expiry)}
                         onSave={v => handleUpdate(pos.id, "expiry", v)}
-                        placeholder="yyyy-mm-dd"
-                      />
-                    </td>
-                    <td>
-                      <EditableCell
-                        value={pos.contracts}
-                        onSave={v => handleUpdate(pos.id, "contracts", v)}
-                        type="number"
-                        placeholder="#"
+                        placeholder="expiry"
                       />
                     </td>
                     <td>
@@ -360,11 +414,13 @@ export default function MyPositions({ allRows, onRowClick }) {
                     </td>
                     <td>
                       <EditableCell
-                        value={pos.notes}
-                        onSave={v => handleUpdate(pos.id, "notes", v)}
-                        placeholder="notes"
+                        value={pos.contracts}
+                        onSave={v => handleUpdate(pos.id, "contracts", v)}
+                        type="number"
+                        placeholder="#"
                       />
                     </td>
+                    <td className="pos-td-action-tag">—</td>
                     <td>
                       <button
                         className="pos-remove-btn"

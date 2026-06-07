@@ -1985,7 +1985,7 @@ def create_position(body: PositionIn, db: Session = Depends(get_db)) -> Position
         _regime = get_current_regime(db)
 
         _scan_row = db.execute(_text(
-            "SELECT price, path_safety_grade, prob_assign_pct, prob_mae, prob_exit_pct "
+            "SELECT price, path_safety_grade, prob_assign_pct, prob_mae, prob_exit_pct, prob_regime "
             "FROM scan_results WHERE ticker = :t ORDER BY id DESC LIMIT 1"
         ), {"t": pos.ticker}).fetchone()
 
@@ -2006,7 +2006,7 @@ def create_position(body: PositionIn, db: Session = Depends(get_db)) -> Position
                 "all"
             )
 
-        pos.entry_regime = _regime.get("name") if _regime else None
+        pos.entry_regime = (_scan_row.prob_regime if _scan_row and _scan_row.prob_regime else (_regime.get("name") if _regime else None))
         pos.entry_grade = _scan_row.path_safety_grade if _scan_row else None
         pos.entry_underlying_price = float(_scan_row.price) if _scan_row else None
         pos.entry_assign_pct = (_probs["assigned_pct"] if _probs else
