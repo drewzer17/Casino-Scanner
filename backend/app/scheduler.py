@@ -1,4 +1,4 @@
-"""APScheduler background jobs: Extensive Scan at 8:35 AM and 3:30 PM CT, weekdays."""
+"""APScheduler background jobs: Extensive Scan at 8:35 AM and 3:30 PM CT, weekdays; Price update at 4:00 PM CT, weekdays."""
 from __future__ import annotations
 
 import logging
@@ -68,6 +68,21 @@ def _afternoon_extensive_scan() -> None:
     _run_extensive_scan("pm")
 
 
+def _daily_price_update() -> None:
+    """4:00 PM CT job — fill missing rows in price_history for all tracked tickers."""
+    logger.info("scheduler: starting daily price history update")
+    try:
+        from .update_prices import update_price_history
+        summary = update_price_history()
+        logger.info(
+            "scheduler: daily price update complete — updated=%s rows_inserted=%s skipped=%s failed=%s",
+            summary.get("updated"), summary.get("rows_inserted"),
+            summary.get("skipped"), len(summary.get("failed", [])),
+        )
+    except Exception as exc:
+        logger.exception("scheduler: daily price update failed: %s", exc)
+
+
 def start_scheduler() -> None:
     """Register cron jobs and start the scheduler. Called from main.py startup."""
     scheduler.add_job(
@@ -90,9 +105,20 @@ def start_scheduler() -> None:
         id="afternoon_extensive_scan",
         replace_existing=True,
     )
+    scheduler.add_job(
+        _daily_price_update,
+        trigger="cron",
+        day_of_week="mon-fri",
+        hour=16,
+        minute=0,
+        timezone=_CT,
+        id="daily_price_update",
+        replace_existing=True,
+    )
     scheduler.start()
     logger.info(
-        "scheduler: started — extensive scan jobs registered for 8:35 AM and 3:30 PM CT Mon-Fri"
+        "scheduler: started — extensive scan jobs registered for 8:35 AM and 3:30 PM CT Mon-Fri; "
+        "price update registered for 4:00 PM CT Mon-Fri"
     )
 
 
