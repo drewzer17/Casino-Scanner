@@ -802,7 +802,7 @@ export default function Dashboard() {
     <>
       <div className="header">
         <div>
-          <h1>Casino Scanner</h1>
+          <h1 style={{ color: "#ffffff" }}>Casino Scanner V.2</h1>
           <div className="subtitle">
             Run #{data.run_id} · {data.universe_size || data.tickers_scanned} tickers ·{" "}
             {formatCentral(data.finished_at)}
