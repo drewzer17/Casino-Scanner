@@ -1926,6 +1926,23 @@ def trigger_backfill_iv_history(background_tasks: BackgroundTasks) -> dict:
     }
 
 
+@router.post("/admin/update-prices", include_in_schema=False)
+def trigger_update_prices(_user: int = Depends(require_login)) -> dict:
+    """Trigger a one-time price history update for all tracked tickers.
+
+    Runs in a daemon background thread — returns immediately.
+    Watch Railway logs for progress and results.
+    """
+    import threading
+    from ..update_prices import update_price_history
+
+    threading.Thread(target=update_price_history, daemon=True).start()
+    return {
+        "status": "started",
+        "message": "Price history update running in background. Check logs for progress.",
+    }
+
+
 # ── My Positions — Status ─────────────────────────────────────────────────────
 
 @router.get("/positions/status")
