@@ -366,6 +366,38 @@ def init_db() -> None:
         "ON option_snapshots(ticker, scan_date)"
     )
 
+    # New columns on user_positions — v25
+    _add_column_if_missing(
+        "ALTER TABLE user_positions ADD COLUMN IF NOT EXISTS profit_target_pct DOUBLE PRECISION DEFAULT 50.0"
+    )
+    _add_column_if_missing(
+        "ALTER TABLE user_positions ADD COLUMN IF NOT EXISTS entry_regime VARCHAR(60)"
+    )
+    _add_column_if_missing(
+        "ALTER TABLE user_positions ADD COLUMN IF NOT EXISTS entry_assign_pct DOUBLE PRECISION"
+    )
+    _add_column_if_missing(
+        "ALTER TABLE user_positions ADD COLUMN IF NOT EXISTS entry_mae DOUBLE PRECISION"
+    )
+    _add_column_if_missing(
+        "ALTER TABLE user_positions ADD COLUMN IF NOT EXISTS entry_exit_pct DOUBLE PRECISION"
+    )
+    _add_column_if_missing(
+        "ALTER TABLE user_positions ADD COLUMN IF NOT EXISTS entry_grade VARCHAR(4)"
+    )
+    _add_column_if_missing(
+        "ALTER TABLE user_positions ADD COLUMN IF NOT EXISTS entry_underlying_price DOUBLE PRECISION"
+    )
+    _add_column_if_missing(
+        "ALTER TABLE user_positions ADD COLUMN IF NOT EXISTS last_alert_type VARCHAR(30)"
+    )
+    _add_column_if_missing(
+        "ALTER TABLE user_positions ADD COLUMN IF NOT EXISTS last_alert_at TIMESTAMP"
+    )
+    _add_column_if_missing(
+        "ALTER TABLE user_positions ADD COLUMN IF NOT EXISTS manual_status_override_reason TEXT"
+    )
+
     # dataset_cohort on backtest_runs — v22
     _add_column_if_missing(
         "ALTER TABLE backtest_runs ADD COLUMN IF NOT EXISTS dataset_cohort VARCHAR(30) DEFAULT 'foundation_v1'"

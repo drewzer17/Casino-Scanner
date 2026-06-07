@@ -215,6 +215,16 @@ class UserPosition(Base):
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    profit_target_pct: Mapped[float | None] = mapped_column(Float, nullable=True, default=50.0)
+    entry_regime: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    entry_assign_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    entry_mae: Mapped[float | None] = mapped_column(Float, nullable=True)
+    entry_exit_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    entry_grade: Mapped[str | None] = mapped_column(String(4), nullable=True)
+    entry_underlying_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    last_alert_type: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    last_alert_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    manual_status_override_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class OptionSnapshot(Base):
