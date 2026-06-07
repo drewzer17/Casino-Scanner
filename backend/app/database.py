@@ -401,6 +401,19 @@ def init_db() -> None:
         "ALTER TABLE user_positions ADD COLUMN IF NOT EXISTS current_mark DOUBLE PRECISION"
     )
 
+    # Owner column on user_positions — v26
+    _add_column_if_missing(
+        "ALTER TABLE user_positions ADD COLUMN IF NOT EXISTS owner VARCHAR(10) DEFAULT 'drew'"
+    )
+    with engine.connect() as _conn:
+        try:
+            _conn.execute(_text(
+                "UPDATE user_positions SET owner = 'drew' WHERE owner IS NULL"
+            ))
+            _conn.commit()
+        except Exception:
+            _conn.rollback()
+
     # dataset_cohort on backtest_runs — v22
     _add_column_if_missing(
         "ALTER TABLE backtest_runs ADD COLUMN IF NOT EXISTS dataset_cohort VARCHAR(30) DEFAULT 'foundation_v1'"

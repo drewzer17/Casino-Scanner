@@ -182,6 +182,7 @@ class PositionIn(BaseModel):
     strike: float | None = None
     expiry: str | None = None            # ISO date string e.g. "2026-06-20"
     notes: str | None = None
+    owner: str = "drew"                  # "drew" | "randy"
 
 
 class PositionUpdate(BaseModel):
@@ -219,6 +220,7 @@ class PositionOut(BaseModel):
     current_mark: float | None = None
     last_alert_type: str | None = None
     manual_status_override_reason: str | None = None
+    owner: str = "drew"
 
 
 class QuickAddIn(BaseModel):

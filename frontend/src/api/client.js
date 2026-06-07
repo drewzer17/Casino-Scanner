@@ -76,8 +76,8 @@ export const api = {
   earningsStatus: () => get("/api/earnings-status"),
 
   // My Positions — CRUD
-  getPositions: () => get("/api/positions"),
-  getPositionsStatus: () => get("/api/positions/status"),
+  getPositions: (owner = "drew") => get(`/api/positions?owner=${encodeURIComponent(owner)}`),
+  getPositionsStatus: (owner = "drew") => get(`/api/positions/status?owner=${encodeURIComponent(owner)}`),
   addPosition: (ticker, opts = {}) => postJson("/api/positions", { ticker, ...opts }),
   quickAddPositions: (tickers) => postJson("/api/positions/quick-add", { tickers }),
   deletePosition: (id) => del(`/api/positions/${id}`),

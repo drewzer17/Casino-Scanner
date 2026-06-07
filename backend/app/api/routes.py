@@ -1929,8 +1929,11 @@ def trigger_backfill_iv_history(background_tasks: BackgroundTasks) -> dict:
 # ── My Positions — Status ─────────────────────────────────────────────────────
 
 @router.get("/positions/status")
-def get_positions_status(db: Session = Depends(get_db), _user: int = Depends(require_login)) -> list:
-    positions = db.query(models.UserPosition).filter(models.UserPosition.active == True).all()  # noqa: E712
+def get_positions_status(owner: str = "drew", db: Session = Depends(get_db), _user: int = Depends(require_login)) -> list:
+    positions = db.query(models.UserPosition).filter(
+        models.UserPosition.active == True,  # noqa: E712
+        models.UserPosition.owner == owner,
+    ).all()
 
     from sqlalchemy import text as _text
     from datetime import date as _date
@@ -2022,12 +2025,15 @@ def get_positions_status(db: Session = Depends(get_db), _user: int = Depends(req
 # ── My Positions — CRUD ───────────────────────────────────────────────────────
 
 @router.get("/positions", response_model=list[PositionOut])
-def list_positions(db: Session = Depends(get_db)) -> list[PositionOut]:
-    """Return all active positions ordered by ticker."""
+def list_positions(owner: str = "drew", db: Session = Depends(get_db)) -> list[PositionOut]:
+    """Return active positions for the given owner, ordered by ticker."""
     rows = (
         db.execute(
             select(models.UserPosition)
-            .where(models.UserPosition.active == True)  # noqa: E712
+            .where(
+                models.UserPosition.active == True,  # noqa: E712
+                models.UserPosition.owner == owner,
+            )
             .order_by(models.UserPosition.ticker)
         )
         .scalars()
@@ -2043,12 +2049,15 @@ def create_position(body: PositionIn, db: Session = Depends(get_db)) -> Position
     if not ticker:
         raise HTTPException(status_code=422, detail="ticker is required")
 
-    # Check for existing active position with same ticker
+    owner = (body.owner or "drew").lower().strip()
+
+    # Check for existing active position with same ticker + owner
     existing = db.execute(
         select(models.UserPosition)
         .where(
             models.UserPosition.ticker == ticker,
             models.UserPosition.active == True,  # noqa: E712
+            models.UserPosition.owner == owner,
         )
         .limit(1)
     ).scalar_one_or_none()
@@ -2066,6 +2075,7 @@ def create_position(body: PositionIn, db: Session = Depends(get_db)) -> Position
         notes=body.notes,
         active=True,
         created_at=datetime.utcnow(),
+        owner=owner,
     )
     db.add(pos)
     db.commit()

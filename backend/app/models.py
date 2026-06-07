@@ -226,6 +226,7 @@ class UserPosition(Base):
     last_alert_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     manual_status_override_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     current_mark: Mapped[float | None] = mapped_column(Float, nullable=True)
+    owner: Mapped[str] = mapped_column(String(10), nullable=False, default="drew", server_default="drew")
 
 
 class OptionSnapshot(Base):

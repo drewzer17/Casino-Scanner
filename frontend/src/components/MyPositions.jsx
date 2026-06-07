@@ -2,6 +2,12 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api/client.js";
 import { GRADE_COLORS } from "./RiskQualityScanner.jsx";
 
+// ── PIN constants ─────────────────────────────────────────────────────────────
+const PIN_DREW  = "1723";
+const PIN_RANDY = "1717";
+
+const OWNER_PINS = { drew: PIN_DREW, randy: PIN_RANDY };
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 function fmtDollar(v) {
@@ -38,6 +44,11 @@ const ACTION_TAG_STYLES = {
   "DANGER":    { background: "#dc2626", color: "#fff", fontWeight: 700 },
   "STALLED":   { background: "#ca8a04", color: "#000", fontWeight: 600 },
   "HOLD":      { color: "#9ca3af", fontWeight: 400 },
+};
+
+const OWNER_STYLES = {
+  drew:  { background: "#1d4ed8", color: "#fff" },
+  randy: { background: "#d97706", color: "#fff" },
 };
 
 // ── Inline editable cell ──────────────────────────────────────────────────────
@@ -166,24 +177,80 @@ function ScanResultRow({ row, fullScanGrade, onClick }) {
   );
 }
 
+// ── PIN prompt (inline) ───────────────────────────────────────────────────────
+
+function PinPrompt({ targetOwner, onSuccess, onCancel }) {
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState(false);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (inputRef.current) inputRef.current.focus();
+  }, []);
+
+  const handleKey = (e) => {
+    if (e.key === "Escape") { onCancel(); return; }
+    if (e.key === "Enter") { attempt(); }
+  };
+
+  const attempt = () => {
+    if (pin === OWNER_PINS[targetOwner]) {
+      setError(false);
+      onSuccess();
+    } else {
+      setError(true);
+      setPin("");
+    }
+  };
+
+  return (
+    <span className="pos-pin-prompt" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: 8 }}>
+      <input
+        ref={inputRef}
+        className="pos-pin-input"
+        type="password"
+        inputMode="numeric"
+        maxLength={4}
+        placeholder="PIN"
+        value={pin}
+        onChange={e => { setPin(e.target.value); setError(false); }}
+        onKeyDown={handleKey}
+        style={{ width: 60, textAlign: "center", letterSpacing: 4, fontSize: 14 }}
+      />
+      <button className="pos-pin-go" onClick={attempt} style={{ fontSize: 12 }}>Go</button>
+      <button className="pos-pin-cancel" onClick={onCancel} style={{ fontSize: 12, color: "#6b7280" }}>✕</button>
+      {error && (
+        <span style={{ color: "#ef4444", fontSize: 11, fontWeight: 600 }}>Incorrect PIN</span>
+      )}
+    </span>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function MyPositions({ allRows, onRowClick }) {
+  // ── Owner / PIN state ──
+  const [activeOwner, setActiveOwner] = useState(() => {
+    return localStorage.getItem("cs_active_owner") || "drew";
+  });
+  const [pinTarget, setPinTarget] = useState(null);   // "drew" | "randy" | null
+
+  // ── Data state ──
   const [positions, setPositions] = useState([]);
-  const [statusMap, setStatusMap] = useState({});   // id → status row from /positions/status
+  const [statusMap, setStatusMap] = useState({});
   const [lastScan, setLastScan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState(null);
 
-  // Add form state
+  // ── Add form state ──
   const [addTicker, setAddTicker] = useState("");
   const [addType, setAddType] = useState("");
   const [addStrike, setAddStrike] = useState("");
   const [addExpiry, setAddExpiry] = useState("");
   const [addPremium, setAddPremium] = useState("");
   const [addContracts, setAddContracts] = useState("");
-  const [addMsg, setAddMsg] = useState(null);  // { text, ok }
+  const [addMsg, setAddMsg] = useState(null);
 
   // Build a grade map from the latest full scan for comparison
   const fullScanGradeMap = {};
@@ -193,9 +260,9 @@ export default function MyPositions({ allRows, onRowClick }) {
     }
   }
 
-  const loadStatus = useCallback(async () => {
+  const loadStatus = useCallback(async (owner) => {
     try {
-      const rows = await api.getPositionsStatus();
+      const rows = await api.getPositionsStatus(owner);
       const map = {};
       for (const r of rows) map[r.id] = r;
       setStatusMap(map);
@@ -204,11 +271,11 @@ export default function MyPositions({ allRows, onRowClick }) {
     }
   }, []);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (owner) => {
     setLoading(true);
     try {
       const [pos, scan] = await Promise.all([
-        api.getPositions(),
+        api.getPositions(owner),
         api.scanPositionsLatest(),
       ]);
       setPositions(pos);
@@ -221,9 +288,26 @@ export default function MyPositions({ allRows, onRowClick }) {
   }, []);
 
   useEffect(() => {
-    load().then(() => loadStatus());
-  }, [load, loadStatus]);
+    load(activeOwner).then(() => loadStatus(activeOwner));
+  }, [activeOwner, load, loadStatus]);
 
+  // ── Owner switch ──
+  const handleSwitchClick = () => {
+    const target = activeOwner === "drew" ? "randy" : "drew";
+    setPinTarget(target);
+  };
+
+  const handlePinSuccess = () => {
+    const newOwner = pinTarget;
+    setPinTarget(null);
+    setActiveOwner(newOwner);
+    localStorage.setItem("cs_active_owner", newOwner);
+    // load() fires via useEffect on activeOwner change
+  };
+
+  const handlePinCancel = () => setPinTarget(null);
+
+  // ── CRUD ──
   const handleRemove = async (id) => {
     try {
       await api.deletePosition(id);
@@ -238,8 +322,7 @@ export default function MyPositions({ allRows, onRowClick }) {
     try {
       const updated = await api.updatePosition(id, { [field]: value });
       setPositions(p => p.map(pos => pos.id === id ? { ...pos, ...updated } : pos));
-      // Refresh status after mark update
-      if (field === "current_mark") loadStatus();
+      if (field === "current_mark") loadStatus(activeOwner);
     } catch {
       // non-fatal
     }
@@ -249,7 +332,7 @@ export default function MyPositions({ allRows, onRowClick }) {
     const ticker = addTicker.trim().toUpperCase();
     if (!ticker) return;
     try {
-      const opts = {};
+      const opts = { owner: activeOwner };
       if (addType) opts.position_type = addType;
       if (addStrike !== "") opts.strike = Number(addStrike);
       if (addExpiry) opts.expiry = addExpiry;
@@ -265,7 +348,7 @@ export default function MyPositions({ allRows, onRowClick }) {
       setAddPremium("");
       setAddContracts("");
       setAddMsg({ text: `Added ${created.ticker}`, ok: true });
-      loadStatus();
+      loadStatus(activeOwner);
     } catch (e) {
       setAddMsg({ text: e.message, ok: false });
     } finally {
@@ -280,7 +363,7 @@ export default function MyPositions({ allRows, onRowClick }) {
     try {
       const result = await api.scanPositions();
       setLastScan(result);
-      loadStatus();
+      loadStatus(activeOwner);
     } catch (e) {
       setScanError(e.message);
     } finally {
@@ -291,6 +374,9 @@ export default function MyPositions({ allRows, onRowClick }) {
   if (loading) return <div className="empty">Loading positions…</div>;
 
   const scanResults = lastScan?.results ?? [];
+  const ownerLabel = activeOwner === "drew" ? "Drew" : "Randy";
+  const ownerStyle = OWNER_STYLES[activeOwner] || OWNER_STYLES.drew;
+  const switchLabel = activeOwner === "drew" ? "Randy" : "Drew";
 
   return (
     <div className="pos-root">
@@ -318,6 +404,40 @@ export default function MyPositions({ allRows, onRowClick }) {
               <span className="pos-scan-error">{scanError}</span>
             )}
           </div>
+        </div>
+
+        {/* ── Owner toggle bar ── */}
+        <div className="pos-owner-bar" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, padding: "6px 0" }}>
+          <span style={{ fontSize: 12, color: "#9ca3af" }}>Viewing:</span>
+          <span
+            className="pos-owner-pill"
+            style={{
+              ...ownerStyle,
+              padding: "2px 10px",
+              borderRadius: 12,
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: 0.5,
+            }}
+          >
+            {ownerLabel}
+          </span>
+          {!pinTarget && (
+            <button
+              className="pos-switch-btn"
+              onClick={handleSwitchClick}
+              style={{ fontSize: 11, padding: "2px 8px" }}
+            >
+              Switch to {switchLabel}
+            </button>
+          )}
+          {pinTarget && (
+            <PinPrompt
+              targetOwner={pinTarget}
+              onSuccess={handlePinSuccess}
+              onCancel={handlePinCancel}
+            />
+          )}
         </div>
 
         {/* ── Add position form ── */}
