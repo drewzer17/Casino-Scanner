@@ -2353,11 +2353,14 @@ def get_probability(
     strike_pct: float = 0.02,
     hold_days: int = 21,
     cohort: str = "all",
+    direction: str = "csp",
     db: Session = Depends(get_db),
     _user: int = Depends(require_login),
 ) -> dict:
     """
-    Return empirical CSP assignment probabilities for a ticker in the current regime.
+    Return empirical probability metrics for a ticker in the current regime.
+    direction='csp' (default): downside assignment metrics.
+    direction='cc': upside callaway metrics (upside_breached, upside_overshoot_pct).
 
     Determines path safety grade by reconstructing live factors; falls back to
     the most recent scan result's risk_grade if reconstruction fails.
@@ -2451,6 +2454,7 @@ def get_probability(
         hold_days,
         sector,
         cohort,
+        direction=direction,
     )
 
     # ── Comparison tables ─────────────────────────────────────────────────────

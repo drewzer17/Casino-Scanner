@@ -131,9 +131,12 @@ def get_probabilities(
     sector: Optional[str] = None,
     cohort: str = 'all',
     min_n: int = 30,
+    direction: str = 'csp',
 ) -> Optional[dict]:
     """
-    Look up empirical CSP probabilities from backtest_results.
+    Look up empirical probabilities from backtest_results.
+    direction='csp' (default): downside assignment metrics (final_distance_pct, mae_pct, touched).
+    direction='cc': upside callaway metrics (upside_breached, upside_overshoot_pct, upside_touched).
     Falls back to no-sector if n < min_n with sector applied.
     Returns None if no matching rows found.
     """
@@ -168,28 +171,52 @@ def get_probabilities(
 
     def _run(conds, pms):
         where = " AND ".join(conds)
-        sql = f"""
-            SELECT
-                COUNT(*) AS n,
-                ROUND((100.0 * SUM(CASE WHEN br.final_distance_pct < 0 THEN 1 ELSE 0 END)
-                       / NULLIF(COUNT(*), 0))::numeric, 1) AS assigned_pct,
-                ROUND((100.0 * SUM(CASE WHEN br.touched THEN 1 ELSE 0 END)
-                       / NULLIF(COUNT(*), 0))::numeric, 1) AS touch_pct,
-                ROUND((100.0 * SUM(CASE WHEN br.mfe_pct >= 4.0 THEN 1 ELSE 0 END)
-                       / NULLIF(COUNT(*), 0))::numeric, 1) AS runaway_pct,
-                ROUND(AVG(br.mae_pct)::numeric, 2)          AS avg_mae,
-                ROUND(AVG(br.mfe_pct)::numeric, 2)          AS avg_mfe,
-                ROUND(AVG(br.final_distance_pct)::numeric, 2) AS avg_final_dist,
-                ROUND((100.0 * SUM(CASE WHEN br.mae_pct < -10 THEN 1 ELSE 0 END)
-                       / NULLIF(COUNT(*), 0))::numeric, 1) AS pct_worse_than_10,
-                ROUND((100.0 * SUM(CASE WHEN br.mae_pct < -15 THEN 1 ELSE 0 END)
-                       / NULLIF(COUNT(*), 0))::numeric, 1) AS pct_worse_than_15,
-                ROUND((100.0 * SUM(CASE WHEN br.mae_pct < -20 THEN 1 ELSE 0 END)
-                       / NULLIF(COUNT(*), 0))::numeric, 1) AS pct_worse_than_20
-            FROM backtest_results br
-            JOIN backtest_runs r ON br.run_id = r.id
-            WHERE {where}
-        """
+        if direction == 'cc':
+            sql = f"""
+                SELECT
+                    COUNT(*) AS n,
+                    ROUND((100.0 * SUM(CASE WHEN br.upside_breached = true THEN 1 ELSE 0 END)
+                           / NULLIF(COUNT(*), 0))::numeric, 1) AS assigned_pct,
+                    ROUND((100.0 * SUM(CASE WHEN br.upside_touched = true THEN 1 ELSE 0 END)
+                           / NULLIF(COUNT(*), 0))::numeric, 1) AS touch_pct,
+                    ROUND((100.0 * SUM(CASE WHEN br.mfe_pct >= 4.0 THEN 1 ELSE 0 END)
+                           / NULLIF(COUNT(*), 0))::numeric, 1) AS runaway_pct,
+                    ROUND(AVG(br.upside_overshoot_pct)::numeric, 2) AS avg_mae,
+                    ROUND(AVG(br.mfe_pct)::numeric, 2)              AS avg_mfe,
+                    ROUND(AVG(br.final_distance_pct)::numeric, 2)   AS avg_final_dist,
+                    ROUND((100.0 * SUM(CASE WHEN br.mae_pct < -10 THEN 1 ELSE 0 END)
+                           / NULLIF(COUNT(*), 0))::numeric, 1) AS pct_worse_than_10,
+                    ROUND((100.0 * SUM(CASE WHEN br.mae_pct < -15 THEN 1 ELSE 0 END)
+                           / NULLIF(COUNT(*), 0))::numeric, 1) AS pct_worse_than_15,
+                    ROUND((100.0 * SUM(CASE WHEN br.mae_pct < -20 THEN 1 ELSE 0 END)
+                           / NULLIF(COUNT(*), 0))::numeric, 1) AS pct_worse_than_20
+                FROM backtest_results br
+                JOIN backtest_runs r ON br.run_id = r.id
+                WHERE {where}
+            """
+        else:
+            sql = f"""
+                SELECT
+                    COUNT(*) AS n,
+                    ROUND((100.0 * SUM(CASE WHEN br.final_distance_pct < 0 THEN 1 ELSE 0 END)
+                           / NULLIF(COUNT(*), 0))::numeric, 1) AS assigned_pct,
+                    ROUND((100.0 * SUM(CASE WHEN br.touched THEN 1 ELSE 0 END)
+                           / NULLIF(COUNT(*), 0))::numeric, 1) AS touch_pct,
+                    ROUND((100.0 * SUM(CASE WHEN br.mfe_pct >= 4.0 THEN 1 ELSE 0 END)
+                           / NULLIF(COUNT(*), 0))::numeric, 1) AS runaway_pct,
+                    ROUND(AVG(br.mae_pct)::numeric, 2)          AS avg_mae,
+                    ROUND(AVG(br.mfe_pct)::numeric, 2)          AS avg_mfe,
+                    ROUND(AVG(br.final_distance_pct)::numeric, 2) AS avg_final_dist,
+                    ROUND((100.0 * SUM(CASE WHEN br.mae_pct < -10 THEN 1 ELSE 0 END)
+                           / NULLIF(COUNT(*), 0))::numeric, 1) AS pct_worse_than_10,
+                    ROUND((100.0 * SUM(CASE WHEN br.mae_pct < -15 THEN 1 ELSE 0 END)
+                           / NULLIF(COUNT(*), 0))::numeric, 1) AS pct_worse_than_15,
+                    ROUND((100.0 * SUM(CASE WHEN br.mae_pct < -20 THEN 1 ELSE 0 END)
+                           / NULLIF(COUNT(*), 0))::numeric, 1) AS pct_worse_than_20
+                FROM backtest_results br
+                JOIN backtest_runs r ON br.run_id = r.id
+                WHERE {where}
+            """
         return db_session.execute(text(sql), pms).fetchone()
 
     row = _run(conditions, params)
