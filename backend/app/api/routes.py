@@ -334,6 +334,13 @@ def _to_out(
         prob_regime=row.prob_regime,
         prob_n=row.prob_n,
         prob_confidence=row.prob_confidence,
+        # Regime Flag fields
+        regime_flag=row.regime_flag,
+        regime_backwardated=row.regime_backwardated,
+        regime_systemic=row.regime_systemic,
+        regime_catalyst_clear=row.regime_catalyst_clear,
+        term_structure_ratio=_san(row.term_structure_ratio),
+        spy_daily_change=_san(row.spy_daily_change),
     )
 
 

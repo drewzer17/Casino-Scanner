@@ -276,6 +276,7 @@ const COLS = [
   { key: "ticker",        label: "Ticker",   align: "left" },
   { key: "risk_grade",    label: "GRADE",    align: "center", compact: true },
   { key: "vrp_state",     label: "VRP",      align: "center", compact: true },
+  { key: "regime_flag",   label: "REGIME",   align: "center", compact: true },
   { key: "strategy_type", label: "STRATEGY", align: "center", compact: true },
   { key: "earnings",      label: "EARNINGS", align: "center" },
   { key: "type",          label: "Type",     align: "left" },
@@ -459,6 +460,23 @@ function cellValue(item, key, onResearch, opts = {}) {
       const vrpColors = {Rich:'#4caf50',Moderate:'#ffc107',Weak:'#ff9800',Negative:'#f44336'};
       return <span style={{color:vrpColors[vrp]||'#888',fontSize:12}}>{vrp}</span>;
     }
+    case "regime_flag": {
+      const flag = item.regime_flag ?? null;
+      const REGIME_COLORS = {
+        STANDARD:   '#3fc27f',
+        INFLECTION: '#f59e0b',
+        CATALYST:   '#f97316',
+        RERATING:   '#e0525e',
+        NO_EDGE:    '#e0525e',
+      };
+      const color = flag ? (REGIME_COLORS[flag] || '#6b7280') : '#6b7280';
+      return (
+        <span style={{fontSize:11, whiteSpace:'nowrap'}}>
+          <span style={{color, marginRight: flag ? 3 : 0}}>●</span>
+          {flag && <span style={{color}}>{flag}</span>}
+        </span>
+      );
+    }
     case "strategy_type": {
       const strat = item.strategy_type || '—';
       const stratColors = {'Income Grind':'#888','Event Ramp':'#ffc107','Technical Location':'#64b5f6'};
@@ -526,6 +544,7 @@ function sortValue(item, key) {
     case "prob_exit": return item.prob_exit_pct != null ? -item.prob_exit_pct : Infinity;
     case "risk_grade": return {A:1,B:2,C:3,F:4}[item.risk_grade] ?? 5;
     case "vrp_state": return {Rich:1,Moderate:2,Weak:3,Negative:4}[item.vrp_state] ?? 5;
+    case "regime_flag": return {STANDARD:1,INFLECTION:2,CATALYST:3,RERATING:4,NO_EDGE:5}[item.regime_flag] ?? 6;
     case "strategy_type": return item.strategy_type || 'zzz';
     default: return 0;
   }
