@@ -50,6 +50,13 @@ TICKER_TIMEOUT = 60   # seconds — multi-expiry fetches need more time
 
 _sma_sr_debug_count = 0  # log SMA/SR values for first 3 tickers to verify calculation
 
+# ── Regime Flag tunable constants ────────────────────────────────────────────
+BACKWARDATION_THRESHOLD    = 1.05   # iv_front / iv_back ratio above which term structure is backwardated
+SPY_SYSTEMIC_THRESHOLD     = -1.0   # SPY daily % below which a move is considered systemic
+TICKER_MOVE_THRESHOLD      = -3.0   # Ticker daily % below which a move is considered a real move
+CATALYST_WINDOW_DAYS       = 14     # Days to earnings within which we flag CATALYST
+VOLUME_MULTIPLIER_THRESHOLD = 2.5   # Today's volume / 20d avg above which volume is elevated
+
 TRADIER_BASE = "https://sandbox.tradier.com"
 
 
@@ -1061,6 +1068,14 @@ class ScanRowResult:
     prob_regime: str | None = None
     prob_n: int | None = None
     prob_confidence: str | None = None
+    # Regime Flag fields (populated in run_scan loop after VRP grade)
+    regime_flag: str | None = None
+    regime_backwardated: bool | None = None
+    regime_systemic: bool | None = None
+    regime_catalyst_clear: bool | None = None
+    regime_volume_elevated: bool | None = None
+    term_structure_ratio: float | None = None
+    spy_daily_change: float | None = None
     # Option chain snapshot data (populated in scan_ticker, consumed by _persist_result)
     # List of dicts with keys: expiration, strike, bid, ask, mark, iv, delta, theta, gamma, volume, open_interest
     chain_snapshot_data: list | None = None
@@ -1658,6 +1673,77 @@ def _calc_iv_ramp_metrics(
     return result
 
 
+# ── Regime Flag computation ───────────────────────────────────────────────────
+
+def compute_regime_flag(
+    vrp_grade: str | None,
+    iv_front: float | None,
+    iv_back: float | None,
+    spy_daily_change: float,
+    ticker_daily_change: float,
+    next_earnings_date,
+    today_volume: float | None,
+    avg_20d_volume: float | None,
+) -> tuple:
+    """Return (flag, backwardated, systemic, catalyst_clear, volume_elevated, term_structure_ratio).
+
+    Flags:
+      STANDARD   — VRP is Rich or Moderate; no edge signal needed
+      CATALYST   — earnings within CATALYST_WINDOW_DAYS; flag suppressed
+      INFLECTION — backwardated + systemic + catalyst_clear + volume_elevated
+      RERATING   — idiosyncratic ticker move with no SPY catalyst
+      NO_EDGE    — Weak/Negative VRP but no tells firing
+    """
+    if vrp_grade in ("Rich", "Moderate"):
+        return ("STANDARD", False, False, True, False, None)
+
+    # Tell 1 — backwardation
+    if iv_front and iv_back and iv_back > 0:
+        term_structure_ratio = iv_front / iv_back
+        backwardated = term_structure_ratio > BACKWARDATION_THRESHOLD
+    else:
+        term_structure_ratio = None
+        backwardated = False
+
+    # Tell 2 — systemic vs idiosyncratic move
+    systemic = (
+        spy_daily_change < SPY_SYSTEMIC_THRESHOLD
+        and ticker_daily_change < TICKER_MOVE_THRESHOLD
+    )
+    idiosyncratic = (
+        spy_daily_change >= SPY_SYSTEMIC_THRESHOLD
+        and ticker_daily_change < TICKER_MOVE_THRESHOLD
+    )
+
+    # Tell 3 — catalyst clear (no earnings within window)
+    if next_earnings_date:
+        try:
+            days_to_earnings = (next_earnings_date - date.today()).days
+            catalyst_clear = days_to_earnings > CATALYST_WINDOW_DAYS
+        except Exception:
+            catalyst_clear = True
+    else:
+        catalyst_clear = True
+
+    # Tell 4 — volume elevated
+    if today_volume and avg_20d_volume and avg_20d_volume > 0:
+        volume_elevated = (today_volume / avg_20d_volume) > VOLUME_MULTIPLIER_THRESHOLD
+    else:
+        volume_elevated = False
+
+    # Flag logic
+    if not catalyst_clear:
+        flag = "CATALYST"
+    elif backwardated and systemic and catalyst_clear and volume_elevated:
+        flag = "INFLECTION"
+    elif idiosyncratic:
+        flag = "RERATING"
+    else:
+        flag = "NO_EDGE"
+
+    return (flag, backwardated, systemic, catalyst_clear, volume_elevated, term_structure_ratio)
+
+
 # ── DB persistence ────────────────────────────────────────────────────────────
 
 def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
@@ -1762,6 +1848,14 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
         prob_regime=result.prob_regime,
         prob_n=result.prob_n,
         prob_confidence=result.prob_confidence,
+        # Regime Flag fields
+        regime_flag=result.regime_flag,
+        regime_backwardated=result.regime_backwardated,
+        regime_systemic=result.regime_systemic,
+        regime_catalyst_clear=result.regime_catalyst_clear,
+        regime_volume_elevated=result.regime_volume_elevated,
+        term_structure_ratio=result.term_structure_ratio,
+        spy_daily_change=result.spy_daily_change,
     ))
 
     # Record IV snapshot for IV rank history (one row per ticker per day)
@@ -2104,6 +2198,25 @@ def run_scan(
         _scan_regime = None
         _scan_sectors = {}
 
+    # Pre-compute SPY daily % change once for the entire scan (used by regime flag)
+    _spy_daily_change: float = 0.0
+    try:
+        _spy_rows = db.execute(
+            _text(
+                "SELECT close FROM price_history WHERE ticker = 'SPY' "
+                "ORDER BY date DESC LIMIT 2"
+            )
+        ).fetchall()
+        if len(_spy_rows) >= 2:
+            _spy_today = float(_spy_rows[0][0])
+            _spy_prev  = float(_spy_rows[1][0])
+            if _spy_prev > 0:
+                _spy_daily_change = (_spy_today - _spy_prev) / _spy_prev * 100
+        logger.info("regime flag: SPY daily change = %.2f%%", _spy_daily_change)
+    except Exception as _spy_exc:
+        logger.warning("SPY daily change lookup failed, defaulting to 0.0: %s", _spy_exc)
+        _spy_daily_change = 0.0
+
     for batch_start in range(0, len(remaining), BATCH_SIZE):
         batch = remaining[batch_start : batch_start + BATCH_SIZE]
         logger.info("run_id=%s batch %d-%d / %d", run.id,
@@ -2112,6 +2225,9 @@ def run_scan(
         # Pre-fetch quotes for the whole batch (≤20 tickers per Tradier call)
         prices: dict[str, float] = {}
         company_names: dict[str, str] = {}
+        ticker_change_pcts: dict[str, float] = {}    # daily % change for regime flag
+        ticker_volumes: dict[str, float] = {}        # today's volume for regime flag
+        ticker_avg_volumes: dict[str, float] = {}    # average volume for regime flag
         for q_start in range(0, len(batch), QUOTE_BATCH):
             q_symbols = batch[q_start : q_start + QUOTE_BATCH]
             try:
@@ -2122,6 +2238,16 @@ def run_scan(
                     desc = (q.get("description") or "").strip()
                     if desc:
                         company_names[sym] = desc
+                    # Volume and daily change for regime flag computation
+                    _chg = q.get("change_percentage")
+                    if _is_valid(_chg):
+                        ticker_change_pcts[sym] = float(_chg)
+                    _vol = q.get("volume")
+                    if _is_valid(_vol):
+                        ticker_volumes[sym] = float(_vol)
+                    _avg_vol = q.get("average_volume")
+                    if _is_valid(_avg_vol):
+                        ticker_avg_volumes[sym] = float(_avg_vol)
             except Exception as exc:
                 logger.warning("quote batch failed (%s): %s", q_symbols, exc)
 
@@ -2233,6 +2359,32 @@ def run_scan(
                                     result.prob_confidence = _probs["confidence"]
                         except Exception:
                             pass  # silently skip — scan continues without prob data
+
+                    # Regime Flag computation — runs for every ticker after VRP + probs
+                    try:
+                        _ticker_chg = ticker_change_pcts.get(ticker, 0.0)
+                        _today_vol  = ticker_volumes.get(ticker)
+                        _avg_vol    = ticker_avg_volumes.get(ticker)
+                        (
+                            result.regime_flag,
+                            result.regime_backwardated,
+                            result.regime_systemic,
+                            result.regime_catalyst_clear,
+                            result.regime_volume_elevated,
+                            result.term_structure_ratio,
+                        ) = compute_regime_flag(
+                            vrp_grade=result.vrp_state,
+                            iv_front=result.iv_front_month,
+                            iv_back=result.iv_back_month,
+                            spy_daily_change=_spy_daily_change,
+                            ticker_daily_change=_ticker_chg,
+                            next_earnings_date=earn_date,
+                            today_volume=_today_vol,
+                            avg_20d_volume=_avg_vol,
+                        )
+                        result.spy_daily_change = _spy_daily_change
+                    except Exception as _rf_exc:
+                        logger.warning("regime flag compute failed for %s: %s", ticker, _rf_exc)
 
                     _persist_result(db, run.id, result)
                 scanned += 1

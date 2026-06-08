@@ -414,6 +414,29 @@ def init_db() -> None:
         except Exception:
             _conn.rollback()
 
+    # Regime Flag columns on scan_results — v27
+    _add_column_if_missing(
+        "ALTER TABLE scan_results ADD COLUMN IF NOT EXISTS regime_flag VARCHAR(20)"
+    )
+    _add_column_if_missing(
+        "ALTER TABLE scan_results ADD COLUMN IF NOT EXISTS regime_backwardated BOOLEAN"
+    )
+    _add_column_if_missing(
+        "ALTER TABLE scan_results ADD COLUMN IF NOT EXISTS regime_systemic BOOLEAN"
+    )
+    _add_column_if_missing(
+        "ALTER TABLE scan_results ADD COLUMN IF NOT EXISTS regime_catalyst_clear BOOLEAN"
+    )
+    _add_column_if_missing(
+        "ALTER TABLE scan_results ADD COLUMN IF NOT EXISTS regime_volume_elevated BOOLEAN"
+    )
+    _add_column_if_missing(
+        "ALTER TABLE scan_results ADD COLUMN IF NOT EXISTS term_structure_ratio FLOAT"
+    )
+    _add_column_if_missing(
+        "ALTER TABLE scan_results ADD COLUMN IF NOT EXISTS spy_daily_change FLOAT"
+    )
+
     # dataset_cohort on backtest_runs — v22
     _add_column_if_missing(
         "ALTER TABLE backtest_runs ADD COLUMN IF NOT EXISTS dataset_cohort VARCHAR(30) DEFAULT 'foundation_v1'"

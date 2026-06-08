@@ -156,6 +156,15 @@ class ScanResult(Base):
     prob_n: Mapped[int | None] = mapped_column(Integer, nullable=True)
     prob_confidence: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
+    # Regime Flag fields
+    regime_flag: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    regime_backwardated: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    regime_systemic: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    regime_catalyst_clear: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    regime_volume_elevated: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    term_structure_ratio: Mapped[float | None] = mapped_column(Float, nullable=True)
+    spy_daily_change: Mapped[float | None] = mapped_column(Float, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
