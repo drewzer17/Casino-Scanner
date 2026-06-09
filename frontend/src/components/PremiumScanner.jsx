@@ -702,10 +702,12 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
 
   const baseRows = showAll ? allScanRows : rows;
 
-  const searchedRows = tickerSearch.trim()
+  const searchTokens = tickerSearch.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+  const searchedRows = searchTokens.length
     ? baseRows.filter(r => {
-        const q = tickerSearch.toLowerCase();
-        return r.ticker.toLowerCase().includes(q) || (r.company_name || '').toLowerCase().includes(q);
+        const ticker = r.ticker.toLowerCase();
+        const company = (r.company_name || '').toLowerCase();
+        return searchTokens.some(q => ticker.includes(q) || company.includes(q));
       })
     : baseRows;
 
