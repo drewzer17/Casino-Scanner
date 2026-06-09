@@ -659,6 +659,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const [lensGroups, setLensGroups] = useState([]);
   const [selectedLenses, setSelectedLenses] = useState(new Set());
   const [showLensDropdown, setShowLensDropdown] = useState(false);
+  const [tickerSearch, setTickerSearch] = useState("");
 
   useEffect(() => {
     fetch('/api/probability/SPY', { credentials: 'include' })
@@ -701,7 +702,14 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
 
   const baseRows = showAll ? allScanRows : rows;
 
-  const rqFiltered = baseRows.filter(r => {
+  const searchedRows = tickerSearch.trim()
+    ? baseRows.filter(r => {
+        const q = tickerSearch.toLowerCase();
+        return r.ticker.toLowerCase().includes(q) || (r.company_name || '').toLowerCase().includes(q);
+      })
+    : baseRows;
+
+  const rqFiltered = searchedRows.filter(r => {
     if (gradeFilter.size > 0 && !gradeFilter.has(r.risk_grade)) return false;
     if (vrpFilter.size > 0 && !vrpFilter.has(r.vrp_state)) return false;
     if (stratFilter.size > 0 && !stratFilter.has(r.strategy_type)) return false;
@@ -913,6 +921,22 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
       </button>
 
       {tableExpanded && (<>
+      <div style={{display:'flex', alignItems:'center', marginBottom:6}}>
+        <div style={{position:'relative', display:'inline-flex', alignItems:'center'}}>
+          <input
+            className="search-input"
+            type="text"
+            placeholder="Search ticker or company…"
+            value={tickerSearch}
+            onChange={e => setTickerSearch(e.target.value)}
+            autoComplete="off"
+            spellCheck={false}
+          />
+          {tickerSearch && (
+            <button className="search-clear" onClick={() => setTickerSearch("")}>✕</button>
+          )}
+        </div>
+      </div>
       <div className="dte-filter-row" style={{position:'relative'}}>
         <span className="dte-filter-label">Type</span>
         <button
