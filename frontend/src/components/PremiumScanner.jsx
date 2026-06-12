@@ -660,6 +660,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const [selectedLenses, setSelectedLenses] = useState(new Set());
   const [showLensDropdown, setShowLensDropdown] = useState(false);
   const [tickerSearch, setTickerSearch] = useState("");
+  const [showThisFri, setShowThisFri] = useState(false);
 
   useEffect(() => {
     fetch('/api/probability/SPY', { credentials: 'include' })
@@ -675,10 +676,15 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
       .catch(() => {});
   }, []);
 
-  useEffect(() => { setVisibleCount(100); }, [dteSelected, typeFilter, otmSelected, earnBuckets, showAll, showLeaps]);
+  useEffect(() => { setVisibleCount(100); }, [dteSelected, typeFilter, otmSelected, earnBuckets, showAll, showLeaps, showThisFri]);
+
+  const _today = new Date();
+  const _thisFriday = new Date(_today);
+  _thisFriday.setDate(_today.getDate() + ((5 - _today.getDay() + 7) % 7));
+  const thisFriExpiry = `${_thisFriday.getFullYear()}-${String(_thisFriday.getMonth()+1).padStart(2,'0')}-${String(_thisFriday.getDate()).padStart(2,'0')}`;
 
   const toggleType  = (v) => setTypeFilter(prev => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n; });
-  const toggleDte   = (v) => setDteSelected(prev => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n; });
+  const toggleDte   = (v) => { setShowThisFri(false); setDteSelected(prev => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n; }); };
   const toggleOtm   = (v) => setOtmSelected(prev => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n; });
   const toggleGrade = (v) => setGradeFilter(prev => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n; });
   const toggleVrp   = (v) => setVrpFilter(prev => { const n = new Set(prev); n.has(v) ? n.delete(v) : n.add(v); return n; });
@@ -810,7 +816,9 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
 
   const allExcluded = [...(showAll ? [] : excludedRows), ...internalExcluded];
 
-  const sorted = [...earnFiltered].sort((a, b) => {
+  const friFiltered = showThisFri ? earnFiltered.filter(i => i._d.expiry === thisFriExpiry) : earnFiltered;
+
+  const sorted = [...friFiltered].sort((a, b) => {
     if (sortCol === "earnings") {
       const an = a.earnings_days == null;
       const bn = b.earnings_days == null;
@@ -985,14 +993,18 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
           >{r.label}</button>
         ))}
         <button
-          className={`dte-filter-btn${dteSelected.size === 0 ? " active" : ""}`}
-          onClick={() => setDteSelected(new Set())}
+          className={`dte-filter-btn${dteSelected.size === 0 && !showThisFri ? " active" : ""}`}
+          onClick={() => { setDteSelected(new Set()); setShowThisFri(false); }}
         >ALL</button>
         <button
           className={`leaps-toggle-btn${showLeaps ? " active" : ""}`}
           onClick={() => setShowLeaps(v => !v)}
           title="Show LEAPS (180–365 DTE) from the most recent LEAPS scan"
         >LEAPS</button>
+        <button
+          className={`dte-filter-btn${showThisFri ? " active" : ""}`}
+          onClick={() => { setShowThisFri(v => !v); setDteSelected(new Set()); }}
+        >This Fri</button>
         {showLeaps && (
           <span className="leaps-scan-ts">Last: {fmtLeapsTs(leapsScannedAt)}</span>
         )}
