@@ -536,7 +536,7 @@ def _nearest_expiry(exp_dates: Iterable[str], min_days: int = 21, max_days: int 
         except ValueError:
             continue
         days = (d - today).days
-        if days < 7:
+        if days < 1:
             continue
         if min_days <= days <= max_days:
             score = abs(days - 30)
@@ -549,7 +549,7 @@ def _nearest_expiry(exp_dates: Iterable[str], min_days: int = 21, max_days: int 
             d = datetime.strptime(exp, "%Y-%m-%d").date()
         except ValueError:
             continue
-        if (d - today).days >= 7:
+        if (d - today).days >= 1:
             return exp
     return None
 
