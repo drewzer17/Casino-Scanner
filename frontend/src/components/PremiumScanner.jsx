@@ -102,6 +102,40 @@ function getOtmPutsFromExpiry(row, dteSelected) {
   return result;
 }
 
+function getCallDataForFriday(row, friString) {
+  const e = (row.expiry_data || []).find(x => x.expiry === friString);
+  if (!e || e.atm_call_prem == null) return null;
+  return { premium: e.atm_call_prem, premiumPct: e.atm_call_prem && row.price ? e.atm_call_prem / row.price : null, strike: e.atm_strike, expiry: e.expiry, dte: e.dte, delta: e.atm_call_delta ?? null };
+}
+
+function getPutDataForFriday(row, friString) {
+  const e = (row.expiry_data || []).find(x => x.expiry === friString);
+  if (!e || e.atm_put_prem == null) return null;
+  return { premium: e.atm_put_prem, premiumPct: e.atm_put_prem && row.price ? e.atm_put_prem / row.price : null, strike: e.atm_strike, expiry: e.expiry, dte: e.dte, delta: e.atm_put_delta ?? null };
+}
+
+function getOtmCallsForFriday(row, friString) {
+  const e = (row.expiry_data || []).find(x => x.expiry === friString);
+  if (!e) return [];
+  const result = [];
+  (e.calls || []).forEach((s, idx) => {
+    if (s.prem != null)
+      result.push({ level: idx + 1, premium: s.prem, premiumPct: row.price ? s.prem / row.price : null, strike: s.strike, expiry: e.expiry, dte: e.dte, delta: s.delta ?? null });
+  });
+  return result;
+}
+
+function getOtmPutsForFriday(row, friString) {
+  const e = (row.expiry_data || []).find(x => x.expiry === friString);
+  if (!e) return [];
+  const result = [];
+  (e.puts || []).forEach((s, idx) => {
+    if (s.prem != null)
+      result.push({ level: idx + 1, premium: s.prem, premiumPct: row.price ? s.prem / row.price : null, strike: s.strike, expiry: e.expiry, dte: e.dte, delta: s.delta ?? null });
+  });
+  return result;
+}
+
 function fmt(v, digits = 2) {
   if (v == null) return "—";
   return Number(v).toFixed(digits);
@@ -565,6 +599,13 @@ function ExclusionTable({ allExcluded }) {
 
 export default function PremiumScanner({ rows, onRowClick, allScanRows = [], excludedRows = [], onResearch }) {
   const [dteSelected, setDteSelected] = useState(new Set()); // empty = ALL
+  const [thisFriActive, setThisFriActive] = useState(false);
+  const thisFriString = (() => {
+    const today = new Date();
+    const fri = new Date(today);
+    fri.setDate(today.getDate() + ((5 - today.getDay() + 7) % 7));
+    return `${fri.getFullYear()}-${String(fri.getMonth() + 1).padStart(2, "0")}-${String(fri.getDate()).padStart(2, "0")}`;
+  })();
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [otmSelected, setOtmSelected] = useState(new Set()); // empty = ALL
   const [sortCol, setSortCol] = useState("premium");
@@ -578,6 +619,7 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   const [tableExpanded, setTableExpanded] = useState(false);
 
   const toggleDte = (label) => {
+    setThisFriActive(false);
     setDteSelected(prev => {
       const next = new Set(prev);
       if (next.has(label)) next.delete(label);
@@ -615,28 +657,55 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
   // Expand each ticker into rows: ATM + each OTM level available in expiry_data
   const items = [];
   for (const row of baseRows) {
-    if (typeFilter !== "CSP") {
-      const callD = getCallData(row, dteSelected);
-      if (callD) {
-        if (otmSelected.size === 0 || otmSelected.has("ATM"))
-          items.push({ ...row, _d: callD, _type: "CC", _key: `${row.ticker}-CC-ATM-${callD?.dte ?? row.best_dte}`, _otmLevel: 0 });
+    if (thisFriActive) {
+      if (typeFilter !== "CSP") {
+        const callD = getCallDataForFriday(row, thisFriString);
+        if (callD) {
+          if (otmSelected.size === 0 || otmSelected.has("ATM"))
+            items.push({ ...row, _d: callD, _type: "CC", _key: `${row.ticker}-CC-ATM-${callD.dte}`, _otmLevel: 0 });
+          for (const oc of getOtmCallsForFriday(row, thisFriString)) {
+            const key = otmLevelKey(oc.level);
+            if (otmSelected.size === 0 || otmSelected.has(key))
+              items.push({ ...row, _d: oc, _type: "CC", _key: `${row.ticker}-CC-${oc.level}-${oc.dte}`, _otmLevel: oc.level });
+          }
+        }
       }
-      for (const oc of getOtmCallsFromExpiry(row, dteSelected)) {
-        const key = otmLevelKey(oc.level);
-        if (otmSelected.size === 0 || otmSelected.has(key))
-          items.push({ ...row, _d: oc, _type: "CC", _key: `${row.ticker}-CC-${oc.level}-${oc.dte ?? row.best_dte}`, _otmLevel: oc.level });
+      if (typeFilter !== "CC") {
+        const putD = getPutDataForFriday(row, thisFriString);
+        if (putD) {
+          if (otmSelected.size === 0 || otmSelected.has("ATM"))
+            items.push({ ...row, _d: putD, _type: "CSP", _key: `${row.ticker}-CSP-ATM-${putD.dte}`, _otmLevel: 0 });
+          for (const op of getOtmPutsForFriday(row, thisFriString)) {
+            const key = otmLevelKey(op.level);
+            if (otmSelected.size === 0 || otmSelected.has(key))
+              items.push({ ...row, _d: op, _type: "CSP", _key: `${row.ticker}-CSP-${op.level}-${op.dte}`, _otmLevel: op.level });
+          }
+        }
       }
-    }
-    if (typeFilter !== "CC") {
-      const putD = getPutData(row, dteSelected);
-      if (putD) {
-        if (otmSelected.size === 0 || otmSelected.has("ATM"))
-          items.push({ ...row, _d: putD, _type: "CSP", _key: `${row.ticker}-CSP-ATM-${putD?.dte ?? row.best_put_dte}`, _otmLevel: 0 });
+    } else {
+      if (typeFilter !== "CSP") {
+        const callD = getCallData(row, dteSelected);
+        if (callD) {
+          if (otmSelected.size === 0 || otmSelected.has("ATM"))
+            items.push({ ...row, _d: callD, _type: "CC", _key: `${row.ticker}-CC-ATM-${callD?.dte ?? row.best_dte}`, _otmLevel: 0 });
+        }
+        for (const oc of getOtmCallsFromExpiry(row, dteSelected)) {
+          const key = otmLevelKey(oc.level);
+          if (otmSelected.size === 0 || otmSelected.has(key))
+            items.push({ ...row, _d: oc, _type: "CC", _key: `${row.ticker}-CC-${oc.level}-${oc.dte ?? row.best_dte}`, _otmLevel: oc.level });
+        }
       }
-      for (const op of getOtmPutsFromExpiry(row, dteSelected)) {
-        const key = otmLevelKey(op.level);
-        if (otmSelected.size === 0 || otmSelected.has(key))
-          items.push({ ...row, _d: op, _type: "CSP", _key: `${row.ticker}-CSP-${op.level}-${op.dte ?? row.best_put_dte}`, _otmLevel: op.level });
+      if (typeFilter !== "CC") {
+        const putD = getPutData(row, dteSelected);
+        if (putD) {
+          if (otmSelected.size === 0 || otmSelected.has("ATM"))
+            items.push({ ...row, _d: putD, _type: "CSP", _key: `${row.ticker}-CSP-ATM-${putD?.dte ?? row.best_put_dte}`, _otmLevel: 0 });
+        }
+        for (const op of getOtmPutsFromExpiry(row, dteSelected)) {
+          const key = otmLevelKey(op.level);
+          if (otmSelected.size === 0 || otmSelected.has(key))
+            items.push({ ...row, _d: op, _type: "CSP", _key: `${row.ticker}-CSP-${op.level}-${op.dte ?? row.best_put_dte}`, _otmLevel: op.level });
+        }
       }
     }
   }
@@ -759,12 +828,16 @@ export default function PremiumScanner({ rows, onRowClick, allScanRows = [], exc
           <button
             key={r.label}
             className={`dte-filter-btn${dteSelected.has(r.label) ? " active" : ""}`}
-            onClick={() => toggleDte(r.label)}
+            onClick={() => { setThisFriActive(false); toggleDte(r.label); }}
           >{r.label}</button>
         ))}
         <button
-          className={`dte-filter-btn${dteSelected.size === 0 ? " active" : ""}`}
-          onClick={() => setDteSelected(new Set())}
+          className={`dte-filter-btn${thisFriActive ? " active" : ""}`}
+          onClick={() => { setThisFriActive(true); setDteSelected(new Set()); }}
+        >This Fri</button>
+        <button
+          className={`dte-filter-btn${dteSelected.size === 0 && !thisFriActive ? " active" : ""}`}
+          onClick={() => { setThisFriActive(false); setDteSelected(new Set()); }}
         >ALL</button>
         <span className="dte-filter-count">{sorted.length} rows · {uniqueTickers} tickers</span>
       </div>
