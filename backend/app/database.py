@@ -477,6 +477,9 @@ def init_db() -> None:
         "soxx_close DOUBLE PRECISION"
         ")"
     )
+    _add_column_if_missing(
+        "ALTER TABLE orats_chain_history ADD COLUMN IF NOT EXISTS driftless_theta DOUBLE PRECISION"
+    )
 
     # dataset_cohort on backtest_runs — v22
     _add_column_if_missing(
