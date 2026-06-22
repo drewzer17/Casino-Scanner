@@ -437,6 +437,47 @@ def init_db() -> None:
         "ALTER TABLE scan_results ADD COLUMN IF NOT EXISTS spy_daily_change FLOAT"
     )
 
+    # ORATS historical options vault — v28
+    _add_column_if_missing(
+        "CREATE TABLE IF NOT EXISTS orats_chain_history ("
+        "id BIGSERIAL PRIMARY KEY, "
+        "ticker VARCHAR(16) NOT NULL, "
+        "trade_date DATE NOT NULL, "
+        "expir_date DATE NOT NULL, "
+        "strike DOUBLE PRECISION NOT NULL, "
+        "stk_px DOUBLE PRECISION, "
+        "c_bid DOUBLE PRECISION, "
+        "c_ask DOUBLE PRECISION, "
+        "c_value DOUBLE PRECISION, "
+        "p_bid DOUBLE PRECISION, "
+        "p_ask DOUBLE PRECISION, "
+        "p_value DOUBLE PRECISION, "
+        "c_mid_iv DOUBLE PRECISION, "
+        "p_mid_iv DOUBLE PRECISION, "
+        "smooth_smv_vol DOUBLE PRECISION, "
+        "delta DOUBLE PRECISION, "
+        "gamma DOUBLE PRECISION, "
+        "theta DOUBLE PRECISION, "
+        "vega DOUBLE PRECISION, "
+        "c_volume INTEGER, "
+        "c_oi INTEGER, "
+        "p_volume INTEGER, "
+        "p_oi INTEGER, "
+        "yte DOUBLE PRECISION"
+        ")"
+    )
+    _add_column_if_missing(
+        "CREATE TABLE IF NOT EXISTS regime_tags ("
+        "trade_date DATE PRIMARY KEY, "
+        "vix_close DOUBLE PRECISION, "
+        "spy_close DOUBLE PRECISION, "
+        "vix_regime VARCHAR(16), "
+        "spy_above_ema50 BOOLEAN, "
+        "sector_regime VARCHAR(16), "
+        "soxx_close DOUBLE PRECISION"
+        ")"
+    )
+
     # dataset_cohort on backtest_runs — v22
     _add_column_if_missing(
         "ALTER TABLE backtest_runs ADD COLUMN IF NOT EXISTS dataset_cohort VARCHAR(30) DEFAULT 'foundation_v1'"
