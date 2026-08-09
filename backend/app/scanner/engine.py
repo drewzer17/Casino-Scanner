@@ -1481,23 +1481,21 @@ def scan_ticker(
                 is_leaps=leaps_only,
             ))
 
-        # Collect option chain snapshots for nearest 2-3 expirations.
-        # Only puts within 5% of current price. Stored on first result so
-        # _persist_result() can bulk-insert them into option_snapshots.
+        # Collect option chain snapshots for ALL expirations already fetched into
+        # chain_cache this scan (zero new Tradier calls — reuses what scoring
+        # already pulled). Both puts and calls, strikes within 15% of current
+        # price. Stored on first result so _persist_result() can bulk-insert
+        # them into option_snapshots.
         if results and price and chain_cache:
             try:
                 _snap_rows: list[dict] = []
-                _snap_exps = [e for _, e in exp_list[:3]]
-                # Also include iv_exp if not already covered
-                if iv_exp and iv_exp not in _snap_exps and iv_exp in chain_cache:
-                    _snap_exps = ([iv_exp] + _snap_exps)[:3]
-                _price_lo = price * 0.95
-                _price_hi = price * 1.05
+                _snap_exps = list(chain_cache.keys())
+                _price_lo = price * 0.85
+                _price_hi = price * 1.15
                 for _se in _snap_exps:
-                    if _se not in chain_cache:
-                        continue
                     for _o in chain_cache[_se]:
-                        if _o.get("option_type") != "put":
+                        _otype = _o.get("option_type")
+                        if _otype not in ("put", "call"):
                             continue
                         _sk_raw = _o.get("strike")
                         if not _is_valid(_sk_raw):
@@ -1515,6 +1513,7 @@ def scan_ticker(
                         _snap_rows.append({
                             "expiration": _se,
                             "strike": _sk,
+                            "option_type": _otype,
                             "bid": float(_bid) if _is_valid(_bid) else None,
                             "ask": float(_ask) if _is_valid(_ask) else None,
                             "mark": round(_mid, 4) if _mid is not None else None,
@@ -1522,6 +1521,7 @@ def scan_ticker(
                             "delta": float(_greeks["delta"]) if _is_valid(_greeks.get("delta")) else None,
                             "theta": float(_greeks["theta"]) if _is_valid(_greeks.get("theta")) else None,
                             "gamma": float(_greeks["gamma"]) if _is_valid(_greeks.get("gamma")) else None,
+                            "vega": float(_greeks["vega"]) if _is_valid(_greeks.get("vega")) else None,
                             "volume": int(float(_o["volume"])) if _is_valid(_o.get("volume")) else None,
                             "open_interest": int(float(_o["open_interest"])) if _is_valid(_o.get("open_interest")) else None,
                         })
@@ -1894,7 +1894,7 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
                         "ticker": result.ticker,
                         "expiration": row["expiration"],
                         "strike": row["strike"],
-                        "option_type": "put",
+                        "option_type": row["option_type"],
                         "bid": row["bid"],
                         "ask": row["ask"],
                         "mark": row["mark"],
@@ -1902,6 +1902,7 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
                         "delta": row["delta"],
                         "theta": row["theta"],
                         "gamma": row["gamma"],
+                        "vega": row.get("vega"),
                         "volume": row["volume"],
                         "open_interest": row["open_interest"],
                     }
@@ -1911,9 +1912,9 @@ def _persist_result(db: Session, run_id: int, result: ScanRowResult) -> None:
                     _text(
                         "INSERT INTO option_snapshots "
                         "(scan_date, scan_timestamp, ticker, expiration, strike, option_type, "
-                        "bid, ask, mark, iv, delta, theta, gamma, volume, open_interest) "
+                        "bid, ask, mark, iv, delta, theta, gamma, vega, volume, open_interest) "
                         "VALUES (:scan_date, :scan_timestamp, :ticker, :expiration, :strike, :option_type, "
-                        ":bid, :ask, :mark, :iv, :delta, :theta, :gamma, :volume, :open_interest)"
+                        ":bid, :ask, :mark, :iv, :delta, :theta, :gamma, :vega, :volume, :open_interest)"
                     ),
                     _rows,
                 )
