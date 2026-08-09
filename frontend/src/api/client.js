@@ -94,4 +94,10 @@ export const api = {
   // Chain Analyzer proxy
   chainTickers: () => get("/api/chain/tickers"),
   chainHistory: (ticker) => get(`/api/chain/history/${encodeURIComponent(ticker)}`),
+
+  // Mispriced DITM covered-call scanner — standalone, stores nothing
+  mispricedState: () => get("/api/mispriced/state"),
+  mispricedToggle: (on) => postJson("/api/mispriced/toggle", { on }),
+  mispricedSetFloor: (floor) => postJson("/api/mispriced/floor", { floor }),
+  mispricedSweepNow: () => postJson("/api/mispriced/sweep", {}),
 };
