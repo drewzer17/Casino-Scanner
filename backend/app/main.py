@@ -22,6 +22,7 @@ from .auth import require_login_page
 from .auth_routes import auth_router
 from .config import settings
 from .database import init_db
+from .mispriced.routes import router as mispriced_router
 from .scheduler import start_scheduler, stop_scheduler
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -53,6 +54,9 @@ app.include_router(auth_router)
 # ── API routes (registered before static mounts so /api/* is never swallowed) ──
 app.include_router(api_router)
 
+# ── DITM mispriced-options scanner — separate, standalone, stores nothing ──────
+app.include_router(mispriced_router)
+
 
 @app.on_event("startup")
 def _on_startup() -> None:
@@ -74,6 +78,10 @@ def _on_startup() -> None:
     except Exception as _exc:
         import logging as _logging
         _logging.getLogger(__name__).warning("AI universe drift check failed: %s", _exc)
+    # DITM mispriced-options scanner — idle background thread, gated by an
+    # in-memory toggle (default off). NOT the APScheduler cron below.
+    from .mispriced.engine import start_cadence_loop
+    start_cadence_loop()
     start_scheduler()
 
 

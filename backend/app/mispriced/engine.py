@@ -1,0 +1,360 @@
+"""Sweep logic, in-memory state, and the cadence loop for the DITM covered-call
+mispricing scanner.
+
+No database writes anywhere. ticker_universe and earnings_calendar are read
+only. Everything else — toggle state, floor, latest results — lives in a
+module-level dict and is lost on process restart. That's intentional: the
+spec is "no storage, no migrations, no new tables."
+
+Not wired to backend/app/scheduler.py's APScheduler cron. The cadence loop
+here is a separate background thread, gated entirely by the in-memory toggle:
+while off, it does nothing and makes zero Tradier calls.
+"""
+from __future__ import annotations
+
+import logging
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import date, datetime
+
+import httpx
+import pytz
+from sqlalchemy import text as _text
+
+from ..config import settings
+from ..database import SessionLocal
+
+logger = logging.getLogger(__name__)
+
+TRADIER_BASE = "https://sandbox.tradier.com"
+QUOTE_BATCH = 20
+STRIKES_BELOW_SPOT = 15
+SWEEP_WORKERS = 8  # concurrent tickers per sweep
+
+# Central Time, 24h "HH:MM" strings. Edit this list to retune cadence — no
+# other code changes needed. Front-loaded near the open, spreads out midday.
+SWEEP_TIMES_CT = [
+    "08:32", "08:40", "08:50", "09:00", "09:15", "09:30", "09:50",
+    "10:15", "10:45", "11:15", "11:45", "12:30", "13:15", "14:00", "14:45",
+]
+
+_CT = pytz.timezone("America/Chicago")
+
+# ── in-memory state ──────────────────────────────────────────────────────────
+_lock = threading.RLock()
+_state = {
+    "toggle_on": False,
+    "floor": 500.0,
+    "rows": [],              # last sweep's qualifying rows, sorted desc by edge
+    "known_keys": set(),     # (ticker, expiration, strike) that qualified last sweep
+    "last_swept_at": None,   # ISO8601 UTC string
+    "sweep_in_progress": False,
+    "last_error": None,
+    "universe_size": None,
+    "last_call_count": None,
+    "last_sweep_seconds": None,
+}
+
+
+def get_state() -> dict:
+    with _lock:
+        return {
+            "toggle_on": _state["toggle_on"],
+            "floor": _state["floor"],
+            "rows": _state["rows"],
+            "last_swept_at": _state["last_swept_at"],
+            "sweep_in_progress": _state["sweep_in_progress"],
+            "last_error": _state["last_error"],
+            "universe_size": _state["universe_size"],
+            "last_call_count": _state["last_call_count"],
+            "last_sweep_seconds": _state["last_sweep_seconds"],
+            "cadence_times_ct": SWEEP_TIMES_CT,
+        }
+
+
+def set_toggle(on: bool) -> dict:
+    with _lock:
+        was_on = _state["toggle_on"]
+        _state["toggle_on"] = on
+    if on and not was_on:
+        threading.Thread(target=run_sweep, name="mispriced-immediate-sweep", daemon=True).start()
+    return get_state()
+
+
+def set_floor(floor: float) -> dict:
+    if floor < 0:
+        raise ValueError("floor must be >= 0")
+    with _lock:
+        _state["floor"] = float(floor)
+    return get_state()
+
+
+# ── minimal Tradier client — deliberately NOT scan_ticker_extensive, which
+#    does unrelated scoring work (1yr history, IV history, SMA, ...) that
+#    would badly overstate this scanner's real cost ─────────────────────────
+
+def _headers() -> dict:
+    return {"Authorization": f"Bearer {settings.tradier_api_key}", "Accept": "application/json"}
+
+
+def _get(client: httpx.Client, path: str, params: dict, tries: int = 3) -> dict:
+    last_exc: Exception | None = None
+    for attempt in range(1, tries + 1):
+        try:
+            resp = client.get(TRADIER_BASE + path, params=params, headers=_headers())
+            if resp.status_code == 429:
+                time.sleep(1.5 * attempt)
+                continue
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as exc:
+            last_exc = exc
+            time.sleep(0.5 * attempt)
+    raise last_exc
+
+
+def _fetch_quotes_batch(client: httpx.Client, symbols: list[str]) -> dict:
+    data = _get(client, "/v1/markets/quotes", {"symbols": ",".join(symbols)})
+    q = (data.get("quotes") or {}).get("quote") or []
+    if isinstance(q, dict):
+        q = [q]
+    return {row["symbol"]: row for row in q if "symbol" in row}
+
+
+def _fetch_expirations(client: httpx.Client, symbol: str) -> list[str]:
+    data = _get(client, "/v1/markets/options/expirations", {"symbol": symbol, "includeAllRoots": "true"})
+    exps = data.get("expirations") or {}
+    dates = exps.get("date") or []
+    if isinstance(dates, str):
+        dates = [dates]
+    return dates
+
+
+def _fetch_chain(client: httpx.Client, symbol: str, expiration: str) -> list[dict]:
+    data = _get(client, "/v1/markets/options/chains",
+                {"symbol": symbol, "expiration": expiration, "greeks": "true"})
+    opts = data.get("options") or {}
+    o = opts.get("option") or []
+    if isinstance(o, dict):
+        o = [o]
+    return o
+
+
+def _is_valid(v) -> bool:
+    return v is not None and v != "" and not (isinstance(v, float) and v != v)
+
+
+# ── universe + earnings (read only) ─────────────────────────────────────────
+
+def _load_universe() -> list[str]:
+    db = SessionLocal()
+    try:
+        rows = db.execute(_text(
+            "SELECT ticker FROM ticker_universe WHERE source = 'ai_sector' AND active = true ORDER BY ticker"
+        )).fetchall()
+        return [r[0] for r in rows]
+    finally:
+        db.close()
+
+
+def _load_earnings(tickers: list[str]) -> dict[str, date]:
+    if not tickers:
+        return {}
+    db = SessionLocal()
+    try:
+        rows = db.execute(
+            _text("SELECT ticker, next_earnings_date FROM earnings_calendar "
+                  "WHERE ticker = ANY(:tickers) AND next_earnings_date IS NOT NULL"),
+            {"tickers": tickers},
+        ).fetchall()
+        return {r[0]: r[1] for r in rows}
+    finally:
+        db.close()
+
+
+# ── per-ticker sweep worker ─────────────────────────────────────────────────
+
+def _sweep_ticker(client: httpx.Client, ticker: str, quote: dict | None,
+                   earnings_date: date | None) -> tuple[list[dict], int]:
+    """Returns (candidate_rows, tradier_calls_made). Never raises — a thin or
+    broken ticker contributes fewer calls and zero rows, the sweep continues."""
+    calls = 0
+    stock_ask = None
+    if quote:
+        stock_ask = quote.get("ask")
+        if not _is_valid(stock_ask):
+            stock_ask = quote.get("last")
+    if not _is_valid(stock_ask):
+        return [], calls
+    stock_ask = float(stock_ask)
+
+    try:
+        exps = _fetch_expirations(client, ticker)
+        calls += 1
+    except Exception as exc:
+        logger.debug("mispriced: %s expirations failed: %s", ticker, exc)
+        return [], calls
+
+    fridays = sorted(d for d in exps if datetime.strptime(d, "%Y-%m-%d").weekday() == 4)
+    chosen = fridays[:2]  # 0, 1, or 2 — thin names never error the sweep
+
+    out_rows: list[dict] = []
+    today = date.today()
+    for exp_str in chosen:
+        try:
+            chain = _fetch_chain(client, ticker, exp_str)
+            calls += 1
+        except Exception as exc:
+            logger.debug("mispriced: %s chain %s failed: %s", ticker, exp_str, exc)
+            continue
+
+        exp_date = datetime.strptime(exp_str, "%Y-%m-%d").date()
+        calls_only = [
+            o for o in chain
+            if o.get("option_type") == "call" and _is_valid(o.get("strike"))
+            and float(o["strike"]) <= stock_ask
+        ]
+        calls_only.sort(key=lambda o: float(o["strike"]), reverse=True)
+        deep_itm = calls_only[:STRIKES_BELOW_SPOT]
+
+        earn_in_window = earnings_date is not None and today <= earnings_date <= exp_date
+
+        for o in deep_itm:
+            call_bid = o.get("bid")
+            if not _is_valid(call_bid) or float(call_bid) <= 0:
+                continue
+            call_bid = float(call_bid)
+            strike = float(o["strike"])
+            edge = (strike + call_bid - stock_ask) * 100.0
+            out_rows.append({
+                "ticker": ticker,
+                "expiration": exp_str,
+                "strike": strike,
+                "call_bid": round(call_bid, 2),
+                "stock_price": round(stock_ask, 2),
+                "edge": round(edge, 2),
+                "breakeven": round(stock_ask - call_bid, 2),
+                "earnings_in_window": earn_in_window,
+            })
+
+    return out_rows, calls
+
+
+# ── full sweep ───────────────────────────────────────────────────────────────
+
+def run_sweep() -> dict:
+    """Runs one full sweep synchronously. Called from a request handler
+    (manual trigger, toggle-on immediate fire) or the cadence loop."""
+    with _lock:
+        if _state["sweep_in_progress"]:
+            return get_state()
+        _state["sweep_in_progress"] = True
+        _state["last_error"] = None
+        floor = _state["floor"]
+        prev_known_keys = set(_state["known_keys"])
+
+    t0 = time.time()
+    total_calls = 0
+    try:
+        tickers = _load_universe()
+        earnings = _load_earnings(tickers)
+
+        with httpx.Client(timeout=15) as client:
+            quotes: dict[str, dict] = {}
+            for i in range(0, len(tickers), QUOTE_BATCH):
+                batch = tickers[i:i + QUOTE_BATCH]
+                try:
+                    quotes.update(_fetch_quotes_batch(client, batch))
+                    total_calls += 1
+                except Exception as exc:
+                    logger.warning("mispriced: quote batch %s failed: %s", i, exc)
+
+            all_rows: list[dict] = []
+            with ThreadPoolExecutor(max_workers=SWEEP_WORKERS) as pool:
+                futures = {
+                    pool.submit(_sweep_ticker, client, t, quotes.get(t), earnings.get(t)): t
+                    for t in tickers
+                }
+                for fut in as_completed(futures):
+                    t = futures[fut]
+                    try:
+                        rows, calls = fut.result()
+                        all_rows.extend(rows)
+                        total_calls += calls
+                    except Exception as exc:
+                        logger.warning("mispriced: sweep failed for %s: %s", t, exc)
+
+        qualifying = [r for r in all_rows if r["edge"] >= floor]
+        qualifying.sort(key=lambda r: r["edge"], reverse=True)
+
+        current_keys = {(r["ticker"], r["expiration"], r["strike"]) for r in qualifying}
+        for r in qualifying:
+            key = (r["ticker"], r["expiration"], r["strike"])
+            r["is_new"] = key not in prev_known_keys
+
+        with _lock:
+            _state["rows"] = qualifying
+            _state["known_keys"] = current_keys
+            _state["last_swept_at"] = datetime.utcnow().isoformat() + "Z"
+            _state["universe_size"] = len(tickers)
+            _state["last_call_count"] = total_calls
+            _state["last_sweep_seconds"] = round(time.time() - t0, 1)
+
+        logger.info(
+            "mispriced sweep: %d tickers, %d calls, %.1fs, %d qualifying (floor=%.0f)",
+            len(tickers), total_calls, time.time() - t0, len(qualifying), floor,
+        )
+    except Exception as exc:
+        logger.exception("mispriced sweep failed: %s", exc)
+        with _lock:
+            _state["last_error"] = str(exc)
+    finally:
+        with _lock:
+            _state["sweep_in_progress"] = False
+
+    return get_state()
+
+
+# ── cadence loop — background thread, NOT the Railway/APScheduler cron ─────
+
+_loop_started = False
+_loop_lock = threading.Lock()
+_fired_today: set[str] = set()
+_fired_date: date | None = None
+
+
+def _cadence_loop() -> None:
+    global _fired_date
+    while True:
+        try:
+            now_ct = datetime.now(_CT)
+            today = now_ct.date()
+            if _fired_date != today:
+                _fired_today.clear()
+                _fired_date = today
+
+            with _lock:
+                on = _state["toggle_on"]
+                in_progress = _state["sweep_in_progress"]
+
+            if on and not in_progress:
+                hhmm = now_ct.strftime("%H:%M")
+                if hhmm in SWEEP_TIMES_CT and hhmm not in _fired_today:
+                    _fired_today.add(hhmm)
+                    run_sweep()
+        except Exception:
+            logger.exception("mispriced cadence loop error")
+        time.sleep(15)
+
+
+def start_cadence_loop() -> None:
+    """Idempotent, safe to call at app startup. The loop is a no-op while the
+    toggle is off (default) — zero Tradier calls, nothing running."""
+    global _loop_started
+    with _loop_lock:
+        if _loop_started:
+            return
+        _loop_started = True
+    threading.Thread(target=_cadence_loop, name="mispriced-cadence", daemon=True).start()
+    logger.info("mispriced: cadence loop started (idle — toggle is off by default)")

@@ -102,6 +102,7 @@ import BucketTabs from "./BucketTabs.jsx";
 import AsymmetricScanner from "./AsymmetricScanner.jsx";
 import { calcAsymmetricFlags } from "../utils/asymmetric.js";
 import IvRampScanner from "./IvRampScanner.jsx";
+import MispricedScanner from "./MispricedScanner.jsx";
 import MyPositions from "./MyPositions.jsx";
 import PremiumScanner from "./PremiumScanner.jsx";
 import RangeScanner from "./RangeScanner.jsx";
@@ -209,7 +210,7 @@ export default function Dashboard() {
   const [premTimeframe, setPremTimeframe] = useState(30);
   const [showAll, setShowAll] = useState(false);
   const [asymOnly, setAsymOnly] = useState(false);
-  const [view, setView] = useState("cards"); // "cards" | "premium" | "range" | "ivramp" | "asymmetric" | "riskquality" | "positions" | "markethealth"
+  const [view, setView] = useState("cards"); // "cards" | "premium" | "range" | "ivramp" | "asymmetric" | "riskquality" | "positions" | "mispriced" | "markethealth"
   const [scanMode, setScanMode] = useState(null); // "normal" | "extensive" | null
   const [sourceFilter, setSourceFilter] = useState("all");
   const [assetTypeFilter, setAssetTypeFilter] = useState("all"); // "all" | "stocks" | "etfs"
@@ -845,6 +846,12 @@ export default function Dashboard() {
             >
               {view === "positions" ? "← Cards" : "📋 My Positions"}
             </button>
+            <button
+              className={`mispriced-view-btn${view === "mispriced" ? " active" : ""}`}
+              onClick={() => setView(v => v === "mispriced" ? "cards" : "mispriced")}
+            >
+              {view === "mispriced" ? "← Cards" : "💰 Mispriced DITM"}
+            </button>
             {/* TODO: MarketHealth side-tabled — restore button when feature is ready
             <button
               className={`mh-view-btn${view === "markethealth" ? " active" : ""}`}
@@ -1249,6 +1256,8 @@ export default function Dashboard() {
         />
       ) : view === "positions" ? (
         <MyPositions allRows={allRows} onRowClick={setSelectedRow} />
+      ) : view === "mispriced" ? (
+        <MispricedScanner />
       ) : /* TODO: MarketHealth side-tabled — render branch removed until feature is ready */ (
         <>
           <div className="tabs-row">
