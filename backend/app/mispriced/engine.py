@@ -39,7 +39,24 @@ SWEEP_TIMES_CT = [
     "10:15", "10:45", "11:15", "11:45", "12:30", "13:15", "14:00", "14:45",
 ]
 
+# Market-hours gate — Mon-Fri only, 8:30 AM-3:00 PM CT. The toggle can stay
+# ON overnight/weekends; it just sits idle outside this window and makes no
+# Tradier calls until the next valid window arrives.
+MARKET_OPEN_CT = "08:30"
+MARKET_CLOSE_CT = "15:00"
+
 _CT = pytz.timezone("America/Chicago")
+
+
+def _within_market_hours(now_ct: datetime) -> bool:
+    if now_ct.weekday() >= 5:  # Mon=0 .. Fri=4, Sat=5, Sun=6
+        return False
+    hhmm = now_ct.strftime("%H:%M")
+    return MARKET_OPEN_CT <= hhmm <= MARKET_CLOSE_CT
+
+
+def is_market_open_now() -> bool:
+    return _within_market_hours(datetime.now(_CT))
 
 # ── in-memory state ──────────────────────────────────────────────────────────
 _lock = threading.RLock()
@@ -70,6 +87,7 @@ def get_state() -> dict:
             "last_call_count": _state["last_call_count"],
             "last_sweep_seconds": _state["last_sweep_seconds"],
             "cadence_times_ct": SWEEP_TIMES_CT,
+            "market_open": is_market_open_now(),  # computed live, not stored
         }
 
 
@@ -77,7 +95,10 @@ def set_toggle(on: bool) -> dict:
     with _lock:
         was_on = _state["toggle_on"]
         _state["toggle_on"] = on
-    if on and not was_on:
+    # Only fire immediately if we're actually inside market hours. Flipping
+    # ON overnight/weekend just arms the toggle — it sits idle until the
+    # cadence loop's next in-hours slot, no immediate Tradier calls.
+    if on and not was_on and is_market_open_now():
         threading.Thread(target=run_sweep, name="mispriced-immediate-sweep", daemon=True).start()
     return get_state()
 
@@ -398,7 +419,11 @@ def _cadence_loop() -> None:
                 on = _state["toggle_on"]
                 in_progress = _state["sweep_in_progress"]
 
-            if on and not in_progress:
+            # Market-hours gate: even with the toggle ON, the cadence loop
+            # only fires Mon-Fri 8:30 AM-3:00 PM CT. Outside that window this
+            # is a no-op every 15s poll — zero Tradier calls, toggle just
+            # sits armed until the next in-hours slot.
+            if on and not in_progress and _within_market_hours(now_ct):
                 hhmm = now_ct.strftime("%H:%M")
                 if hhmm in SWEEP_TIMES_CT and hhmm not in _fired_today:
                     _fired_today.add(hhmm)

@@ -2892,6 +2892,15 @@ body {
   background: #4ade80;
   box-shadow: 0 0 6px #4ade80;
 }
+/* Toggle is armed but outside market hours — deliberately NOT green/pulsing
+   (that would look like it's actively sweeping) and NOT red (it's not off,
+   it's armed) — a static amber "idle" look. */
+.mispriced-toggle.idle {
+  background: #2a2110;
+  border-color: #92702a;
+  color: #d4a94a;
+}
+.mispriced-toggle.idle .mispriced-toggle-dot { background: #d4a94a; }
 .mispriced-toggle:disabled { opacity: 0.6; cursor: not-allowed; }
 @keyframes mispriced-pulse {
   0%, 100% { box-shadow: 0 0 0 rgba(74, 222, 128, 0); }

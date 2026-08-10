@@ -268,12 +268,21 @@ export default function MispricedScanner() {
 
         <div className="mispriced-controls">
           <button
-            className={`mispriced-toggle${state?.toggle_on ? " on" : " off"}`}
+            className={`mispriced-toggle${
+              state?.toggle_on ? (state?.market_open ? " on" : " idle") : " off"
+            }`}
             onClick={handleToggle}
             disabled={loading || !state}
+            title={
+              state?.toggle_on && !state?.market_open
+                ? "Toggle is armed — sweeps resume automatically at the next Mon-Fri 8:30 AM-3:00 PM CT window"
+                : undefined
+            }
           >
             <span className="mispriced-toggle-dot" />
-            {state?.toggle_on ? "SWEEPING: ON" : "SWEEPING: OFF"}
+            {state?.toggle_on
+              ? (state?.market_open ? "SWEEPING: ON" : "MARKET CLOSED — IDLE")
+              : "SWEEPING: OFF"}
           </button>
 
           <div className="mispriced-floor">
