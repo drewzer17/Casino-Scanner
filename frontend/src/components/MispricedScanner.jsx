@@ -31,17 +31,32 @@ function playDing() {
   }
 }
 
+// "edge" is intentionally not in this list — it needs a mode toggle in its
+// header and a range-aware cell, so it's rendered explicitly, spliced in
+// between stock_price and breakeven (see EDGE_COL_INDEX below).
 const COLS = [
   { key: "ticker",              label: "Ticker",     align: "left",   type: "text" },
   { key: "expiration",          label: "Expiration", align: "left",   type: "text" },
   { key: "strike",              label: "Strike",     align: "right",  type: "number" },
+  { key: "call_ask",            label: "Call Ask",   align: "right",  type: "number" },
   { key: "call_bid",            label: "Call Bid",   align: "right",  type: "number" },
-  { key: "stock_price",         label: "Stock (ask)",align: "right",  type: "number" },
-  { key: "edge",                label: "Edge $",     align: "right",  type: "number" },
+  { key: "stock_price",         label: "Stock Ask",  align: "right",  type: "number" },
   { key: "breakeven",           label: "Breakeven",  align: "right",  type: "number" },
   { key: "earnings_in_window",  label: "Earnings",   align: "center", type: "bool" },
 ];
+const EDGE_COL_INDEX = 6; // splice point: after stock_price, before breakeven
 const COL_TYPE = Object.fromEntries(COLS.map((c) => [c.key, c.type]));
+const TOTAL_COLS = COLS.length + 1; // +1 for the spliced-in edge column
+
+const EDGE_MODES = ["ask", "bid", "mid", "range"];
+
+// range mode sorts/floors on the bid (worst case) per spec.
+function effectiveEdge(row, mode) {
+  if (mode === "ask") return row.edge_ask;
+  if (mode === "bid") return row.edge_bid;
+  if (mode === "range") return row.edge_bid;
+  return row.edge_mid;
+}
 
 function compareRows(a, b, key) {
   const type = COL_TYPE[key];
@@ -70,6 +85,17 @@ function fmtEdge(v) {
   return `${n < 0 ? "-" : ""}$${Math.abs(n).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }
 
+function fmtEdgeCell(row, mode) {
+  if (mode === "range") {
+    const lo = row.edge_bid;
+    const hi = row.edge_ask;
+    if (lo == null) return "—";
+    if (hi == null) return fmtEdge(lo);
+    return `${fmtEdge(lo)}–${fmtEdge(hi)}`;
+  }
+  return fmtEdge(effectiveEdge(row, mode));
+}
+
 function timeAgo(iso) {
   if (!iso) return "never";
   const then = new Date(iso).getTime();
@@ -80,6 +106,23 @@ function timeAgo(iso) {
   return `${Math.floor(m / 60)}h ${m % 60}m ago`;
 }
 
+function SortableTh({ c, sort, onSort }) {
+  const active = sort.key === c.key;
+  return (
+    <th
+      className="mispriced-sortable-th"
+      style={{ textAlign: c.align }}
+      onClick={() => onSort(c.key)}
+      title={`Sort by ${c.label}`}
+    >
+      {c.label}
+      <span className={`mispriced-sort-arrow${active ? " active" : ""}`}>
+        {active ? (sort.dir === "asc" ? " ▲" : " ▼") : ""}
+      </span>
+    </th>
+  );
+}
+
 export default function MispricedScanner() {
   const [state, setState] = useState(null);
   const [floorInput, setFloorInput] = useState("500");
@@ -88,6 +131,9 @@ export default function MispricedScanner() {
   const [error, setError] = useState(null);
   const [sort, setSort] = useState({ key: "edge", dir: "desc" });
   const [panelTicker, setPanelTicker] = useState(null);
+  // Global edge display mode. Page-session only (plain state, no storage) —
+  // recomputes from rows already in hand, never triggers a new sweep.
+  const [edgeMode, setEdgeMode] = useState("mid");
   const pollRef = useRef(null);
   const editingFloorRef = useRef(false);
 
@@ -109,7 +155,15 @@ export default function MispricedScanner() {
       }
       setError(null);
 
-      const newOnes = (s.rows || []).filter((r) => r.is_new);
+      // Only ding/flash for rows that are both newly-qualifying AND actually
+      // visible under the current mode's floor test — a row that's "new" to
+      // the server's superset but doesn't clear the active mode's floor
+      // isn't shown, so it shouldn't alert either.
+      const visible = (s.rows || []).filter((r) => {
+        const v = effectiveEdge(r, edgeMode);
+        return v != null && v >= s.floor;
+      });
+      const newOnes = visible.filter((r) => r.is_new);
       if (newOnes.length > 0) {
         const keys = new Set(newOnes.map((r) => `${r.ticker}|${r.expiration}|${r.strike}`));
         setFlashKeys(keys);
@@ -119,7 +173,7 @@ export default function MispricedScanner() {
     } catch (e) {
       setError(e.message || String(e));
     }
-  }, []);
+  }, [edgeMode]);
 
   useEffect(() => {
     refresh();
@@ -170,16 +224,37 @@ export default function MispricedScanner() {
   }
 
   const rawRows = state?.rows || [];
-  // Pure display-order concern — never mutates state.rows, so is_new flashing
-  // and the floor filter (both server-computed) are unaffected by sorting.
+  const floorValue = state?.floor ?? 500;
+
+  // Server sends a loose superset (qualifies under the most permissive edge
+  // mode) so the toggle never needs a new sweep. The active mode's floor
+  // test happens here, purely client-side, from data already in hand.
+  const visibleRows = useMemo(() => {
+    return rawRows.filter((r) => {
+      const v = effectiveEdge(r, edgeMode);
+      return v != null && v >= floorValue;
+    });
+  }, [rawRows, edgeMode, floorValue]);
+
+  // Pure display-order concern — never mutates state.rows.
   const rows = useMemo(() => {
-    const copy = [...rawRows];
+    const copy = [...visibleRows];
     copy.sort((a, b) => {
-      const cmp = compareRows(a, b, sort.key);
+      let cmp;
+      if (sort.key === "edge") {
+        const av = effectiveEdge(a, edgeMode);
+        const bv = effectiveEdge(b, edgeMode);
+        if (av == null && bv == null) cmp = 0;
+        else if (av == null) cmp = -1;
+        else if (bv == null) cmp = 1;
+        else cmp = av - bv;
+      } else {
+        cmp = compareRows(a, b, sort.key);
+      }
       return sort.dir === "asc" ? cmp : -cmp;
     });
     return copy;
-  }, [rawRows, sort]);
+  }, [visibleRows, sort, edgeMode]);
 
   return (
     <div className="mispriced-wrap">
@@ -233,35 +308,53 @@ export default function MispricedScanner() {
       {state?.last_error && <div className="mispriced-error">Last sweep error: {state.last_error}</div>}
 
       <div className="mispriced-table-wrap">
-        <table className="mispriced-table">
+        <table className="mispriced-table mispriced-table-compact">
           <thead>
             <tr>
-              {COLS.map((c) => {
-                const active = sort.key === c.key;
-                return (
-                  <th
-                    key={c.key}
-                    className="mispriced-sortable-th"
-                    style={{ textAlign: c.align }}
-                    onClick={() => handleSort(c.key)}
-                    title={`Sort by ${c.label}`}
-                  >
-                    {c.label}
-                    <span className={`mispriced-sort-arrow${active ? " active" : ""}`}>
-                      {active ? (sort.dir === "asc" ? " ▲" : " ▼") : ""}
-                    </span>
-                  </th>
-                );
-              })}
+              {COLS.slice(0, EDGE_COL_INDEX).map((c) => (
+                <SortableTh key={c.key} c={c} sort={sort} onSort={handleSort} />
+              ))}
+              <th
+                className="mispriced-sortable-th mispriced-edge-th"
+                style={{ textAlign: "right" }}
+                onClick={() => handleSort("edge")}
+                title="Sort by Edge"
+              >
+                <div className="mispriced-edge-toggle" onClick={(e) => e.stopPropagation()}>
+                  {EDGE_MODES.map((m) => (
+                    <button
+                      key={m}
+                      className={`mispriced-edge-mode-btn${edgeMode === m ? " active" : ""}`}
+                      onClick={() => setEdgeMode(m)}
+                      title={
+                        m === "range"
+                          ? "Show bid–ask range; sort/floor on bid (worst case)"
+                          : `Edge from call ${m}`
+                      }
+                    >
+                      {m === "range" ? "ASK–BID" : m.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+                <div>
+                  Edge $
+                  <span className={`mispriced-sort-arrow${sort.key === "edge" ? " active" : ""}`}>
+                    {sort.key === "edge" ? (sort.dir === "asc" ? " ▲" : " ▼") : ""}
+                  </span>
+                </div>
+              </th>
+              {COLS.slice(EDGE_COL_INDEX).map((c) => (
+                <SortableTh key={c.key} c={c} sort={sort} onSort={handleSort} />
+              ))}
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={COLS.length} className="mispriced-empty">
+                <td colSpan={TOTAL_COLS} className="mispriced-empty">
                   {state?.sweep_in_progress
                     ? "Sweeping…"
-                    : `No strikes clearing the $${state?.floor ?? 500} floor right now.`}
+                    : `No strikes clearing the $${floorValue} floor right now (${edgeMode} mode).`}
                 </td>
               </tr>
             ) : (
@@ -288,9 +381,12 @@ export default function MispricedScanner() {
                     </td>
                     <td>{r.expiration}</td>
                     <td style={{ textAlign: "right" }}>{fmtMoney(r.strike)}</td>
+                    <td style={{ textAlign: "right" }}>{fmtMoney(r.call_ask)}</td>
                     <td style={{ textAlign: "right" }}>{fmtMoney(r.call_bid)}</td>
                     <td style={{ textAlign: "right" }}>{fmtMoney(r.stock_price)}</td>
-                    <td style={{ textAlign: "right" }} className="mispriced-edge">{fmtEdge(r.edge)}</td>
+                    <td style={{ textAlign: "right" }} className="mispriced-edge">
+                      {fmtEdgeCell(r, edgeMode)}
+                    </td>
                     <td style={{ textAlign: "right" }}>{fmtMoney(r.breakeven)}</td>
                     <td style={{ textAlign: "center" }}>
                       {r.earnings_in_window ? <span className="mispriced-earn-flag">📅 earnings</span> : "—"}

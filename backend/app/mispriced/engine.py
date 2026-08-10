@@ -252,14 +252,27 @@ def _sweep_ticker(client: httpx.Client, ticker: str, quote: dict | None,
                 continue
             call_bid = float(call_bid)
             strike = float(o["strike"])
-            edge = (strike + call_bid - stock_ask) * 100.0
+
+            call_ask_raw = o.get("ask")
+            call_ask = float(call_ask_raw) if _is_valid(call_ask_raw) and float(call_ask_raw) > 0 else None
+
+            edge_bid = (strike + call_bid - stock_ask) * 100.0
+            edge_ask = (strike + call_ask - stock_ask) * 100.0 if call_ask is not None else None
+            edge_mid = (
+                (strike + (call_bid + call_ask) / 2.0 - stock_ask) * 100.0
+                if call_ask is not None else None
+            )
+
             out_rows.append({
                 "ticker": ticker,
                 "expiration": exp_str,
                 "strike": strike,
                 "call_bid": round(call_bid, 2),
+                "call_ask": round(call_ask, 2) if call_ask is not None else None,
                 "stock_price": round(stock_ask, 2),
-                "edge": round(edge, 2),
+                "edge_bid": round(edge_bid, 2),
+                "edge_ask": round(edge_ask, 2) if edge_ask is not None else None,
+                "edge_mid": round(edge_mid, 2) if edge_mid is not None else None,
                 "breakeven": round(stock_ask - call_bid, 2),
                 "earnings_in_window": earn_in_window,
             })
@@ -313,8 +326,17 @@ def run_sweep() -> dict:
                     except Exception as exc:
                         logger.warning("mispriced: sweep failed for %s: %s", t, exc)
 
-        qualifying = [r for r in all_rows if r["edge"] >= floor]
-        qualifying.sort(key=lambda r: r["edge"], reverse=True)
+        # Loosest bound (edge_ask, the max of the three) so the superset sent
+        # to the client covers every row that could qualify under ANY of the
+        # frontend's edge-mode toggle positions (ask/bid/mid/range) against
+        # the current floor -- the toggle recomputes client-side from data
+        # already here, it never triggers a new sweep, so nothing the toggle
+        # might need can be pre-filtered away by a single fixed criterion.
+        def _loose_edge(r):
+            return r["edge_ask"] if r["edge_ask"] is not None else r["edge_bid"]
+
+        qualifying = [r for r in all_rows if _loose_edge(r) >= floor]
+        qualifying.sort(key=_loose_edge, reverse=True)
 
         # Same universe-metadata source the main scanner's purple pills and
         # research asterisk use — reused, not reimplemented.
