@@ -41,11 +41,11 @@ const COLS = [
   { key: "call_ask",            label: "Call Ask",   align: "right",  type: "number" },
   { key: "call_bid",            label: "Call Bid",   align: "right",  type: "number" },
   { key: "stock_price",         label: "Stock Ask",  align: "right",  type: "number" },
-  { key: "depth_strikes",       label: "Depth",      align: "right",  type: "number" },
+  { key: "depth_strikes",       label: "Moves",      align: "right",  type: "number" },
   { key: "breakeven",           label: "Breakeven",  align: "right",  type: "number" },
   { key: "earnings_in_window",  label: "Earnings",   align: "center", type: "bool" },
 ];
-const EDGE_COL_INDEX = 7; // splice point: after depth, before breakeven
+const EDGE_COL_INDEX = 7; // splice point: after moves, before breakeven
 const COL_TYPE = Object.fromEntries(COLS.map((c) => [c.key, c.type]));
 const TOTAL_COLS = COLS.length + 1; // +1 for the spliced-in edge column
 
@@ -80,10 +80,33 @@ function fmtMoney(v) {
   return `$${Number(v).toFixed(2)}`;
 }
 
-function fmtDepth(row) {
+// Moves = strike count below spot only. No dollar figure — that's a
+// deliberate simplification, not an oversight; depth_dollars still exists on
+// the row (from the earlier DEPTH column work) but isn't displayed here.
+function fmtMoves(row) {
   if (row.depth_strikes == null) return "—";
-  const dollars = row.depth_dollars != null ? ` (${fmtMoney(row.depth_dollars)})` : "";
-  return `${row.depth_strikes} ITM${dollars}`;
+  return String(row.depth_strikes);
+}
+
+const MOVES_BUCKETS = [
+  { key: "1-5",   label: "1–5 moves",   min: 1,  max: 5 },
+  { key: "5-10",  label: "5–10 moves",  min: 5,  max: 10 },
+  { key: "10-15", label: "10–15 moves", min: 10, max: 15 },
+  { key: "all",   label: "ALL",         min: null, max: null },
+];
+
+function passesMovesFilter(row, bucketKey) {
+  if (bucketKey === "all") return true;
+  const bucket = MOVES_BUCKETS.find((b) => b.key === bucketKey);
+  if (!bucket) return true;
+  const v = row.depth_strikes;
+  return v != null && v >= bucket.min && v <= bucket.max;
+}
+
+function passesStockCeiling(row, ceilingInput) {
+  const ceiling = parseFloat(ceilingInput);
+  if (!ceilingInput || Number.isNaN(ceiling) || ceiling <= 0) return true;
+  return row.stock_price != null && row.stock_price <= ceiling;
 }
 
 function fmtEdge(v) {
@@ -141,6 +164,10 @@ export default function MispricedScanner() {
   // Global edge display mode. Page-session only (plain state, no storage) —
   // recomputes from rows already in hand, never triggers a new sweep.
   const [edgeMode, setEdgeMode] = useState("mid");
+  // Moves-bucket and stock-ceiling filters — page-session-only state, stack
+  // on top of the floor/edge-mode filter, recompute client-side, no re-sweep.
+  const [movesBucket, setMovesBucket] = useState("all");
+  const [maxStockInput, setMaxStockInput] = useState("");
   const pollRef = useRef(null);
   const editingFloorRef = useRef(false);
 
@@ -163,12 +190,15 @@ export default function MispricedScanner() {
       setError(null);
 
       // Only ding/flash for rows that are both newly-qualifying AND actually
-      // visible under the current mode's floor test — a row that's "new" to
-      // the server's superset but doesn't clear the active mode's floor
-      // isn't shown, so it shouldn't alert either.
+      // visible under ALL active filters (floor/edge-mode + moves bucket +
+      // stock ceiling) — a row that's "new" to the server's superset but
+      // isn't currently shown shouldn't alert either.
       const visible = (s.rows || []).filter((r) => {
         const v = effectiveEdge(r, edgeMode);
-        return v != null && v >= s.floor;
+        if (v == null || v < s.floor) return false;
+        if (!passesMovesFilter(r, movesBucket)) return false;
+        if (!passesStockCeiling(r, maxStockInput)) return false;
+        return true;
       });
       const newOnes = visible.filter((r) => r.is_new);
       if (newOnes.length > 0) {
@@ -180,7 +210,7 @@ export default function MispricedScanner() {
     } catch (e) {
       setError(e.message || String(e));
     }
-  }, [edgeMode]);
+  }, [edgeMode, movesBucket, maxStockInput]);
 
   useEffect(() => {
     refresh();
@@ -235,13 +265,17 @@ export default function MispricedScanner() {
 
   // Server sends a loose superset (qualifies under the most permissive edge
   // mode) so the toggle never needs a new sweep. The active mode's floor
-  // test happens here, purely client-side, from data already in hand.
+  // test, the moves bucket, and the stock-price ceiling all stack here,
+  // purely client-side, from data already in hand.
   const visibleRows = useMemo(() => {
     return rawRows.filter((r) => {
       const v = effectiveEdge(r, edgeMode);
-      return v != null && v >= floorValue;
+      if (v == null || v < floorValue) return false;
+      if (!passesMovesFilter(r, movesBucket)) return false;
+      if (!passesStockCeiling(r, maxStockInput)) return false;
+      return true;
     });
-  }, [rawRows, edgeMode, floorValue]);
+  }, [rawRows, edgeMode, floorValue, movesBucket, maxStockInput]);
 
   // Pure display-order concern — never mutates state.rows.
   const rows = useMemo(() => {
@@ -312,6 +346,35 @@ export default function MispricedScanner() {
         </div>
       </div>
 
+      <div className="mispriced-controls mispriced-controls-row2">
+        <div className="mispriced-moves-filter">
+          <label>Moves</label>
+          <div className="mispriced-moves-buckets">
+            {MOVES_BUCKETS.map((b) => (
+              <button
+                key={b.key}
+                className={`mispriced-moves-btn${movesBucket === b.key ? " active" : ""}`}
+                onClick={() => setMovesBucket(b.key)}
+              >
+                {b.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mispriced-stock-ceiling">
+          <label>Max stock price $</label>
+          <input
+            type="number"
+            min="0"
+            step="50"
+            placeholder="no ceiling"
+            value={maxStockInput}
+            onChange={(e) => setMaxStockInput(e.target.value)}
+          />
+        </div>
+      </div>
+
       <div className="mispriced-status">
         {state?.universe_size != null && <span>{state.universe_size} tickers</span>}
         {state?.last_call_count != null && <span>{state.last_call_count} Tradier calls</span>}
@@ -370,7 +433,18 @@ export default function MispricedScanner() {
                 <td colSpan={TOTAL_COLS} className="mispriced-empty">
                   {state?.sweep_in_progress
                     ? "Sweeping…"
-                    : `No strikes clearing the $${floorValue} floor right now (${edgeMode} mode).`}
+                    : (() => {
+                        const extra = [];
+                        if (movesBucket !== "all") {
+                          const b = MOVES_BUCKETS.find((x) => x.key === movesBucket);
+                          if (b) extra.push(b.label);
+                        }
+                        if (maxStockInput && parseFloat(maxStockInput) > 0) {
+                          extra.push(`stock ≤ $${maxStockInput}`);
+                        }
+                        const filterNote = extra.length ? `, ${extra.join(", ")}` : "";
+                        return `No strikes clearing the $${floorValue} floor (${edgeMode} mode${filterNote}) right now.`;
+                      })()}
                 </td>
               </tr>
             ) : (
@@ -400,7 +474,7 @@ export default function MispricedScanner() {
                     <td style={{ textAlign: "right" }}>{fmtMoney(r.call_ask)}</td>
                     <td style={{ textAlign: "right" }}>{fmtMoney(r.call_bid)}</td>
                     <td style={{ textAlign: "right" }}>{fmtMoney(r.stock_price)}</td>
-                    <td style={{ textAlign: "right" }} className="mispriced-depth">{fmtDepth(r)}</td>
+                    <td style={{ textAlign: "right" }} className="mispriced-depth">{fmtMoves(r)}</td>
                     <td style={{ textAlign: "right" }} className="mispriced-edge">
                       {fmtEdgeCell(r, edgeMode)}
                     </td>

@@ -2924,6 +2924,43 @@ body {
   font-size: 13px;
 }
 
+.mispriced-controls-row2 { margin-top: 8px; gap: 20px; }
+
+.mispriced-moves-filter, .mispriced-stock-ceiling {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.mispriced-moves-buckets { display: flex; gap: 4px; }
+.mispriced-moves-btn {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.mispriced-moves-btn:hover { color: #fde68a; }
+.mispriced-moves-btn.active {
+  background: #422006;
+  border-color: #eab308;
+  color: #fde68a;
+}
+.mispriced-stock-ceiling input {
+  width: 100px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text);
+  font-size: 13px;
+}
+
 .mispriced-sweep-btn {
   padding: 8px 14px;
   border-radius: 6px;
