@@ -267,12 +267,20 @@ def _sweep_ticker(client: httpx.Client, ticker: str, quote: dict | None,
 
         earn_in_window = earnings_date is not None and today <= earnings_date <= exp_date
 
-        for o in deep_itm:
+        for idx, o in enumerate(deep_itm):
             call_bid = o.get("bid")
             if not _is_valid(call_bid) or float(call_bid) <= 0:
                 continue
             call_bid = float(call_bid)
             strike = float(o["strike"])
+            # Position within deep_itm (which is calls_only, already sorted
+            # closest-to-spot-first) IS the strike count below spot for this
+            # name's actual listed spacing -- idx 0 (closest to/at spot) = 1.
+            # Computed from the enumerate() index, not from the post-filter
+            # out_rows list, so a skipped zero-bid strike above this one
+            # doesn't shift this strike's depth.
+            depth_strikes = idx + 1
+            depth_dollars = round(stock_ask - strike, 2)
 
             call_ask_raw = o.get("ask")
             call_ask = float(call_ask_raw) if _is_valid(call_ask_raw) and float(call_ask_raw) > 0 else None
@@ -291,6 +299,8 @@ def _sweep_ticker(client: httpx.Client, ticker: str, quote: dict | None,
                 "call_bid": round(call_bid, 2),
                 "call_ask": round(call_ask, 2) if call_ask is not None else None,
                 "stock_price": round(stock_ask, 2),
+                "depth_strikes": depth_strikes,
+                "depth_dollars": depth_dollars,
                 "edge_bid": round(edge_bid, 2),
                 "edge_ask": round(edge_ask, 2) if edge_ask is not None else None,
                 "edge_mid": round(edge_mid, 2) if edge_mid is not None else None,

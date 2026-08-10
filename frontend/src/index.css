@@ -3006,9 +3006,10 @@ body {
 
 /* Tighter sizing so 9 columns (incl. Call Ask/Bid) fit without horizontal
    cutoff — overrides the base padding/font-size above. */
-.mispriced-table-compact { font-size: 11.5px; }
-.mispriced-table-compact th { padding: 5px 6px; font-size: 9.5px; }
-.mispriced-table-compact td { padding: 4px 6px; }
+.mispriced-table-compact { font-size: 11px; }
+.mispriced-table-compact th { padding: 4px 5px; font-size: 9px; }
+.mispriced-table-compact td { padding: 3px 5px; }
+.mispriced-depth { color: var(--text-muted); font-size: 10.5px; }
 
 .mispriced-edge-th {
   vertical-align: bottom;

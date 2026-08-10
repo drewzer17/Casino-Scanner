@@ -41,10 +41,11 @@ const COLS = [
   { key: "call_ask",            label: "Call Ask",   align: "right",  type: "number" },
   { key: "call_bid",            label: "Call Bid",   align: "right",  type: "number" },
   { key: "stock_price",         label: "Stock Ask",  align: "right",  type: "number" },
+  { key: "depth_strikes",       label: "Depth",      align: "right",  type: "number" },
   { key: "breakeven",           label: "Breakeven",  align: "right",  type: "number" },
   { key: "earnings_in_window",  label: "Earnings",   align: "center", type: "bool" },
 ];
-const EDGE_COL_INDEX = 6; // splice point: after stock_price, before breakeven
+const EDGE_COL_INDEX = 7; // splice point: after depth, before breakeven
 const COL_TYPE = Object.fromEntries(COLS.map((c) => [c.key, c.type]));
 const TOTAL_COLS = COLS.length + 1; // +1 for the spliced-in edge column
 
@@ -77,6 +78,12 @@ function compareRows(a, b, key) {
 function fmtMoney(v) {
   if (v == null) return "—";
   return `$${Number(v).toFixed(2)}`;
+}
+
+function fmtDepth(row) {
+  if (row.depth_strikes == null) return "—";
+  const dollars = row.depth_dollars != null ? ` (${fmtMoney(row.depth_dollars)})` : "";
+  return `${row.depth_strikes} ITM${dollars}`;
 }
 
 function fmtEdge(v) {
@@ -393,6 +400,7 @@ export default function MispricedScanner() {
                     <td style={{ textAlign: "right" }}>{fmtMoney(r.call_ask)}</td>
                     <td style={{ textAlign: "right" }}>{fmtMoney(r.call_bid)}</td>
                     <td style={{ textAlign: "right" }}>{fmtMoney(r.stock_price)}</td>
+                    <td style={{ textAlign: "right" }} className="mispriced-depth">{fmtDepth(r)}</td>
                     <td style={{ textAlign: "right" }} className="mispriced-edge">
                       {fmtEdgeCell(r, edgeMode)}
                     </td>
