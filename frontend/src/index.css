@@ -2948,13 +2948,22 @@ body {
   margin-bottom: 10px;
 }
 
-.mispriced-table-wrap { overflow-x: auto; }
+.mispriced-table-wrap {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100vh - 260px);
+}
 .mispriced-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 13px;
 }
 .mispriced-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-elev);
   text-align: left;
   padding: 8px 10px;
   border-bottom: 1px solid var(--border);
@@ -2965,6 +2974,18 @@ body {
   letter-spacing: 0.03em;
   white-space: nowrap;
 }
+.mispriced-sortable-th {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.12s;
+}
+.mispriced-sortable-th:hover { color: #fde68a; }
+.mispriced-sort-arrow {
+  display: inline-block;
+  width: 10px;
+  color: #eab308;
+  font-size: 9px;
+}
 .mispriced-table td {
   padding: 8px 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
@@ -2973,6 +2994,20 @@ body {
 .mispriced-table tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
 .mispriced-edge { color: #4ade80; font-weight: 700; }
 .mispriced-earn-flag { color: #fde68a; font-size: 12px; }
+.mispriced-lens-pill {
+  display: inline-block;
+  background: #8b5cf6;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-left: 6px;
+  cursor: default;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.mispriced-lens-pill.defense { background: #fbbf24; color: #000; }
 .mispriced-empty {
   text-align: center;
   color: var(--text-muted);

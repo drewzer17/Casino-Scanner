@@ -173,6 +173,32 @@ def _load_earnings(tickers: list[str]) -> dict[str, date]:
         db.close()
 
 
+def _load_sitrep_set(tickers: list[str]) -> set[str]:
+    if not tickers:
+        return set()
+    db = SessionLocal()
+    try:
+        rows = db.execute(
+            _text("SELECT ticker FROM sitreps WHERE ticker = ANY(:tickers)"),
+            {"tickers": tickers},
+        ).fetchall()
+        return {r[0] for r in rows}
+    finally:
+        db.close()
+
+
+def _load_ai_metadata() -> dict[str, dict]:
+    """Same universe/lens metadata (category, lenses, primary_lens) the main
+    scanner's purple pills use — reused verbatim, not reimplemented, per the
+    same ai_buildout_universe.json / ai_overview_lenses.json source."""
+    try:
+        from ..api.routes import _build_ai_metadata
+        return _build_ai_metadata()
+    except Exception as exc:
+        logger.warning("mispriced: _build_ai_metadata reuse failed: %s", exc)
+        return {}
+
+
 # ── per-ticker sweep worker ─────────────────────────────────────────────────
 
 def _sweep_ticker(client: httpx.Client, ticker: str, quote: dict | None,
@@ -259,6 +285,8 @@ def run_sweep() -> dict:
     try:
         tickers = _load_universe()
         earnings = _load_earnings(tickers)
+        sitrep_set = _load_sitrep_set(tickers)
+        ai_meta = _load_ai_metadata()
 
         with httpx.Client(timeout=15) as client:
             quotes: dict[str, dict] = {}
@@ -287,6 +315,16 @@ def run_sweep() -> dict:
 
         qualifying = [r for r in all_rows if r["edge"] >= floor]
         qualifying.sort(key=lambda r: r["edge"], reverse=True)
+
+        # Same universe-metadata source the main scanner's purple pills and
+        # research asterisk use — reused, not reimplemented.
+        for r in qualifying:
+            meta = ai_meta.get(r["ticker"]) or {}
+            r["has_sitrep"] = r["ticker"] in sitrep_set
+            r["primary_lens"] = meta.get("primary_lens")
+            r["lenses"] = meta.get("lenses") or []
+            r["category"] = meta.get("category")
+            r["is_defense"] = meta.get("primary_lens") == "Defense & Aerospace"
 
         current_keys = {(r["ticker"], r["expiration"], r["strike"]) for r in qualifying}
         for r in qualifying:

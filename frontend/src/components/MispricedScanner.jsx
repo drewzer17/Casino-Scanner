@@ -1,5 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api/client.js";
+import ResearchAsterisk from "./ResearchAsterisk.jsx";
+import ResearchPanel from "./ResearchPanel.jsx";
 
 // Synthesized two-tone "ding" via Web Audio API — no external asset or
 // pre-recorded file needed, so there's nothing to fabricate or get wrong.
@@ -30,15 +32,32 @@ function playDing() {
 }
 
 const COLS = [
-  { key: "ticker",              label: "Ticker",     align: "left" },
-  { key: "expiration",          label: "Expiration", align: "left" },
-  { key: "strike",              label: "Strike",     align: "right" },
-  { key: "call_bid",            label: "Call Bid",   align: "right" },
-  { key: "stock_price",         label: "Stock (ask)",align: "right" },
-  { key: "edge",                label: "Edge $",     align: "right" },
-  { key: "breakeven",           label: "Breakeven",  align: "right" },
-  { key: "earnings_in_window",  label: "Earnings",   align: "center" },
+  { key: "ticker",              label: "Ticker",     align: "left",   type: "text" },
+  { key: "expiration",          label: "Expiration", align: "left",   type: "text" },
+  { key: "strike",              label: "Strike",     align: "right",  type: "number" },
+  { key: "call_bid",            label: "Call Bid",   align: "right",  type: "number" },
+  { key: "stock_price",         label: "Stock (ask)",align: "right",  type: "number" },
+  { key: "edge",                label: "Edge $",     align: "right",  type: "number" },
+  { key: "breakeven",           label: "Breakeven",  align: "right",  type: "number" },
+  { key: "earnings_in_window",  label: "Earnings",   align: "center", type: "bool" },
 ];
+const COL_TYPE = Object.fromEntries(COLS.map((c) => [c.key, c.type]));
+
+function compareRows(a, b, key) {
+  const type = COL_TYPE[key];
+  if (type === "text") {
+    return String(a[key] ?? "").localeCompare(String(b[key] ?? ""));
+  }
+  if (type === "bool") {
+    return (a[key] ? 1 : 0) - (b[key] ? 1 : 0);
+  }
+  const av = a[key];
+  const bv = b[key];
+  if (av == null && bv == null) return 0;
+  if (av == null) return -1;
+  if (bv == null) return 1;
+  return av - bv;
+}
 
 function fmtMoney(v) {
   if (v == null) return "—";
@@ -67,8 +86,18 @@ export default function MispricedScanner() {
   const [loading, setLoading] = useState(false);
   const [flashKeys, setFlashKeys] = useState(new Set());
   const [error, setError] = useState(null);
+  const [sort, setSort] = useState({ key: "edge", dir: "desc" });
+  const [panelTicker, setPanelTicker] = useState(null);
   const pollRef = useRef(null);
   const editingFloorRef = useRef(false);
+
+  function handleSort(key) {
+    setSort((prev) =>
+      prev.key === key
+        ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: "asc" }
+    );
+  }
 
   const refresh = useCallback(async () => {
     try {
@@ -140,7 +169,17 @@ export default function MispricedScanner() {
     }
   }
 
-  const rows = state?.rows || [];
+  const rawRows = state?.rows || [];
+  // Pure display-order concern — never mutates state.rows, so is_new flashing
+  // and the floor filter (both server-computed) are unaffected by sorting.
+  const rows = useMemo(() => {
+    const copy = [...rawRows];
+    copy.sort((a, b) => {
+      const cmp = compareRows(a, b, sort.key);
+      return sort.dir === "asc" ? cmp : -cmp;
+    });
+    return copy;
+  }, [rawRows, sort]);
 
   return (
     <div className="mispriced-wrap">
@@ -197,9 +236,23 @@ export default function MispricedScanner() {
         <table className="mispriced-table">
           <thead>
             <tr>
-              {COLS.map((c) => (
-                <th key={c.key} style={{ textAlign: c.align }}>{c.label}</th>
-              ))}
+              {COLS.map((c) => {
+                const active = sort.key === c.key;
+                return (
+                  <th
+                    key={c.key}
+                    className="mispriced-sortable-th"
+                    style={{ textAlign: c.align }}
+                    onClick={() => handleSort(c.key)}
+                    title={`Sort by ${c.label}`}
+                  >
+                    {c.label}
+                    <span className={`mispriced-sort-arrow${active ? " active" : ""}`}>
+                      {active ? (sort.dir === "asc" ? " ▲" : " ▼") : ""}
+                    </span>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -217,7 +270,22 @@ export default function MispricedScanner() {
                 const flashing = flashKeys.has(key);
                 return (
                   <tr key={key} className={flashing ? "mispriced-row-new" : ""}>
-                    <td>{r.ticker}</td>
+                    <td>
+                      <ResearchAsterisk
+                        ticker={r.ticker}
+                        hasSitrep={r.has_sitrep}
+                        onResearch={setPanelTicker}
+                        isDefense={r.is_defense}
+                      />
+                      {r.ticker}
+                      {r.has_sitrep && r.primary_lens && (
+                        <span
+                          className={`mispriced-lens-pill${r.is_defense ? " defense" : ""}`}
+                        >
+                          {r.primary_lens}
+                        </span>
+                      )}
+                    </td>
                     <td>{r.expiration}</td>
                     <td style={{ textAlign: "right" }}>{fmtMoney(r.strike)}</td>
                     <td style={{ textAlign: "right" }}>{fmtMoney(r.call_bid)}</td>
@@ -234,6 +302,8 @@ export default function MispricedScanner() {
           </tbody>
         </table>
       </div>
+
+      <ResearchPanel ticker={panelTicker} onClose={() => setPanelTicker(null)} />
     </div>
   );
 }
