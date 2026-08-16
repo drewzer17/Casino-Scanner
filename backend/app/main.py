@@ -78,11 +78,18 @@ def _on_startup() -> None:
     except Exception as _exc:
         import logging as _logging
         _logging.getLogger(__name__).warning("AI universe drift check failed: %s", _exc)
-    # DITM mispriced-options scanner — idle background thread, gated by an
-    # in-memory toggle (default off). NOT the APScheduler cron below.
-    from .mispriced.engine import start_cadence_loop
-    start_cadence_loop()
+    # Main scan scheduler registers first, unconditionally, so nothing below
+    # it can ever prevent the 8:35/3:30/4:00 jobs from being registered.
     start_scheduler()
+    # DITM mispriced-options scanner — idle background thread, gated by an
+    # in-memory toggle (default off). NOT the APScheduler cron above. Wrapped
+    # so a DITM startup failure logs and continues instead of propagating.
+    try:
+        from .mispriced.engine import start_cadence_loop
+        start_cadence_loop()
+    except Exception as _exc:
+        import logging as _logging
+        _logging.getLogger(__name__).warning("DITM cadence loop failed to start: %s", _exc)
 
 
 @app.on_event("shutdown")
