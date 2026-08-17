@@ -2975,6 +2975,24 @@ body {
 .mispriced-sweep-btn:hover { background: rgba(234, 179, 8, 0.24); }
 .mispriced-sweep-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.mispriced-friday-btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.mispriced-friday-btn:hover { color: #93c5fd; border-color: #3b82f6; }
+.mispriced-friday-btn.active {
+  background: rgba(59, 130, 246, 0.16);
+  border-color: #3b82f6;
+  color: #93c5fd;
+}
+
 .mispriced-status {
   display: flex;
   gap: 16px;

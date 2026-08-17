@@ -109,6 +109,29 @@ function passesStockCeiling(row, ceilingInput) {
   return row.stock_price != null && row.stock_price <= ceiling;
 }
 
+// Nearest upcoming Friday, Central Time, as "YYYY-MM-DD" (matches the
+// expiration string format rows already carry). Computed fresh on each call
+// — if today itself is Friday (CT), that's the answer.
+function nearestFridayCT() {
+  const todayStr = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Chicago",
+    year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date()); // "YYYY-MM-DD"
+  const [y, m, d] = todayStr.split("-").map(Number);
+  const noonUTC = new Date(Date.UTC(y, m - 1, d, 12)); // noon avoids DST-edge day shifts
+  const daysUntilFriday = (5 - noonUTC.getUTCDay() + 7) % 7; // JS getDay: Fri=5
+  noonUTC.setUTCDate(noonUTC.getUTCDate() + daysUntilFriday);
+  const yyyy = noonUTC.getUTCFullYear();
+  const mm = String(noonUTC.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(noonUTC.getUTCDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function passesThisFriday(row, enabled, fridayDate) {
+  if (!enabled) return true;
+  return row.expiration === fridayDate;
+}
+
 function fmtEdge(v) {
   if (v == null) return "—";
   const n = Number(v);
@@ -168,6 +191,7 @@ export default function MispricedScanner() {
   // on top of the floor/edge-mode filter, recompute client-side, no re-sweep.
   const [movesBucket, setMovesBucket] = useState("all");
   const [maxStockInput, setMaxStockInput] = useState("");
+  const [thisFridayOnly, setThisFridayOnly] = useState(false);
   const pollRef = useRef(null);
   const editingFloorRef = useRef(false);
 
@@ -191,13 +215,15 @@ export default function MispricedScanner() {
 
       // Only ding/flash for rows that are both newly-qualifying AND actually
       // visible under ALL active filters (floor/edge-mode + moves bucket +
-      // stock ceiling) — a row that's "new" to the server's superset but
-      // isn't currently shown shouldn't alert either.
+      // stock ceiling + this-Friday) — a row that's "new" to the server's
+      // superset but isn't currently shown shouldn't alert either.
+      const fridayDate = nearestFridayCT();
       const visible = (s.rows || []).filter((r) => {
         const v = effectiveEdge(r, edgeMode);
         if (v == null || v < s.floor) return false;
         if (!passesMovesFilter(r, movesBucket)) return false;
         if (!passesStockCeiling(r, maxStockInput)) return false;
+        if (!passesThisFriday(r, thisFridayOnly, fridayDate)) return false;
         return true;
       });
       const newOnes = visible.filter((r) => r.is_new);
@@ -210,7 +236,7 @@ export default function MispricedScanner() {
     } catch (e) {
       setError(e.message || String(e));
     }
-  }, [edgeMode, movesBucket, maxStockInput]);
+  }, [edgeMode, movesBucket, maxStockInput, thisFridayOnly]);
 
   useEffect(() => {
     refresh();
@@ -263,19 +289,24 @@ export default function MispricedScanner() {
   const rawRows = state?.rows || [];
   const floorValue = state?.floor ?? 500;
 
+  // Computed at render time, Central Time, per spec — not memoized across
+  // renders, so it naturally rolls forward the moment it becomes a new day.
+  const fridayDate = nearestFridayCT();
+
   // Server sends a loose superset (qualifies under the most permissive edge
   // mode) so the toggle never needs a new sweep. The active mode's floor
-  // test, the moves bucket, and the stock-price ceiling all stack here,
-  // purely client-side, from data already in hand.
+  // test, the moves bucket, the stock-price ceiling, and the this-Friday
+  // filter all stack here, purely client-side, from data already in hand.
   const visibleRows = useMemo(() => {
     return rawRows.filter((r) => {
       const v = effectiveEdge(r, edgeMode);
       if (v == null || v < floorValue) return false;
       if (!passesMovesFilter(r, movesBucket)) return false;
       if (!passesStockCeiling(r, maxStockInput)) return false;
+      if (!passesThisFriday(r, thisFridayOnly, fridayDate)) return false;
       return true;
     });
-  }, [rawRows, edgeMode, floorValue, movesBucket, maxStockInput]);
+  }, [rawRows, edgeMode, floorValue, movesBucket, maxStockInput, thisFridayOnly, fridayDate]);
 
   // Pure display-order concern — never mutates state.rows.
   const rows = useMemo(() => {
@@ -342,6 +373,14 @@ export default function MispricedScanner() {
 
           <button className="mispriced-sweep-btn" onClick={handleSweepNow} disabled={loading}>
             {state?.sweep_in_progress ? "Sweeping…" : "Sweep Now"}
+          </button>
+
+          <button
+            className={`mispriced-friday-btn${thisFridayOnly ? " active" : ""}`}
+            onClick={() => setThisFridayOnly((v) => !v)}
+            title={`Filter to expiration ${fridayDate}`}
+          >
+            This Friday{thisFridayOnly ? ` (${fridayDate})` : ""}
           </button>
         </div>
       </div>
@@ -441,6 +480,9 @@ export default function MispricedScanner() {
                         }
                         if (maxStockInput && parseFloat(maxStockInput) > 0) {
                           extra.push(`stock ≤ $${maxStockInput}`);
+                        }
+                        if (thisFridayOnly) {
+                          extra.push(`expiration ${fridayDate} only`);
                         }
                         const filterNote = extra.length ? `, ${extra.join(", ")}` : "";
                         return `No strikes clearing the $${floorValue} floor (${edgeMode} mode${filterNote}) right now.`;
